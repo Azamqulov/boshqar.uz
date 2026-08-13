@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
+
+function generateTempPassword(): string {
+  return randomBytes(4).toString('hex').toUpperCase() + '!A1';
+}
 
 function normalizePhone(raw: string): string {
   if (!raw) return '';
@@ -77,8 +82,8 @@ export class EmployeesService {
     }
 
     const cleanPhone = normalizePhone(data.phone);
-    const password = data.password || 'Staff12345!';
-    const passwordHash = await bcrypt.hash(password, 10);
+    const tempPassword = data.password || generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
     const selectedModules: string[] = data.allowedModules || ['pos'];
 
     // 1. Pre-fetch permissions and default branch outside transaction for maximum speed
@@ -187,6 +192,7 @@ export class EmployeesService {
 
         return {
           ...employee,
+          tempPassword: data.password ? undefined : tempPassword,
           allowedModules: selectedModules,
         };
       },

@@ -35,7 +35,10 @@ async function runSecurityAudit() {
     const loginRes = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login: '+998901234567', password: 'Admin12345!' }),
+      body: JSON.stringify({
+        login: '+998901234567',
+        password: process.env.SEED_ADMIN_PASSWORD || 'Admin12345!',
+      }),
     });
     const loginData = await loginRes.json();
     assert("To'g'ri login bilan JWT access_token va refresh_token berildi", loginRes.status === 200 && !!loginData.accessToken);

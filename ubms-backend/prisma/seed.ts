@@ -1,5 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
+
+function generateTempPassword(): string {
+  return randomBytes(4).toString('hex').toUpperCase() + '!A1';
+}
 
 const prisma = new PrismaClient();
 
@@ -148,7 +153,8 @@ async function main() {
   }
 
   // 5. Default Demo Admin User
-  const passwordHash = await bcrypt.hash('Admin12345!', 10);
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || generateTempPassword();
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
   const demoUser = await prisma.user.upsert({
     where: { phone: '+998901234567' },
     update: { passwordHash, status: 'active' },
@@ -582,7 +588,8 @@ async function main() {
   });
 
   console.log('✅ Demo Business, Branches, Categories, Products, Customers, Suppliers, Orders, and Expenses created!');
-  console.log(`🔑 Demo User Login: ${demoUser.phone} / Admin12345!`);
+  console.log(`🔑 Demo User Login: ${demoUser.phone} / Parol: ${adminPassword}`);
+  console.log(`⚠️  Seed admin parol: ${adminPassword} — buni xavfsiz joyga saqlang, birinchi kirishda o'zgartiring`);
   console.log('--- 🚀 Seed Completed Successfully ---');
 }
 
