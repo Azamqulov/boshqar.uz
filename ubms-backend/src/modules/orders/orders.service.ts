@@ -276,7 +276,7 @@ export class OrdersService {
       return order;
     }
 
-    // 1. Check & Decrement Inventory
+    // 1. Check & Decrement Inventory (Skip strict blocking for made-to-order dishes, kitchen items and services)
     for (const item of order.items) {
       if (item.productId) {
         const inv = await tx.inventory.findUnique({
@@ -288,37 +288,45 @@ export class OrdersService {
           },
         });
 
+        const isMadeToOrder =
+          item.product?.brand === 'dish' ||
+          item.product?.brand === 'kitchen' ||
+          item.product?.brand === 'service' ||
+          item.product?.unitId === '00000000-0000-0000-0000-000000000024'; // Porsiya
+
         const currentQty = inv ? Number(inv.quantity) : 0;
         const buyQty = Number(item.quantity);
 
-        if (currentQty < buyQty) {
+        // Only enforce strict stock check on tracked physical goods
+        if (!isMadeToOrder && inv && currentQty < buyQty) {
           throw new ConflictException({
             code: 'INSUFFICIENT_STOCK',
             message: `"${item.product?.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,
           });
         }
 
-        const afterQty = currentQty - buyQty;
+        if (inv) {
+          const afterQty = Math.max(0, currentQty - buyQty);
+          await tx.inventory.update({
+            where: { id: inv.id },
+            data: { quantity: afterQty },
+          });
 
-        await tx.inventory.update({
-          where: { id: inv.id },
-          data: { quantity: afterQty },
-        });
-
-        await tx.inventoryTransaction.create({
-          data: {
-            branchId: order.branchId,
-            productId: item.productId,
-            type: 'out',
-            reason: 'sale',
-            quantity: buyQty,
-            quantityBefore: currentQty,
-            quantityAfter: afterQty,
-            referenceType: 'order',
-            referenceId: order.id,
-            createdBy: userId,
-          },
-        });
+          await tx.inventoryTransaction.create({
+            data: {
+              branchId: order.branchId,
+              productId: item.productId,
+              type: 'out',
+              reason: 'sale',
+              quantity: buyQty,
+              quantityBefore: currentQty,
+              quantityAfter: afterQty,
+              referenceType: 'order',
+              referenceId: order.id,
+              createdBy: userId,
+            },
+          });
+        }
       }
     }
 

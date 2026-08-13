@@ -263,6 +263,46 @@
             </div>
           </div>
 
+          <!-- Cash change calculation if cash selected -->
+          <div v-if="selectedPaymentMethod === '1'" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Mijoz bergan summa:</label>
+              <CurrencyInput
+                v-model="cashReceived"
+                placeholder="0"
+                suffix="so'm"
+                inputClass="font-bold text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <!-- Quick Cash Buttons -->
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                @click="cashReceived = cartStore.grandTotal"
+                class="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-semibold text-slate-700 dark:text-slate-300 hover:border-emerald-500 transition"
+              >
+                Aniq summa
+              </button>
+              <button
+                type="button"
+                v-for="amt in [50000, 100000, 200000]"
+                :key="amt"
+                @click="cashReceived = amt"
+                class="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-mono text-slate-700 dark:text-slate-300 hover:border-emerald-500 transition"
+              >
+                {{ formatCurrency(amt) }}
+              </button>
+            </div>
+
+            <div v-if="cashReceived > cartStore.grandTotal" class="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-800 text-xs">
+              <span class="text-slate-500 dark:text-slate-400 font-semibold">Qaytim:</span>
+              <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+                {{ formatCurrency(cashReceived - cartStore.grandTotal) }}
+              </span>
+            </div>
+          </div>
+
           <button
             @click="handleCompleteOrder"
             :disabled="isProcessing"
@@ -342,6 +382,7 @@ import {
 } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import CurrencyInput from '../../components/CurrencyInput.vue';
 
 const cartStore = useCartStore();
 const dataStore = useDataStore();
@@ -360,6 +401,7 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 const isCheckoutOpen = ref(false);
 const isProcessing = ref(false);
 const completedOrder = ref<any | null>(null);
+const cashReceived = ref<number>(0);
 
 const paymentMethods = ref([
   { id: '1', name: 'Naqd pul', type: 'cash' },
@@ -367,6 +409,11 @@ const paymentMethods = ref([
   { id: '3', name: 'Click / Payme', type: 'click' },
 ]);
 const selectedPaymentMethod = ref('1');
+
+const openCheckoutModal = () => {
+  cashReceived.value = cartStore.grandTotal;
+  isCheckoutOpen.value = true;
+};
 
 const loadProducts = async () => {
   if (dataStore.products.length === 0) {
@@ -466,10 +513,6 @@ const handleBarcodeScan = async () => {
   } else {
     toast.warning(`Shtrix-kod (${searchQuery.value}) bo'yicha tovar topilmadi`, 'Skaner');
   }
-};
-
-const openCheckoutModal = () => {
-  isCheckoutOpen.value = true;
 };
 
 const handleCompleteOrder = async () => {

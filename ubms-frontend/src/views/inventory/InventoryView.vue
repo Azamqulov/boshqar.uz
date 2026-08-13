@@ -105,7 +105,11 @@
               </div>
               <div>
                 <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kirim Narxi (Tannarx)</label>
-                <input type="number" v-model.number="stockForm.purchasePrice" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                <CurrencyInput
+                  v-model="stockForm.purchasePrice"
+                  placeholder="0"
+                  suffix="so'm"
+                />
               </div>
             </div>
 
@@ -192,6 +196,7 @@ import { useFormat } from '../../composables/useFormat';
 import { ArrowDownLeft, ArrowUpRight, X, Search } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
+import CurrencyInput from '../../components/CurrencyInput.vue';
 import { useToast } from '../../composables/useToast';
 
 const toast = useToast();

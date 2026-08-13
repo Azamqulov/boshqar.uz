@@ -99,8 +99,14 @@
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Summa (so'm) *</label>
-              <input type="number" required v-model.number="expenseForm.amount" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20" />
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Summa *</label>
+              <CurrencyInput
+                v-model="expenseForm.amount"
+                placeholder="0"
+                suffix="so'm"
+                :required="true"
+                inputClass="font-bold text-rose-600 dark:text-rose-400"
+              />
             </div>
 
             <div>
@@ -124,11 +130,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import api from '../../services/api';
+import api, { getErrorMessage } from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, X } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
+import CurrencyInput from '../../components/CurrencyInput.vue';
 import { useToast } from '../../composables/useToast';
 
 const toast = useToast();

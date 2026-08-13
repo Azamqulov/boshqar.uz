@@ -38,7 +38,7 @@ export const useDataStore = defineStore('ubms_data', () => {
       return categories.value;
     }
     try {
-      const { data } = await api.get('/products/categories');
+      const { data } = await api.get('/categories');
       categories.value = data || [];
       lastFetched.value['categories'] = Date.now();
     } catch (e) {

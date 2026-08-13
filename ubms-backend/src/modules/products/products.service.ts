@@ -24,6 +24,9 @@ export interface CreateProductDto {
   status?: ProductStatus;
   description?: string;
   image?: string;
+  imageUrl?: string;
+  brand?: string;
+  productType?: 'goods' | 'dish' | 'service';
   isKitchenItem?: boolean;
 }
 
@@ -171,6 +174,9 @@ export class ProductsService {
       unitId = defaultUnit?.id || '00000000-0000-0000-0000-000000000020';
     }
 
+    const effectiveBrand = data.productType || data.brand || (data.isKitchenItem ? 'dish' : 'goods');
+    const effectiveImage = data.imageUrl || data.image || null;
+
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
@@ -180,11 +186,12 @@ export class ProductsService {
           sku,
           barcode: data.barcode || null,
           categoryId: data.categoryId || null,
+          brand: effectiveBrand,
           unitId,
           purchasePrice: data.purchasePrice || 0,
           salePrice: data.salePrice,
           minStock: data.minStockLevel || 0,
-          imageUrl: data.image || null,
+          imageUrl: effectiveImage,
           description: data.description || null,
           status: data.status || 'active',
         },
@@ -223,16 +230,20 @@ export class ProductsService {
 
   async update(businessId: string, id: string, data: UpdateProductDto) {
     const product = await this.findOne(businessId, id);
+    const effectiveBrand = data.productType || data.brand || product.brand;
+    const effectiveImage = data.imageUrl !== undefined ? data.imageUrl : data.image !== undefined ? data.image : product.imageUrl;
+
     return this.prisma.product.update({
       where: { id: product.id },
       data: {
         name: data.name,
         categoryId: data.categoryId,
+        brand: effectiveBrand,
         unitId: data.unitId,
         purchasePrice: data.purchasePrice,
         salePrice: data.salePrice,
         minStock: data.minStockLevel,
-        imageUrl: data.image,
+        imageUrl: effectiveImage,
         description: data.description,
         status: data.status,
       },

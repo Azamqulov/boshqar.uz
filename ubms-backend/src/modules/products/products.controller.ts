@@ -56,6 +56,12 @@ export class ProductsController {
     return this.productsService.getBestsellers(businessId, limitNum, periodDays);
   }
 
+  @Get('categories')
+  @RequirePermission('products.view')
+  getCategories(@CurrentBusinessId() businessId: string) {
+    return this.productsService.getCategories(businessId);
+  }
+
   @Get(':id')
   @RequirePermission('products.view')
   findOne(
