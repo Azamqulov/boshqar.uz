@@ -6,23 +6,22 @@
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Mijozlar tarixi, xaridlar statistikasi va qarz daftari</p>
       </div>
 
-      <button
+      <AppButton
+        variant="primary"
+        size="md"
+        :icon="Plus"
         @click="isCreateModalOpen = true"
-        class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive"
       >
-        <Plus class="w-4 h-4" />
-        <span>Yangi Mijoz Qo'shish</span>
-      </button>
+        Yangi Mijoz Qo'shish
+      </AppButton>
     </div>
 
     <!-- Search Input -->
-    <div class="relative max-w-md">
-      <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <input
+    <div class="max-w-md">
+      <AppInput
         v-model="searchQuery"
-        type="text"
         placeholder="Mijoz ismi yoki telefon raqami bo'yicha qidiruv..."
-        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+        :icon="Search"
       />
     </div>
 
@@ -49,22 +48,22 @@
             </tr>
             <tr v-for="c in filteredCustomers" :key="c.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">{{ c.fullName }}</td>
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono">{{ c.phone || '-' }}</td>
-              <td class="py-3 px-4 font-mono">{{ c.totalPurchases }} ta</td>
-              <td class="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(c.totalSpent) }}</td>
+              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono">{{ c.phone ? formatUzbekPhone(c.phone) : '-' }}</td>
+              <td class="py-3 px-4 font-mono">{{ c.totalPurchases || 0 }} ta</td>
+              <td class="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(c.totalSpent || 0) }}</td>
               <td class="py-3 px-4 font-mono">
                 <span
                   class="font-black px-2 py-0.5 rounded text-[11px]"
                   :class="Number(c.debt) > 0 ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
                 >
-                  {{ formatCurrency(c.debt) }}
+                  {{ formatCurrency(c.debt || 0) }}
                 </span>
               </td>
               <td class="py-3 px-4 text-right space-x-2">
                 <button
                   v-if="Number(c.debt) > 0"
                   @click="openPayDebtModal(c)"
-                  class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] transition btn-interactive"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 font-bold text-xs transition btn-interactive border border-emerald-500/30"
                 >
                   Qarzni Yopish
                 </button>
@@ -75,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Create Modal -->
+    <!-- Create Customer Modal -->
     <div v-if="isCreateModalOpen" @click.self="isCreateModalOpen = false" class="modal-overlay">
       <div class="modal-container max-w-md" @click.stop>
         <div class="modal-header">
@@ -84,27 +83,122 @@
         </div>
 
         <div class="modal-body">
-          <form @submit.prevent="createCustomer" class="space-y-3 text-xs">
+          <form @submit.prevent="createCustomer" class="space-y-3.5 text-xs">
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mijoz Ism Familiyasi *</label>
-              <input v-model="form.fullName" required placeholder="Masalan: Jamshid Aliyev" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mijoz Ism Familiyasi *</label>
+              <input v-model="form.fullName" required placeholder="Masalan: Jamshid Aliyev" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Telefon Raqami</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Telefon Raqami</label>
               <PhoneInput v-model="form.phone" placeholder="90 123 45 67" />
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Izoh / Eslatma</label>
-              <textarea v-model="form.notes" rows="2" placeholder="Mijoz haqida qo'shimcha ma'lumot..." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"></textarea>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Izoh / Eslatma</label>
+              <textarea v-model="form.notes" rows="2" placeholder="Mijoz haqida qo'shimcha ma'lumot..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"></textarea>
             </div>
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-4 btn-interactive"
-            >
-              {{ submitting ? 'Saqlanmoqda...' : 'Saqlash' }}
-            </button>
+            <div class="pt-2">
+              <AppButton
+                type="submit"
+                variant="primary"
+                size="md"
+                class="w-full"
+                :loading="submitting"
+              >
+                {{ submitting ? 'Saqlanmoqda...' : 'Saqlash' }}
+              </AppButton>
+            </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pay Debt Modal (Clean Glassmorphism Modal with CurrencyInput) -->
+    <div v-if="isPayDebtModalOpen" @click.self="isPayDebtModalOpen = false" class="modal-overlay">
+      <div class="modal-container max-w-md" @click.stop>
+        <div class="modal-header">
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20">
+              <CreditCard class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white">Qarz To'lovini Qabul Qilish</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Nasiya daftari bo'yicha to'lov kiritish</p>
+            </div>
+          </div>
+          <button @click="isPayDebtModalOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X class="w-5 h-5" /></button>
+        </div>
+
+        <div class="modal-body space-y-4">
+          <!-- Customer info card -->
+          <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-500 dark:text-slate-400 block">Mijoz:</span>
+              <span class="font-bold text-sm text-slate-900 dark:text-white">{{ activeCustomer?.fullName }}</span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-500 dark:text-slate-400 block">Mavjud qarz:</span>
+              <span class="font-black text-sm text-rose-600 dark:text-rose-400 font-mono">{{ formatCurrency(activeCustomer?.debt || 0) }}</span>
+            </div>
+          </div>
+
+          <!-- Payment Amount with CurrencyInput -->
+          <div>
+            <label class="block font-bold text-xs text-slate-700 dark:text-slate-300 mb-1.5">To'lanayotgan Summa *</label>
+            <CurrencyInput
+              v-model="debtPayAmount"
+              placeholder="0"
+              suffix="so'm"
+            />
+          </div>
+
+          <!-- Quick Fill Buttons -->
+          <div class="space-y-1.5">
+            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Tezkor to'lov variantlari:</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                @click="debtPayAmount = Number(activeCustomer?.debt || 0)"
+                class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 transition"
+              >
+                To'liq qarz ({{ formatCurrency(activeCustomer?.debt || 0) }})
+              </button>
+              <button
+                v-if="Number(activeCustomer?.debt) > 50000"
+                type="button"
+                @click="debtPayAmount = 50000"
+                class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
+              >
+                50 000 so'm
+              </button>
+              <button
+                v-if="Number(activeCustomer?.debt) > 100000"
+                type="button"
+                @click="debtPayAmount = 100000"
+                class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
+              >
+                100 000 so'm
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <AppButton
+              variant="ghost"
+              size="md"
+              @click="isPayDebtModalOpen = false"
+            >
+              Bekor qilish
+            </AppButton>
+            <AppButton
+              variant="primary"
+              size="md"
+              :loading="submitting"
+              :disabled="debtPayAmount <= 0"
+              @click="submitPayDebt"
+            >
+              To'lovni Qabul Qilish
+            </AppButton>
+          </div>
         </div>
       </div>
     </div>
@@ -115,8 +209,11 @@
 import { ref, computed, onMounted } from 'vue';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
-import { Plus, X, Search } from 'lucide-vue-next';
+import { Plus, X, Search, CreditCard } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppButton from '../../components/AppButton.vue';
+import AppInput from '../../components/AppInput.vue';
+import CurrencyInput from '../../components/CurrencyInput.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone, formatUzbekPhone } from '../../composables/usePhoneMask';
@@ -130,7 +227,11 @@ const loading = ref(false);
 const submitting = ref(false);
 const searchQuery = ref('');
 const customers = computed(() => dataStore.customers);
+
 const isCreateModalOpen = ref(false);
+const isPayDebtModalOpen = ref(false);
+const activeCustomer = ref<any | null>(null);
+const debtPayAmount = ref<number>(0);
 
 const form = ref({
   fullName: '',
@@ -185,21 +286,36 @@ const createCustomer = async () => {
   }
 };
 
-const openPayDebtModal = async (customer: any) => {
-  const amountStr = prompt(`"${customer.fullName}" mijozining qarzini yopish uchun summani kiriting (Qarz: ${customer.debt}):`);
-  if (amountStr) {
-    const amount = Number(amountStr);
-    if (amount > 0) {
-      try {
-        await api.post(`/customers/${customer.id}/pay-debt`, { amount });
-        toast.success(`Qarzdan ${amount} so'm muvaffaqiyatli to'landi!`, 'Qarz Daftari');
-        dataStore.invalidate('customers');
-        dataStore.invalidate('dashboard');
-        await loadCustomers(true);
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
-      }
-    }
+const openPayDebtModal = (customer: any) => {
+  activeCustomer.value = customer;
+  debtPayAmount.value = Number(customer.debt) || 0;
+  isPayDebtModalOpen.value = true;
+};
+
+const submitPayDebt = async () => {
+  if (!activeCustomer.value) return;
+  if (!debtPayAmount.value || debtPayAmount.value <= 0) {
+    toast.warning('To\'lov summasini to\'g\'ri kiriting', 'Qarz To\'lovi');
+    return;
+  }
+
+  submitting.value = true;
+  try {
+    await api.post(`/customers/${activeCustomer.value.id}/pay-debt`, {
+      amount: Number(debtPayAmount.value),
+    });
+    toast.success(
+      `"${activeCustomer.value.fullName}" uchun ${formatCurrency(debtPayAmount.value)} qarz to'lovi qabul qilindi!`,
+      'Qarz Daftari'
+    );
+    isPayDebtModalOpen.value = false;
+    dataStore.invalidate('customers');
+    dataStore.invalidate('dashboard');
+    await loadCustomers(true);
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
+  } finally {
+    submitting.value = false;
   }
 };
 
