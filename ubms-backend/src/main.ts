@@ -48,20 +48,24 @@ async function bootstrap() {
     }),
   );
 
-  // 5. Swagger Documentation
-  const config = new DocumentBuilder()
-    .setTitle('boshqar.uz API')
-    .setDescription('boshqar.uz — Universal Biznes Boshqaruv Tizimi Multi-tenant SaaS REST API')
-    .setVersion('2.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  // 5. Swagger Documentation (Only enabled in development / staging)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('boshqar.uz API')
+      .setDescription('boshqar.uz — Universal Biznes Boshqaruv Tizimi Multi-tenant SaaS REST API')
+      .setVersion('2.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
   console.log(`🚀 boshqar.uz Backend API running on: http://localhost:${port}/api/v1`);
-  console.log(`📚 Swagger Docs available at: http://localhost:${port}/docs`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📚 Swagger Docs available at: http://localhost:${port}/docs`);
+  }
 }
 
 bootstrap();
