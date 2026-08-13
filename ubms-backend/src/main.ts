@@ -21,16 +21,16 @@ async function bootstrap() {
 
   // 3. Enable CORS with safe origins
   const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
     : ['http://localhost:5173', 'http://localhost:3000', 'tauri://localhost'];
 
   app.enableCors({
     origin: (origin, callback) => {
-      // allow requests with no origin like mobile apps, curl, or dev
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      // allow requests with no origin like mobile apps, server-to-server or curl
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Dev flexible mode
+        callback(new Error('CORS: ruxsat etilmagan origin'), false);
       }
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
