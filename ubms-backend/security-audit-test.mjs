@@ -7,7 +7,7 @@ const API_URL = 'http://localhost:4000/api/v1';
 
 async function runSecurityAudit() {
   console.log('====================================================');
-  console.log('🛡️  UBMS (boshqar.uz) XAVFSIZLIK VA HAR KUNLIK TEKSHIRUV');
+  console.log('🛡️  boshqar.uz XAVFSIZLIK VA HAR KUNLIK TEKSHIRUV');
   console.log('====================================================\n');
 
   let passedTests = 0;

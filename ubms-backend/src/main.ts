@@ -48,8 +48,8 @@ async function bootstrap() {
 
   // 5. Swagger Documentation
   const config = new DocumentBuilder()
-    .setTitle('UBMS API (boshqar.uz)')
-    .setDescription('Universal Business Management System — Multi-tenant SaaS REST API')
+    .setTitle('boshqar.uz API')
+    .setDescription('boshqar.uz — Universal Biznes Boshqaruv Tizimi Multi-tenant SaaS REST API')
     .setVersion('2.0')
     .addBearerAuth()
     .build();
@@ -58,7 +58,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`🚀 UBMS Backend API running on: http://localhost:${port}/api/v1`);
+  console.log(`🚀 boshqar.uz Backend API running on: http://localhost:${port}/api/v1`);
   console.log(`📚 Swagger Docs available at: http://localhost:${port}/docs`);
 }
 

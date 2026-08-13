@@ -19,7 +19,7 @@ bot.start((ctx) => {
     linkedBusinesses.set(ctx.from.id, { businessId: payload });
     return ctx.reply(`✅ Tabriklaymiz! Biznesingiz muvaffaqiyatli ulandi (ID: ${payload}).\n\nBuyruqlar:\n/kpi — Bugungi umumiy ko'rsatkichlar\n/savdo — Bugungi sotuvlar summasi\n/ombor — Kam qolgan tovarlar`);
   }
-  ctx.reply("👋 Assalomu alaykum! boshqar.uz (UBMS) botiga xush kelibsiz.\n\nBotni biznesingizga ulash uchun boshqaruv panelidagi havoladan foydalaning.");
+  ctx.reply("👋 Assalomu alaykum! boshqar.uz botiga xush kelibsiz.\n\nBotni biznesingizga ulash uchun boshqaruv panelidagi havoladan foydalaning.");
 });
 
 bot.command('kpi', async (ctx) => {
@@ -71,7 +71,7 @@ cron.schedule('0 21 * * *', async () => {
 
 if (process.env.BOT_TOKEN) {
   bot.launch().then(() => {
-    console.log('🤖 UBMS Telegram Bot muvaffaqiyatli ishga tushdi');
+    console.log('🤖 boshqar.uz Telegram Bot muvaffaqiyatli ishga tushdi');
   });
 } else {
   console.log('ℹ️ BOT_TOKEN berilmagan, bot server rejimida tayyor turibdi');

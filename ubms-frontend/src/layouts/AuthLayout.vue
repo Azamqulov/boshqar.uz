@@ -14,7 +14,7 @@
         B
       </div>
       <h2 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">boshqar.uz</h2>
-      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Universal Biznes Boshqaruv Tizimi (UBMS SaaS)</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Universal Biznes Boshqaruv Tizimi</p>
     </div>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-md z-10 px-4 sm:px-0">

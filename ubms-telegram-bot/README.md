@@ -1,6 +1,6 @@
-# UBMS Telegram Bot (ubms-telegram-bot)
+# boshqar.uz Telegram Bot (boshqar-telegram-bot)
 
-Universal Business Management System (UBMS / boshqar.uz) tizimi uchun Telegram orqali kunlik KPI xabarnomalari va on-demand hisobot boti.
+boshqar.uz — Universal Biznes Boshqaruv Tizimi uchun Telegram orqali kunlik KPI xabarnomalari va on-demand hisobot boti.
 
 ## Buyruqlar:
 - `/start <token>`: Biznes egasini botga ulash

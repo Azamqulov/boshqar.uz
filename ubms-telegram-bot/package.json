@@ -1,7 +1,7 @@
 {
-  "name": "ubms-telegram-bot",
+  "name": "boshqar-telegram-bot",
   "version": "2.0.0",
-  "description": "UBMS Telegram Bot for daily KPI alerts and on-demand reports",
+  "description": "boshqar.uz Telegram Bot for daily KPI alerts and on-demand reports",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

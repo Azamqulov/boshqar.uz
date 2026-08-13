@@ -1,6 +1,6 @@
-# UBMS Desktop POS (ubms-desktop)
+# boshqar.uz Desktop POS (boshqar-desktop)
 
-Universal Business Management System (UBMS / boshqar.uz) — Windows uchun Tauri 2 (Rust) asosidagi tezkor POS dasturi.
+boshqar.uz — Windows uchun Tauri 2 (Rust) asosidagi tezkor universal POS dasturi.
 
 ## Imkoniyatlar:
 - To'g'ridan-to'g'ri 80mm ESC/POS termal printeriga chek chop etish drayveri

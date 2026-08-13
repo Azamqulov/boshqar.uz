@@ -1,6 +1,6 @@
-# UBMS Backend API (ubms-backend)
+# boshqar.uz Backend API (boshqar-backend)
 
-Universal Business Management System (UBMS / boshqar.uz) tizimi uchun NestJS asosidagi Multi-tenant SaaS REST API.
+boshqar.uz — Universal Biznes Boshqaruv Tizimi uchun NestJS asosidagi Multi-tenant SaaS REST API.
 
 ## Xususiyatlari:
 - **Multi-Tenant Architecture**: Shared DB / Shared Schema bilan `business_id` va `branch_id` izolyatsiyasi.

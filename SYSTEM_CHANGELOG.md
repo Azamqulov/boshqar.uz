@@ -1,6 +1,6 @@
-# BOSHQAR.UZ (UBMS SaaS v2.0) — System Changelog & Technical Documentation
+# BOSHQAR.UZ (SaaS v2.0) — System Changelog & Technical Documentation
 
-**Platform:** boshqar.uz — Universal Business Management System (UBMS SaaS)  
+**Platform:** boshqar.uz — Universal Biznes Boshqaruv Tizimi  
 **Version:** 2.0.0  
 **Stack:** Vue 3 (Composition API, TypeScript, Vite, Tailwind CSS, Pinia), NestJS, Prisma ORM, PostgreSQL (Neon Cloud)  
 **Language:** English  

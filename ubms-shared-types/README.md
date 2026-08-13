@@ -1,6 +1,6 @@
-# UBMS Shared Types (@ubms/shared-types)
+# boshqar.uz Shared Types (@ubms/shared-types)
 
-Universal Business Management System (UBMS / boshqar.uz) tizimi uchun umumiy TypeScript turlari, DTO'lar, Enumlar va biznes-modullar konfiguratsiyasi.
+boshqar.uz — Universal Biznes Boshqaruv Tizimi uchun umumiy TypeScript turlari, DTO'lar, Enumlar va biznes-modullar konfiguratsiyasi.
 
 ## Tarkibi:
 - `enums.ts`: Barcha 32 ta ma'lumotlar bazasi jadvallari va biznes jarayonlari uchun enumlar

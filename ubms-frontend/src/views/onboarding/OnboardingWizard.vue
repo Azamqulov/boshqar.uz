@@ -43,7 +43,7 @@
         <div v-if="step === 1" class="space-y-5">
           <div>
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Biznesingiz haqida ma'lumot</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">UBMS profilingizni sozlang</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">boshqar.uz profilingizni sozlang</p>
           </div>
 
           <div>

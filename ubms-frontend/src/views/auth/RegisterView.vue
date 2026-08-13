@@ -1,7 +1,7 @@
 <template>
   <div>
     <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1.5">Yangi hisob yaratish</h3>
-    <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">UBMS bilan biznesingizni tezkor boshqaring</p>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">boshqar.uz bilan biznesingizni tezkor boshqaring</p>
 
     <div v-if="errorMessage" class="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs">
       {{ errorMessage }}

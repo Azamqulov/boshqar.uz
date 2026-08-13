@@ -1,7 +1,7 @@
 {
-  "name": "ubms-desktop",
+  "name": "boshqar-desktop",
   "version": "2.0.0",
-  "description": "UBMS Desktop POS Windows application powered by Tauri 2",
+  "description": "boshqar.uz Desktop POS Windows application powered by Tauri 2",
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",

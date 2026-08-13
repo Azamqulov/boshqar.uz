@@ -1,7 +1,7 @@
 {
-  "name": "ubms-backend",
+  "name": "boshqar-backend",
   "version": "2.0.0",
-  "description": "Universal Business Management System (UBMS) NestJS Multi-tenant Backend API",
+  "description": "boshqar.uz — Universal Biznes Boshqaruv Tizimi NestJS Multi-tenant Backend API",
   "author": "boshqar.uz",
   "private": true,
   "license": "UNLICENSED",

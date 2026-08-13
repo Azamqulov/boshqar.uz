@@ -108,7 +108,7 @@
               boshqar.uz
               <span class="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">v2.0</span>
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{{ authStore.activeBusiness?.name || 'UBMS SaaS' }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{{ authStore.activeBusiness?.name || 'boshqar.uz' }}</p>
           </div>
         </div>
       </div>

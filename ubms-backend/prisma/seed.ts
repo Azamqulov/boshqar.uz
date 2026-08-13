@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('--- 🚀 Seeding Rich Demo Data for UBMS (boshqar.uz) ---');
+  console.log('--- 🚀 Seeding Rich Demo Data for boshqar.uz ---');
 
   // 1. Seed Plans
   const freePlan = await prisma.plan.upsert({

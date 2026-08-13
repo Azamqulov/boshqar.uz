@@ -1,6 +1,6 @@
-# UBMS Frontend (ubms-frontend)
+# boshqar.uz Frontend (boshqar-frontend)
 
-Universal Business Management System (UBMS / boshqar.uz) — Vue 3 + TypeScript + Vite + Tailwind CSS asosidagi zamonaviy boshqaruv paneli va Universal Kassa (POS) tizimi.
+boshqar.uz — Vue 3 + TypeScript + Vite + Tailwind CSS asosidagi zamonaviy universal boshqaruv paneli va POS kassa tizimi.
 
 ## Imkoniyatlar:
 - **Dinamik Modullar**: Do'kon, restoran, kafe, sartaroshxona va boshqa sohalar uchun moslashuvchan interfeys.

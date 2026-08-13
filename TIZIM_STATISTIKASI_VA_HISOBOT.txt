@@ -1,5 +1,5 @@
 ================================================================================
-          BOSHQAR.UZ (UBMS SaaS v2.0) — TIZIMNING TO'LIQ STATISTIKASI VA HISOBOTI
+          BOSHQAR.UZ (SaaS v2.0) — TIZIMNING TO'LIQ STATISTIKASI VA HISOBOTI
 ================================================================================
 Sana: 2026-08-11
 Tizim holati: Barcha modullar 100% integratsiya qilingan, to'liq ishchi holatda.

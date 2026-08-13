@@ -1,4 +1,4 @@
-# BOSHQAR.UZ (UBMS SaaS v2.0) — KEYINGI BOSQICH TZ
+# BOSHQAR.UZ (SaaS v2.0) — KEYINGI BOSQICH TZ
 
 **Sana:** 2026-08-11
 **Maqsad:** Mavjud tizimdagi kamchiliklarni tuzatish va yangi funksiyalarni qo'shish.
