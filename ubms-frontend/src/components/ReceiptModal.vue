@@ -1,49 +1,50 @@
 <template>
-  <div v-if="order" @click.self="$emit('close')" class="modal-overlay">
-    <!-- Screen View (Matching Image 3 Modern Banking/POS Receipt UI) -->
-    <div class="modal-container max-w-lg bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden" @click.stop>
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
-          Xarid Cheki Tafsilotlari
-        </h3>
-        <button
-          @click="$emit('close')"
-          class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-        >
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="p-6 overflow-y-auto max-h-[78vh] space-y-6">
-        <!-- Top Green Status Badge & Large Sum (Image 3 Header) -->
-        <div class="text-center space-y-2">
-          <!-- Icon Bubble -->
-          <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
-            <ArrowUpRight class="w-7 h-7 stroke-[2.5]" />
-          </div>
-
-          <!-- Large Amount (show total paid, not order total) -->
-          <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-            {{ formatCurrency(totalPaid) }}
-          </h2>
-
-          <!-- Date & Time -->
-          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            {{ formatDateTime(order.completedAt || order.createdAt) }}
-          </p>
-
-          <!-- Success / Partial Badge -->
-          <div v-if="nasiyaAmount <= 0" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            <span>Operatsiya bajarildi (To'lov qabul qilindi)</span>
-          </div>
-          <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
-            <AlertTriangle class="w-3.5 h-3.5" />
-            <span>Qisman to'lov — Nasiya: {{ formatCurrency(nasiyaAmount) }}</span>
-          </div>
+  <Teleport to="body">
+    <div v-if="order" @click.self="$emit('close')" class="modal-overlay">
+      <!-- Screen View (Matching Image 3 Modern Banking/POS Receipt UI) -->
+      <div class="modal-container max-w-lg bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden" @click.stop>
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+            Xarid Cheki Tafsilotlari
+          </h3>
+          <button
+            @click="$emit('close')"
+            class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          >
+            <X class="w-5 h-5" />
+          </button>
         </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[78vh] space-y-6">
+          <!-- Top Green Status Badge & Large Sum (Image 3 Header) -->
+          <div class="text-center space-y-2">
+            <!-- Icon Bubble -->
+            <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
+              <ArrowUpRight class="w-7 h-7 stroke-[2.5]" />
+            </div>
+
+            <!-- Large Amount (show total paid, not order total) -->
+            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+              {{ formatCurrency(totalPaid) }}
+            </h2>
+
+            <!-- Date & Time -->
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {{ formatDateTime(order.completedAt || order.createdAt) }}
+            </p>
+
+            <!-- Success / Partial Badge -->
+            <div v-if="nasiyaAmount <= 0" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+              <CheckCircle2 class="w-3.5 h-3.5" />
+              <span>Operatsiya bajarildi (To'lov qabul qilindi)</span>
+            </div>
+            <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
+              <AlertTriangle class="w-3.5 h-3.5" />
+              <span>Qisman to'lov — Nasiya: {{ formatCurrency(nasiyaAmount) }}</span>
+            </div>
+          </div>
 
         <!-- Action Button (Download / Print) -->
         <div class="flex items-center justify-center gap-3">
@@ -88,6 +89,14 @@
             <span class="text-slate-400 dark:text-slate-400 font-medium">Mijoz (Qabul qiluvchi):</span>
             <span class="font-bold text-slate-900 dark:text-white">
               {{ order.customer.fullName }} {{ order.customer.phone ? `(${order.customer.phone})` : '' }}
+            </span>
+          </div>
+
+          <!-- Xizmat turi / Stol (agar mavjud bo'lsa) -->
+          <div v-if="order.tableNumber || order.orderType" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
+            <span class="text-slate-400 dark:text-slate-400 font-medium">Xizmat turi / Stol:</span>
+            <span class="font-bold text-slate-900 dark:text-white">
+              {{ order.tableNumber ? `🍽️ ${order.tableNumber}` : (order.orderType === 'takeaway' ? '🥡 Saboy (Olib ketish)' : '🛵 Yetkazib berish') }}
             </span>
           </div>
 
@@ -161,8 +170,9 @@
         <div class="text-center text-[11px] text-slate-400 dark:text-slate-500 font-medium">
           {{ settings.footerText || 'Xaridingiz uchun rahmat! Yana kutib qolamiz.' }}
         </div>
-      </div>
-    </div>
+        </div> <!-- /modal-body -->
+      </div> <!-- /modal-container -->
+    </div> <!-- /modal-overlay -->
 
     <!-- Hidden Dedicated Thermal / A4 Printable Receipt Template -->
     <div id="print-receipt-area" class="print-only">
@@ -181,6 +191,9 @@
           <div class="receipt-meta">
             <div>CHEK №: <strong>{{ order.orderNumber }}</strong></div>
             <div>SANA: {{ formatDateTime(order.completedAt || order.createdAt) }}</div>
+            <div v-if="order.tableNumber || order.orderType">
+              XIZMAT: <strong>{{ order.tableNumber ? `STOL #${order.tableNumber}` : (order.orderType === 'takeaway' ? 'SABOY (OLIB KETISH)' : 'DOSTAVKA') }}</strong>
+            </div>
             <div v-if="settings.showCashier && order.cashier">KASSIR: {{ order.cashier.fullName }}</div>
             <div v-if="settings.showCustomer && order.customer">MIJOZ: {{ order.customer.fullName }}</div>
           </div>
@@ -255,7 +268,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

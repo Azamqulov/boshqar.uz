@@ -17,21 +17,12 @@
       </button>
 
       <button
-        @click="activeTab = 'profile'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'profile' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <Building2 class="w-4 h-4" />
-        <span>Biznes Profili</span>
-      </button>
-
-      <button
         @click="activeTab = 'appearance'"
         class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
         :class="activeTab === 'appearance' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
       >
         <Palette class="w-4 h-4" />
-        <span>Ko'rinish & Mavzu</span>
+        <span>Ko'rinish & Xizmatlar</span>
       </button>
 
       <button
@@ -71,198 +62,468 @@
       </button>
     </div>
 
-    <!-- Tab 0: Mening Profilim (Phase 6) -->
-    <div v-if="activeTab === 'my-profile'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
-      <!-- 1. Personal Details Form -->
-      <div class="glass-card rounded-2xl p-6 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <UserCircle class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-            <span>Shaxsiy Ma'lumotlar</span>
-          </h3>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold uppercase">
-            {{ authStore.user?.isSuperAdmin ? 'SuperAdmin' : 'Owner' }}
-          </span>
+    <!-- Tab 0: Mening Profilim (Redesigned Full-Width & Unified) -->
+    <div v-if="activeTab === 'my-profile'" class="space-y-6 w-full">
+      <!-- User Profile Hero Banner -->
+      <div class="glass-card rounded-3xl p-6 sm:p-8 relative overflow-visible z-20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-5 relative z-20">
+          <!-- Left: Avatar & User Quick Details -->
+          <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+            <div class="relative group">
+              <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-emerald-500 text-white font-black text-3xl sm:text-4xl flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-4 ring-white dark:ring-slate-900 shrink-0">
+                {{ (authStore.user?.fullName || 'U').charAt(0).toUpperCase() }}
+              </div>
+              <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 flex items-center justify-center text-white" title="Faol profil">
+                <CheckCircle2 class="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {{ authStore.user?.fullName || 'Foydalanuvchi' }}
+                </h2>
+                <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] uppercase border border-emerald-500/30">
+                  {{ authStore.user?.isSuperAdmin ? 'SuperAdmin' : (authStore.activeBusiness?.role || 'Owner') }}
+                </span>
+              </div>
+
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center sm:justify-start gap-3">
+                <span class="flex items-center gap-1 font-mono">
+                  <Phone class="w-3.5 h-3.5 text-emerald-500" />
+                  {{ authStore.user?.phone }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Right Side: Business Badge & Interactive Currency Selector -->
+          <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
+            <span class="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-1.5 shadow-sm">
+              <Building2 class="w-4 h-4 text-emerald-500" />
+              <span>{{ authStore.activeBusiness?.name || 'Biznes' }}</span>
+            </span>
+
+            <div class="w-44">
+              <AppSelect
+                v-model="selectedCurrency"
+                :options="currencyOptions"
+                @change="handleCurrencyChange"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Profile & Business Settings Single Unified Form Container -->
+      <form @submit.prevent="handleSaveUnifiedProfile" class="glass-card rounded-3xl p-6 sm:p-8 space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 dark:divide-slate-800">
+          <!-- 1. Shaxsiy Ma'lumotlar -->
+          <div class="space-y-4 lg:pr-6">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <UserCircle class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span>Shaxsiy Ma'lumotlar</span>
+              </h3>
+            </div>
+
+            <div class="space-y-4 text-xs">
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">To'liq Ism Familiya *</label>
+                <input
+                  v-model="profileForm.fullName"
+                  required
+                  placeholder="Ism Familiyangizni kiriting"
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Telefon Raqami *</label>
+                <PhoneInput v-model="profileForm.phone" required placeholder="90 123 45 67" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Xavfsizlik & Parol -->
+          <div class="space-y-4 pt-6 lg:pt-0 lg:pl-8">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Key class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                <span>Xavfsizlik & Parol</span>
+              </h3>
+            </div>
+
+            <div class="space-y-4 text-xs">
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Amaldagi Parol</label>
+                <input
+                  type="password"
+                  v-model="passwordForm.currentPassword"
+                  placeholder="Amaldagi joriy parolingizni kiriting"
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Yangi Parol (Ixtiyoriy)</label>
+                <input
+                  type="password"
+                  v-model="passwordForm.newPassword"
+                  placeholder="O'zgartirish uchun yangi parol kiriting"
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <form @submit.prevent="handleUpdateProfile" class="space-y-3.5 text-xs">
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">To'liq Ism Familiya *</label>
-            <input
-              v-model="profileForm.fullName"
-              required
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-            />
+        <!-- 3. Biznes Ma'lumotlari (Embedded) -->
+        <div class="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+            <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Building2 class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              <span>Biznes Ma'lumotlari</span>
+            </h3>
           </div>
 
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Telefon Raqami *</label>
-            <PhoneInput v-model="profileForm.phone" required placeholder="90 123 45 67" />
-          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Biznes Nomi</label>
+              <input :value="authStore.activeBusiness?.name" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold cursor-not-allowed" />
+            </div>
 
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Elektron Pochta (Email)</label>
-            <input
-              type="email"
-              v-model="profileForm.email"
-              placeholder="example@mail.com"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-            />
-          </div>
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Biznes Turi</label>
+              <input :value="authStore.activeBusiness?.businessType" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 uppercase font-black cursor-not-allowed" />
+            </div>
 
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tizim Valyutasi *</label>
+              <AppSelect
+                v-model="selectedCurrency"
+                :options="currencyOptions"
+                @change="handleCurrencyChange"
+              />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Foydalanuvchi Roli</label>
+              <input :value="authStore.activeBusiness?.role || 'Owner'" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-black cursor-not-allowed" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Single Unified Save Button -->
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
           <button
             type="submit"
-            :disabled="savingProfile"
-            class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition btn-interactive flex items-center justify-center gap-1.5"
+            :disabled="savingProfile || changingPassword"
+            class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-sm shadow-xl shadow-emerald-500/25 transition btn-interactive flex items-center gap-2"
           >
             <Save class="w-4 h-4" />
-            <span>{{ savingProfile ? 'Saqlanmoqda...' : 'Profilni Saqlash' }}</span>
+            <span>{{ (savingProfile || changingPassword) ? "Saqlanmoqda..." : "O'zgarishlarni Saqlash" }}</span>
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
+    </div>
 
-      <!-- 2. Change Password Form -->
-      <div class="glass-card rounded-2xl p-6 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <!-- Tab: Ko'rinish & Xizmatlar (Theme Mode + Service Modes + POS Features) -->
+    <div v-if="activeTab === 'appearance'" class="space-y-6 w-full animate-fade-in">
+      <!-- Section 0: Appearance & Theme -->
+      <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Key class="w-5 h-5 text-purple-500 dark:text-purple-400" />
-            <span>Parolni O'zgartirish</span>
+            <Palette class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            <span>Interfeys Mavzusi (Theme Mode)</span>
           </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">O'zingizga qulay rejimni tanlang: Yorug' (Light) yoki Tungi (Dark)</p>
         </div>
 
-        <form @submit.prevent="handleChangePassword" class="space-y-3.5 text-xs">
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Amaldagi Parol *</label>
-            <input
-              type="password"
-              v-model="passwordForm.currentPassword"
-              required
-              placeholder="Amaldagi parolni kiriting"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-            />
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Yangi Parol *</label>
-            <input
-              type="password"
-              v-model="passwordForm.newPassword"
-              required
-              placeholder="Kamida 6 ta belgi"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-            />
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Yangi Parol Tasdiqi *</label>
-            <input
-              type="password"
-              v-model="passwordForm.confirmPassword"
-              required
-              placeholder="Yangi parolni qayta kiriting"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-            />
-          </div>
-
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <!-- Light Theme Option -->
           <button
-            type="submit"
-            :disabled="changingPassword"
-            class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition btn-interactive flex items-center justify-center gap-1.5"
+            type="button"
+            @click="themeStore.applyTheme('light')"
+            class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
+            :class="[
+              themeStore.theme === 'light'
+                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
+                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            ]"
           >
-            <ShieldCheck class="w-4 h-4" />
-            <span>{{ changingPassword ? 'Tekshirilmoqda...' : 'Yangi Parolni Saqlash' }}</span>
+            <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Sun class="w-5 h-5" />
+            </div>
+            <span class="text-xs">Yorug' (Light)</span>
           </button>
-        </form>
-      </div>
-    </div>
 
-    <!-- Tab 1: Business Profile -->
-    <div v-if="activeTab === 'profile'" class="glass-card rounded-2xl p-6 max-w-xl space-y-4">
-      <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-        <Building2 class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-        <span>Biznes Ma'lumotlari</span>
-      </h3>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Biznes Nomi</label>
-          <input :value="authStore.activeBusiness?.name" disabled class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400 font-medium" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Biznes Turi</label>
-          <input :value="authStore.activeBusiness?.businessType" disabled class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400 uppercase font-bold" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Valyuta</label>
-          <input :value="authStore.activeBusiness?.currency || 'UZS'" disabled class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-400" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Foydalanuvchi Roli</label>
-          <input :value="authStore.activeBusiness?.role || 'Owner'" disabled class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold" />
-        </div>
-      </div>
-    </div>
+          <!-- Dark Theme Option -->
+          <button
+            type="button"
+            @click="themeStore.applyTheme('dark')"
+            class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
+            :class="[
+              themeStore.theme === 'dark'
+                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
+                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            ]"
+          >
+            <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <Moon class="w-5 h-5" />
+            </div>
+            <span class="text-xs">Tungi (Dark)</span>
+          </button>
 
-    <!-- Tab: Appearance & Theme -->
-    <div v-if="activeTab === 'appearance'" class="glass-card rounded-2xl p-6 max-w-xl space-y-5">
-      <div>
-        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <Palette class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-          <span>Interfeys Mavzusi (Theme Mode)</span>
-        </h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">O'zingizga qulay rejimni tanlang: Yorug' (Light) yoki Tungi (Dark)</p>
+          <!-- System Sync Option -->
+          <button
+            type="button"
+            @click="themeStore.applyTheme('system')"
+            class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
+            :class="[
+              themeStore.theme === 'system'
+                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
+                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            ]"
+          >
+            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center">
+              <Monitor class="w-5 h-5" />
+            </div>
+            <span class="text-xs">Tizim (Avto)</span>
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-        <!-- Light Theme Option -->
-        <button
-          type="button"
-          @click="themeStore.applyTheme('light')"
-          class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
-          :class="[
-            themeStore.theme === 'light'
-              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
-              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          ]"
-        >
-          <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-            <Sun class="w-5 h-5" />
+      <!-- Section 1: Xizmat Turlari (Service Modes) -->
+      <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <UtensilsCrossed class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Buyurtma va Xizmat Turlari</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Kassada qaysi xizmat turlari ko'rinishini boshqaring (yoqish / o'chirish)</p>
+            </div>
           </div>
-          <span class="text-xs">Yorug' (Light)</span>
-        </button>
+        </div>
 
-        <!-- Dark Theme Option -->
-        <button
-          type="button"
-          @click="themeStore.applyTheme('dark')"
-          class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
-          :class="[
-            themeStore.theme === 'dark'
-              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
-              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          ]"
-        >
-          <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-            <Moon class="w-5 h-5" />
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- 1. Zalda (Dine-in) -->
+          <div
+            class="p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4"
+            :class="posSettings.allowDineIn ? 'bg-emerald-500/5 border-emerald-500/30 dark:bg-emerald-950/20' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 opacity-60'"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg shadow-inner">
+                  🍽️
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">Zalda Xizmat</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Stollar bandlovi va zaldagi buyurtmalar</p>
+                </div>
+              </div>
+              <!-- Toggle Switch -->
+              <button
+                type="button"
+                @click="togglePosSetting('allowDineIn')"
+                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="posSettings.allowDineIn ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                  :class="posSettings.allowDineIn ? 'translate-x-5' : 'translate-x-0'"
+                />
+              </button>
+            </div>
+            <div class="text-[11px] font-semibold flex items-center gap-1.5" :class="posSettings.allowDineIn ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
+              <span class="w-2 h-2 rounded-full" :class="posSettings.allowDineIn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+              <span>{{ posSettings.allowDineIn ? "Kassada faol (Ko'rinadi)" : "O'chirilgan (Yashiringan)" }}</span>
+            </div>
           </div>
-          <span class="text-xs">Tungi (Dark)</span>
-        </button>
 
-        <!-- System Sync Option -->
-        <button
-          type="button"
-          @click="themeStore.applyTheme('system')"
-          class="p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-all btn-interactive"
-          :class="[
-            themeStore.theme === 'system'
-              ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 ring-2 ring-emerald-500/30 font-bold'
-              : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          ]"
-        >
-          <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center">
-            <Monitor class="w-5 h-5" />
+          <!-- 2. Saboy (Takeaway) -->
+          <div
+            class="p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4"
+            :class="posSettings.allowTakeaway ? 'bg-amber-500/5 border-amber-500/30 dark:bg-amber-950/20' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 opacity-60'"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg shadow-inner">
+                  🥡
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">Saboy (Olib ketish)</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Mijoz o'zi bilan olib ketishi uchun</p>
+                </div>
+              </div>
+              <!-- Toggle Switch -->
+              <button
+                type="button"
+                @click="togglePosSetting('allowTakeaway')"
+                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="posSettings.allowTakeaway ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                  :class="posSettings.allowTakeaway ? 'translate-x-5' : 'translate-x-0'"
+                />
+              </button>
+            </div>
+            <div class="text-[11px] font-semibold flex items-center gap-1.5" :class="posSettings.allowTakeaway ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'">
+              <span class="w-2 h-2 rounded-full" :class="posSettings.allowTakeaway ? 'bg-amber-500 animate-pulse' : 'bg-slate-400'"></span>
+              <span>{{ posSettings.allowTakeaway ? "Kassada faol (Ko'rinadi)" : "O'chirilgan (Yashiringan)" }}</span>
+            </div>
           </div>
-          <span class="text-xs">Tizim (Avto)</span>
-        </button>
+
+          <!-- 3. Dostavka (Delivery) -->
+          <div
+            class="p-5 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-4"
+            :class="posSettings.allowDelivery ? 'bg-sky-500/5 border-sky-500/30 dark:bg-sky-950/20' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 opacity-60'"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg shadow-inner">
+                  🛵
+                </div>
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">Dostavka (Yetkazib berish)</h4>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">Kuryer orqali yetkazib berish xizmati</p>
+                </div>
+              </div>
+              <!-- Toggle Switch -->
+              <button
+                type="button"
+                @click="togglePosSetting('allowDelivery')"
+                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="posSettings.allowDelivery ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                  :class="posSettings.allowDelivery ? 'translate-x-5' : 'translate-x-0'"
+                />
+              </button>
+            </div>
+            <div class="text-[11px] font-semibold flex items-center gap-1.5" :class="posSettings.allowDelivery ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400'">
+              <span class="w-2 h-2 rounded-full" :class="posSettings.allowDelivery ? 'bg-sky-500 animate-pulse' : 'bg-slate-400'"></span>
+              <span>{{ posSettings.allowDelivery ? "Kassada faol (Ko'rinadi)" : "O'chirilgan (Yashiringan)" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Umumiy Kassa va Savdo Funksiyalari -->
+      <div class="glass-card rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+              <SlidersHorizontal class="w-5 h-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Umumiy Kassa Funksiyalari</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Kassadagi to'lov va qo'shimcha imkoniyatlarni boshqaring</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 1. Nasiya (Debt) -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <Users class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900 dark:text-white">Nasiya (Qarzga sotish)</h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">To'lov usullarida Nasiya tugmasi chiqadi</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="togglePosSetting('allowDebt')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.allowDebt ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.allowDebt ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <!-- 2. Chegirma (Discounts) -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Percent class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900 dark:text-white">Chegirmalar berish</h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">Buyurtmaga foiz yoki summali chegirma qo'llash</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="togglePosSetting('allowDiscounts')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.allowDiscounts ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.allowDiscounts ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <!-- 3. Skaner / Shtrix-kod -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Barcode class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900 dark:text-white">Tezkor shtrix-kod skaneri</h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">Skaner orqali tovarlarni darhol savatga qo'shish</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="togglePosSetting('quickBarcode')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.quickBarcode ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.quickBarcode ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <!-- 4. Nol qoldiq bilan sotish -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Package class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900 dark:text-white">0 qoldiqli tovarlarni sotish</h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">Omborda 0 qolgan tovarlarni ham sotishga ruxsat</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="togglePosSetting('allowZeroStockSale')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.allowZeroStockSale ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.allowZeroStockSale ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -706,6 +967,54 @@
               </div>
             </div>
 
+            <!-- Granular Action Permissions (Create, Edit, Delete) for Selected Modules -->
+            <div v-if="empForm.allowedModules.length > 0" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+              <span class="block font-bold text-slate-800 dark:text-slate-200 text-xs">
+                Operatsion Huquqlar (Qo'shish, Tahrirlash, O'chirish):
+              </span>
+
+              <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div
+                  v-for="modId in empForm.allowedModules"
+                  :key="modId"
+                  class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-[11px]"
+                >
+                  <div class="font-bold text-slate-900 dark:text-white mb-1">
+                    {{ getModuleLabel(modId) }}
+                  </div>
+                  <div class="grid grid-cols-3 gap-1 text-[10px]">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        v-model="getActionPerm(modId).create"
+                        class="rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <Plus class="w-3 h-3 text-emerald-500" />
+                      <span>Qo'shish</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        v-model="getActionPerm(modId).edit"
+                        class="rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <Edit2 class="w-3 h-3 text-amber-500" />
+                      <span>Tahrirlash</span>
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-rose-600 dark:text-rose-400 font-bold">
+                      <input
+                        type="checkbox"
+                        v-model="getActionPerm(modId).delete"
+                        class="rounded text-rose-500 focus:ring-rose-500"
+                      />
+                      <Trash2 class="w-3 h-3 text-rose-500" />
+                      <span>O'chirish</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
               :disabled="savingEmp"
@@ -784,6 +1093,7 @@ import {
   Building2,
   Users,
   ScrollText,
+  Plus,
   Trash2,
   Edit2,
   AlertTriangle,
@@ -806,16 +1116,37 @@ import {
   Save,
   ShieldCheck,
   Printer,
+  CheckCircle2,
+  Phone,
+  Coins,
+  SlidersHorizontal,
+  Percent,
+  Barcode,
 } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import ReceiptModal from '../../components/ReceiptModal.vue';
+import AppSelect from '../../components/AppSelect.vue';
+import { usePosSettings, type PosSettings } from '../../composables/usePosSettings';
+
+const currencyOptions = [
+  { value: 'UZS', label: "UZS (So'm)", icon: Coins },
+  { value: 'USD', label: "USD ($ Dollar)", icon: Coins },
+  { value: 'RUB', label: "RUB (Rubl)", icon: Coins },
+];
 
 const router = useRouter();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const toast = useToast();
 const { formatDate } = useFormat();
+const { posSettings, saveSettings } = usePosSettings();
+
+const togglePosSetting = (key: keyof PosSettings) => {
+  posSettings.value[key] = !posSettings.value[key];
+  saveSettings();
+  toast.success("Sozlama yangilandi!", "Kassa");
+};
 
 const activeTab = ref('my-profile');
 const loading = ref(false);
@@ -865,6 +1196,68 @@ const passwordForm = ref({
   confirmPassword: '',
 });
 
+const selectedCurrency = ref(authStore.activeBusiness?.currency || 'UZS');
+
+watch(
+  () => authStore.activeBusiness?.currency,
+  (cur) => {
+    if (cur) selectedCurrency.value = cur;
+  },
+  { immediate: true },
+);
+
+const handleCurrencyChange = async () => {
+  await authStore.updateBusinessCurrency(selectedCurrency.value);
+  toast.success(`Valyuta ${selectedCurrency.value} ga o'zgartirildi!`, "Valyuta");
+};
+
+const handleSaveUnifiedProfile = async () => {
+  savingProfile.value = true;
+  try {
+    // 1. Update basic profile info
+    const cleanPhone = cleanUzbekPhone(profileForm.value.phone);
+    await authStore.updateProfile({
+      fullName: profileForm.value.fullName,
+      phone: cleanPhone,
+    });
+
+    // 2. Update currency if changed
+    if (selectedCurrency.value !== authStore.activeBusiness?.currency) {
+      await authStore.updateBusinessCurrency(selectedCurrency.value);
+    }
+
+    // 3. If new password is entered, update password
+    if (passwordForm.value.newPassword) {
+      if (passwordForm.value.newPassword.length < 4) {
+        toast.warning("Yangi parol kamida 4 ta belgidan iborat bo'lishi kerak", "Parol");
+        savingProfile.value = false;
+        return;
+      }
+
+      changingPassword.value = true;
+      try {
+        await authStore.changePassword({
+          currentPassword: passwordForm.value.currentPassword || 'placeholder',
+          newPassword: passwordForm.value.newPassword,
+        });
+        passwordForm.value = {
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        };
+      } finally {
+        changingPassword.value = false;
+      }
+    }
+
+    toast.success("Profil va sozlamalar muvaffaqiyatli saqlandi!", "Profil");
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || err.message || "Profilni saqlashda xatolik", "Xatolik");
+  } finally {
+    savingProfile.value = false;
+  }
+};
+
 const handleUpdateProfile = async () => {
   savingProfile.value = true;
   try {
@@ -872,7 +1265,6 @@ const handleUpdateProfile = async () => {
     await authStore.updateProfile({
       fullName: profileForm.value.fullName,
       phone: cleanPhone,
-      email: profileForm.value.email,
     });
     toast.success('Shaxsiy ma\'lumotlaringiz muvaffaqiyatli yangilandi!', 'Profil');
   } catch (err: any) {
@@ -925,7 +1317,15 @@ const empForm = ref({
   password: '',
   position: 'Sotuvchi',
   allowedModules: ['pos', 'products'],
+  actionPermissions: {} as Record<string, { create: boolean; edit: boolean; delete: boolean }>,
 });
+
+const getActionPerm = (modId: string) => {
+  if (!empForm.value.actionPermissions[modId]) {
+    empForm.value.actionPermissions[modId] = { create: true, edit: true, delete: false };
+  }
+  return empForm.value.actionPermissions[modId];
+};
 
 const availableModules = [
   { id: 'pos', label: 'Kassa (POS)', icon: Package },
@@ -967,6 +1367,14 @@ const openAddEmployeeModal = () => {
     password: '',
     position: 'Sotuvchi',
     allowedModules: ['pos', 'products'],
+    actionPermissions: {
+      pos: { create: true, edit: true, delete: false },
+      products: { create: true, edit: true, delete: false },
+      inventory: { create: true, edit: true, delete: false },
+      customers: { create: true, edit: true, delete: false },
+      suppliers: { create: true, edit: true, delete: false },
+      finance: { create: true, edit: true, delete: false },
+    },
   };
   showEmployeeModal.value = true;
 };
@@ -979,6 +1387,14 @@ const editEmployee = (emp: any) => {
     password: '',
     position: emp.position || 'Sotuvchi',
     allowedModules: emp.allowedModules && emp.allowedModules.length > 0 ? [...emp.allowedModules] : ['pos', 'products'],
+    actionPermissions: emp.actionPermissions || {
+      pos: { create: true, edit: true, delete: false },
+      products: { create: true, edit: true, delete: false },
+      inventory: { create: true, edit: true, delete: false },
+      customers: { create: true, edit: true, delete: false },
+      suppliers: { create: true, edit: true, delete: false },
+      finance: { create: true, edit: true, delete: false },
+    },
   };
   showEmployeeModal.value = true;
 };

@@ -21,6 +21,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
+import { ShiftsModule } from './modules/shifts/shifts.module';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
@@ -57,6 +58,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     NotificationsModule,
     AuditLogsModule,
     SuperAdminModule,
+    ShiftsModule,
   ],
   providers: [
     {

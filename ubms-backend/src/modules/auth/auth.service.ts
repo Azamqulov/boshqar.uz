@@ -17,12 +17,28 @@ function normalizePhone(raw: string): string {
   return '+998' + last9;
 }
 
+interface LoginAttemptRecord {
+  failedAttempts: number;
+  lockoutCount: number;
+  lockedUntil: number | null;
+}
+
 @Injectable()
 export class AuthService {
+  private loginAttempts = new Map<string, LoginAttemptRecord>();
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
+
+  private getLockoutDurationMinutes(lockoutCount: number): number {
+    if (lockoutCount === 1) return 3;
+    if (lockoutCount === 2) return 5;
+    if (lockoutCount === 3) return 10;
+    if (lockoutCount === 4) return 15;
+    return 15 + (lockoutCount - 4) * 5;
+  }
 
   async register(dto: RegisterDto) {
     const cleanPhone = normalizePhone(dto.phone);
@@ -75,6 +91,24 @@ export class AuthService {
     const cleanLogin = normalizePhone(dto.login);
     const rawDigits = cleanLogin.replace(/\D/g, '');
 
+    // Check if currently locked out
+    const attemptRecord = this.loginAttempts.get(cleanLogin) || {
+      failedAttempts: 0,
+      lockoutCount: 0,
+      lockedUntil: null,
+    };
+
+    if (attemptRecord.lockedUntil && attemptRecord.lockedUntil > Date.now()) {
+      const remainingSeconds = Math.ceil((attemptRecord.lockedUntil - Date.now()) / 1000);
+      const remainingMinutes = Math.ceil(remainingSeconds / 60);
+      throw new UnauthorizedException({
+        code: 'ACCOUNT_LOCKED',
+        message: `Xavfsizlik yuzasidan tizim bloklangan. Iltimos, ${remainingMinutes} daqiqa (${remainingSeconds} soniya) kuting.`,
+        remainingSeconds,
+        lockoutCount: attemptRecord.lockoutCount,
+      });
+    }
+
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
@@ -105,11 +139,36 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new UnauthorizedException({
-        code: 'INVALID_PASSWORD',
-        message: 'Kiritilgan parol noto\'g\'ri. Qaytadan tekshirib ko\'ring.',
-      });
+      attemptRecord.failedAttempts += 1;
+
+      if (attemptRecord.failedAttempts >= 3) {
+        attemptRecord.lockoutCount += 1;
+        const lockMinutes = this.getLockoutDurationMinutes(attemptRecord.lockoutCount);
+        const lockSeconds = lockMinutes * 60;
+        attemptRecord.lockedUntil = Date.now() + lockSeconds * 1000;
+        attemptRecord.failedAttempts = 0; // reset for next round
+        this.loginAttempts.set(cleanLogin, attemptRecord);
+
+        throw new UnauthorizedException({
+          code: 'ACCOUNT_LOCKED',
+          message: `3 marta xato parol kiritildi! Xavfsizlik yuzasidan tizim ${lockMinutes} daqiqaga bloklandi.`,
+          remainingSeconds: lockSeconds,
+          lockoutCount: attemptRecord.lockoutCount,
+        });
+      } else {
+        this.loginAttempts.set(cleanLogin, attemptRecord);
+        const attemptsLeft = 3 - attemptRecord.failedAttempts;
+        throw new UnauthorizedException({
+          code: 'INVALID_PASSWORD',
+          message: `Kiritilgan parol noto'g'ri. Qolgan urinishlar: ${attemptsLeft} ta.`,
+          attemptsLeft,
+          failedAttempts: attemptRecord.failedAttempts,
+        });
+      }
     }
+
+    // Password is valid - reset lock & attempts
+    this.loginAttempts.delete(cleanLogin);
 
     if (user.status !== 'active') {
       throw new UnauthorizedException({

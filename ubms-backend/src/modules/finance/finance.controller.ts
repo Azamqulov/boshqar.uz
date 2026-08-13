@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { FinanceService } from './finance.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
@@ -38,5 +38,14 @@ export class FinanceController {
     @Body() body: CreateExpenseDto,
   ) {
     return this.financeService.createExpense(businessId, branchId || body.branchId || '', userId, body);
+  }
+
+  @Delete('expenses/:id')
+  @RequirePermission('finance.create')
+  deleteExpense(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') expenseId: string,
+  ) {
+    return this.financeService.deleteExpense(businessId, expenseId);
   }
 }

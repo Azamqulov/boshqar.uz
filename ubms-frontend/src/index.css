@@ -44,6 +44,14 @@ html.dark {
     @apply font-sans antialiased bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 selection:bg-emerald-500 selection:text-white transition-colors duration-200;
   }
 
+  /* Universal Table Alignment & Single-line Formatting */
+  table th {
+    @apply whitespace-nowrap align-middle;
+  }
+  table td {
+    @apply whitespace-nowrap align-middle;
+  }
+
   /* Global native select enhancements */
   select {
     @apply transition-colors duration-150;
@@ -73,25 +81,34 @@ html.dark {
   background: rgba(16, 185, 129, 0.7);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-none, .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Modal architecture utilities */
 .modal-overlay {
-  @apply fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity duration-200;
+  @apply fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md transition-opacity duration-200 overflow-y-auto;
 }
 
 .modal-container {
-  @apply glass-card rounded-2xl shadow-2xl flex flex-col max-h-[90vh] w-full border border-slate-200 dark:border-slate-800 overflow-hidden relative transition-all transform duration-200;
+  @apply glass-card rounded-2xl shadow-2xl flex flex-col max-h-[92vh] w-full border border-slate-200 dark:border-slate-800 overflow-hidden relative transition-all transform duration-200 my-0 mx-auto shrink-0;
 }
 
 .modal-header {
-  @apply flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm;
+  @apply flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex-shrink-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md;
 }
 
 .modal-body {
-  @apply p-6 overflow-y-auto flex-1 space-y-4;
+  @apply p-5 overflow-y-auto flex-1 space-y-4;
 }
 
 .modal-footer {
-  @apply flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0 bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-sm;
+  @apply flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex-shrink-0 bg-slate-50/90 dark:bg-slate-900/70 backdrop-blur-md;
 }
 
 /* Glassmorphism utilities - Light & Dark */

@@ -40,6 +40,22 @@ export class RestaurantService {
     });
   }
 
+  async updateTable(tableId: string, data: { name?: string; capacity?: number }) {
+    return this.prisma.table.update({
+      where: { id: tableId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.capacity !== undefined && { capacity: Number(data.capacity) }),
+      },
+    });
+  }
+
+  async deleteTable(tableId: string) {
+    return this.prisma.table.delete({
+      where: { id: tableId },
+    });
+  }
+
   async updateTableStatus(tableId: string, status: TableStatus) {
     return this.prisma.table.update({
       where: { id: tableId },
@@ -245,5 +261,99 @@ export class RestaurantService {
     }
 
     return updated;
+  }
+
+  // Stol hisobini yopish va to'lovni qabul qilish (Pay & Close Table)
+  async payTableOrder(
+    businessId: string,
+    branchId: string,
+    tableId: string,
+    dto: { paymentMethodId: string; amount: number; serviceFee?: number; discountAmount?: number },
+  ) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        tableId,
+        status: { in: ['draft', 'open'] },
+      },
+      include: {
+        items: { include: { product: true } },
+        table: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Ushbu stolda faol ochiq buyurtma topilmadi');
+    }
+
+    const grandTotal = Number(order.total);
+    const actualPaid = Number(dto.amount) || grandTotal;
+
+    // Resolve payment method
+    let pm: any = null;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dto.paymentMethodId);
+    if (isUuid) {
+      pm = await this.prisma.paymentMethod.findFirst({
+        where: { id: dto.paymentMethodId, businessId },
+      });
+    }
+
+    if (!pm) {
+      const type = (dto.paymentMethodId === '2' ? 'card' : (dto.paymentMethodId === '3' ? 'click' : 'cash')) as any;
+      pm = await this.prisma.paymentMethod.findFirst({
+        where: { businessId, type },
+      });
+      if (!pm) {
+        pm = await this.prisma.paymentMethod.create({
+          data: {
+            businessId,
+            name: type === 'card' ? 'Plastik karta' : (type === 'click' ? 'Click / Payme' : 'Naqd pul'),
+            type,
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    // Check active open shift
+    const activeShift = await this.prisma.posShift.findFirst({
+      where: { businessId, branchId, status: 'open' },
+    });
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Create Payment
+      await tx.payment.create({
+        data: {
+          orderId: order.id,
+          paymentMethodId: pm.id,
+          amount: actualPaid,
+          status: 'completed',
+        },
+      });
+
+      // 2. Complete Order
+      const completedOrder = await tx.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          shiftId: activeShift?.id || order.shiftId || null,
+        },
+        include: {
+          items: { include: { product: true, service: true } },
+          customer: true,
+          cashier: true,
+          table: true,
+          payments: { include: { paymentMethod: true } },
+        },
+      });
+
+      // 3. Mark Table as available
+      await tx.table.update({
+        where: { id: tableId },
+        data: { status: 'available' },
+      });
+
+      return completedOrder;
+    });
   }
 }

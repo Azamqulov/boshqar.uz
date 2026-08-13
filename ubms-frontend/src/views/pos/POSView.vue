@@ -1,64 +1,190 @@
 <template>
-  <div class="h-[calc(100vh-5.5rem)] flex flex-col lg:flex-row gap-4 overflow-hidden">
-    <!-- Left Catalog Area (65%) -->
-    <div class="flex-1 flex flex-col glass-card rounded-2xl p-4 overflow-hidden">
-      <!-- Search & Category Filters -->
-      <div class="flex flex-col sm:flex-row gap-3 mb-4">
-        <!-- Barcode / Search Input with auto-focus -->
-        <div class="relative flex-1">
-          <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-          <input
-            ref="searchInputRef"
-            v-model="searchQuery"
-            @keydown.enter="handleBarcodeScan"
-            type="text"
-            placeholder="Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
+  <div class="h-[calc(100vh-5.5rem)] flex flex-col gap-2.5 overflow-hidden">
+    <!-- Top Shift Status Bar -->
+    <div class="glass-card rounded-2xl px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 border border-slate-200/80 dark:border-slate-800/80 shrink-0">
+      <div v-if="currentShift" class="flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span class="font-black text-xs text-slate-900 dark:text-white">
+            Smena Faol <span class="hidden sm:inline">({{ formatDateTime(currentShift.openedAt) }})</span>
+          </span>
         </div>
+        <div class="hidden md:flex items-center gap-2 text-xs font-mono">
+          <span class="text-slate-400">|</span>
+          <span class="text-slate-500">Kassada:</span>
+          <span class="font-bold text-emerald-600 dark:text-emerald-400">
+            {{ formatCurrency(currentShift.liveSummary?.expectedCash ?? currentShift.startingCash) }}
+          </span>
+          <span class="text-slate-400">|</span>
+          <span class="text-slate-500">Kassir:</span>
+          <span class="font-bold text-slate-800 dark:text-slate-200">{{ currentShift.user?.fullName || currentShift.user?.name || authStore.user?.fullName || 'Kassir' }}</span>
+        </div>
+      </div>
+      <div v-else class="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-bold">
+        <AlertTriangle class="w-4 h-4" />
+        <span>Smena ochilmagan!</span>
+      </div>
 
-        <!-- Category Filter Tabs -->
-        <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            @click="selectedCategory = ''"
-            class="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition"
-            :class="selectedCategory === '' ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
-          >
-            Barchasi
-          </button>
+      <div class="flex items-center gap-1.5">
+        <button
+          v-if="currentShift"
+          type="button"
+          @click="openShiftModal('report')"
+          class="px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1 sm:gap-1.5 transition btn-interactive"
+        >
+          <Receipt class="w-3.5 h-3.5" />
+          <span>Z-Hisobot</span>
+        </button>
+        <button
+          v-if="currentShift"
+          type="button"
+          @click="openShiftModal('close')"
+          class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1 sm:gap-1.5 transition btn-interactive"
+        >
+          <Moon class="w-3.5 h-3.5" />
+          <span>Yopish</span>
+        </button>
+        <button
+          v-else
+          type="button"
+          @click="openShiftModal('open')"
+          class="px-3 sm:px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 transition btn-interactive"
+        >
+          <Sun class="w-3.5 h-3.5" />
+          <span>Smena Ochish</span>
+        </button>
+      </div>
+    </div>
 
-          <!-- Bestseller Fast Filter -->
-          <button
-            @click="selectedCategory = '__bestsellers__'"
-            class="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1"
-            :class="selectedCategory === '__bestsellers__' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'"
-          >
-            <Flame class="w-3.5 h-3.5" />
-            <span>Top Tovar</span>
-          </button>
+    <!-- Mobile Tab Toggle (< lg) -->
+    <div class="flex lg:hidden items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0 gap-1">
+      <button
+        @click="mobileViewTab = 'catalog'"
+        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+        :class="mobileViewTab === 'catalog' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <Package class="w-3.5 h-3.5" />
+        <span>Katalog ({{ filteredProducts.length }})</span>
+      </button>
+      <button
+        @click="mobileViewTab = 'cart'"
+        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+        :class="mobileViewTab === 'cart' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <ShoppingCart class="w-3.5 h-3.5" />
+        <span>Savat ({{ cartStore.itemCount }})</span>
+        <span v-if="cartStore.itemCount > 0" class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+          {{ formatCurrency(cartStore.grandTotal) }}
+        </span>
+      </button>
+    </div>
 
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            @click="selectedCategory = cat.id"
-            class="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition"
-            :class="selectedCategory === cat.id ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
-          >
-            {{ cat.name }}
-          </button>
+    <!-- Main POS Workspace -->
+    <div class="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden relative">
+      <!-- Locked Screen Overlay when Shift is Closed -->
+      <div
+        v-if="!currentShift"
+        class="absolute inset-0 z-20 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 rounded-2xl animate-fade-in"
+      >
+        <div class="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-2xl text-center space-y-4">
+          <div class="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto shadow-inner">
+            <Lock class="w-8 h-8" />
+          </div>
+
+          <div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              Kassa Smenasi Ochilmagan
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+              Mahsulotlarni tanlash va savdo qilish uchun avval kassa smenasini oching. Boshlang'ich kassa qoldig'i qayd etiladi.
+            </p>
+          </div>
+
+          <div class="pt-2">
+            <button
+              type="button"
+              @click="openShiftModal('open')"
+              class="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 transition transform active:scale-98 btn-interactive"
+            >
+              <Sun class="w-5 h-5" />
+              <span>+ Yangi Smenani Ochish</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Products Grid -->
-      <div class="flex-1 overflow-y-auto pr-1">
-        <SkeletonLoader v-if="loading" variant="grid" :count="10" />
+      <!-- Left Catalog Area (65%) -->
+      <div
+        class="flex-1 flex-col glass-card rounded-2xl p-3 sm:p-4 overflow-hidden"
+        :class="mobileViewTab === 'catalog' ? 'flex' : 'hidden lg:flex'"
+      >
+        <!-- Search & Category Filters -->
+        <div class="space-y-2.5 mb-3.5 shrink-0">
+          <!-- Full-Width Search Input with Barcode auto-focus and clear button -->
+          <div class="relative w-full">
+            <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+            <input
+              ref="searchInputRef"
+              v-model="searchQuery"
+              @keydown.enter="handleBarcodeScan"
+              type="text"
+              placeholder="Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)..."
+              class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+            />
+            <button
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
 
-        <div v-else-if="filteredProducts.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
-          <Package class="w-10 h-10 stroke-1 mb-2" />
-          <span>Mahsulot topilmadi</span>
+          <!-- Category Filter Tabs -->
+          <div class="flex items-center space-x-2 overflow-x-auto scrollbar-none pb-0.5">
+            <button
+              @click="selectedCategory = ''"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition"
+              :class="selectedCategory === '' ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+            >
+              Barchasi
+            </button>
+
+            <!-- Bestseller Fast Filter -->
+            <button
+              @click="selectedCategory = '__bestsellers__'"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1"
+              :class="selectedCategory === '__bestsellers__' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'"
+            >
+              <Flame class="w-3.5 h-3.5" />
+              <span>Top Tovar</span>
+            </button>
+
+            <button
+              v-for="cat in categories"
+              :key="cat.id"
+              @click="selectedCategory = cat.id"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition"
+              :class="selectedCategory === cat.id ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+            >
+              {{ cat.name }}
+            </button>
+          </div>
         </div>
 
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+        <!-- Products Grid -->
+        <div class="flex-1 overflow-y-auto pr-1">
+          <SkeletonLoader v-if="loading" variant="grid" :count="10" />
+
+          <div v-else-if="filteredProducts.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+            <Package class="w-10 h-10 stroke-1 mb-2" />
+            <span>Mahsulot topilmadi</span>
+          </div>
+
+          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3">
           <div
             v-for="prod in filteredProducts"
             :key="prod.id"
@@ -137,8 +263,11 @@
       </div>
     </div>
 
-    <!-- Right Cart & Payment Area (35%) -->
-    <div class="w-full lg:w-96 flex flex-col glass-card rounded-2xl p-4 overflow-hidden">
+    <!-- Right Cart & Payment Area (Fixed Width 320-384px) -->
+    <div
+      class="w-full lg:w-80 xl:w-96 flex-col glass-card rounded-2xl p-3 sm:p-4 overflow-hidden shrink-0"
+      :class="mobileViewTab === 'cart' ? 'flex' : 'hidden lg:flex'"
+    >
       <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div class="flex items-center space-x-2">
           <ShoppingCart class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
@@ -154,6 +283,96 @@
         >
           Tozalash
         </button>
+      </div>
+
+      <!-- Restaurant Service / Table Selector -->
+      <div v-if="isRestaurant && enabledServiceTypes.length > 0" class="my-2.5 p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-2 shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Xizmat turi:</span>
+          <span v-if="orderType === 'dine_in'" class="text-[10px] font-black px-2 py-0.5 rounded-md" :class="currentTableDisplayName ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white animate-pulse'">
+            🍽️ {{ currentTableDisplayName || 'Stol tanlanmagan!' }}
+          </span>
+          <span v-else-if="orderType === 'takeaway'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950">
+            🥡 Saboy (Olib ketish)
+          </span>
+          <span v-else-if="orderType === 'delivery'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-sky-500 text-white">
+            🛵 Yetkazib berish
+          </span>
+        </div>
+
+        <!-- Toggle Pills -->
+        <div class="grid gap-1" :class="enabledServiceTypes.length === 1 ? 'grid-cols-1' : enabledServiceTypes.length === 2 ? 'grid-cols-2' : 'grid-cols-3'">
+          <button
+            v-if="posSettings.allowDineIn"
+            type="button"
+            @click="orderType = 'dine_in'"
+            class="py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1"
+            :class="orderType === 'dine_in' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
+          >
+            <span>🍽️</span>
+            <span>Zalda</span>
+          </button>
+          <button
+            v-if="posSettings.allowTakeaway"
+            type="button"
+            @click="orderType = 'takeaway'"
+            class="py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1"
+            :class="orderType === 'takeaway' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
+          >
+            <span>🥡</span>
+            <span>Saboy</span>
+          </button>
+          <button
+            v-if="posSettings.allowDelivery"
+            type="button"
+            @click="orderType = 'delivery'"
+            class="py-1.5 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1"
+            :class="orderType === 'delivery' ? 'bg-sky-500 text-white shadow-xs' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
+          >
+            <span>🛵</span>
+            <span>Dostavka</span>
+          </button>
+        </div>
+
+        <!-- Table Quick Selector if Zalda -->
+        <div v-if="orderType === 'dine_in'" class="pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold" :class="currentTableDisplayName ? 'text-slate-600 dark:text-slate-300' : 'text-rose-500 font-extrabold'">
+              {{ currentTableDisplayName ? 'Tanlangan stol:' : '⚠️ Qaysi stol band qilindi? *' }}
+            </span>
+            <button
+              type="button"
+              @click="isCustomTableInput = !isCustomTableInput"
+              class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+            >
+              {{ isCustomTableInput ? 'Ro\'yxat' : '+ Boshqa stol' }}
+            </button>
+          </div>
+
+          <!-- Custom Table Input -->
+          <div v-if="isCustomTableInput" class="flex gap-1.5">
+            <input
+              v-model="customTableNumber"
+              type="text"
+              placeholder="Masalan: Stol #7, VIP 2..."
+              class="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Table Chips -->
+          <div v-else class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+            <button
+              v-for="tbl in availableTables"
+              :key="tbl.id || tbl.name"
+              type="button"
+              @click="selectedTableNumber = tbl.name"
+              class="px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition"
+              :class="selectedTableNumber === tbl.name ? 'bg-emerald-500 text-white shadow-xs' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
+            >
+              {{ tbl.name }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Cart Items List -->
@@ -230,16 +449,18 @@
         </button>
       </div>
     </div>
+    </div>
 
     <!-- Checkout Modal -->
-    <div v-if="isCheckoutOpen" @click.self="isCheckoutOpen = false" class="modal-overlay">
-      <div class="modal-container max-w-md" @click.stop>
-        <div class="modal-header">
-          <h3 class="font-black text-base text-slate-900 dark:text-white">To'lovni Tasdiqlash</h3>
-          <button @click="isCheckoutOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+    <Teleport to="body">
+      <div v-if="isCheckoutOpen" @click.self="isCheckoutOpen = false" class="modal-overlay">
+        <div class="modal-container max-w-md" @click.stop>
+          <div class="modal-header">
+            <h3 class="font-black text-base text-slate-900 dark:text-white">To'lovni Tasdiqlash</h3>
+            <button @click="isCheckoutOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
 
         <div class="modal-body space-y-4">
           <!-- Total display -->
@@ -248,6 +469,76 @@
             <h2 class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
               {{ formatCurrency(cartStore.grandTotal) }}
             </h2>
+          </div>
+
+          <!-- Restaurant Service & Table Confirmation / Selection in Checkout Modal -->
+          <div v-if="isRestaurant && enabledServiceTypes.length > 0" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-500 dark:text-slate-400 font-semibold">Xizmat turi:</span>
+              <div class="flex items-center gap-1.5">
+                <span v-if="orderType === 'dine_in'" class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <span>🍽️</span>
+                  <span>Zalda</span>
+                </span>
+                <span v-else-if="orderType === 'takeaway'" class="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <span>🥡</span>
+                  <span>Saboy (Olib ketish)</span>
+                </span>
+                <span v-else-if="orderType === 'delivery'" class="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                  <span>🛵</span>
+                  <span>Yetkazib berish (Dostavka)</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Table Selection in Checkout Modal if Zalda -->
+            <div v-if="orderType === 'dine_in'" class="pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold" :class="currentTableDisplayName ? 'text-slate-700 dark:text-slate-300' : 'text-rose-500 font-extrabold'">
+                  🍽️ Qaysi stol band qilindi? *
+                </span>
+                <span v-if="currentTableDisplayName" class="font-black text-emerald-600 dark:text-emerald-400">
+                  {{ currentTableDisplayName }}
+                </span>
+                <span v-else class="text-[11px] text-rose-500 font-bold animate-pulse">
+                  Tanlanmagan!
+                </span>
+              </div>
+
+              <!-- Table Options -->
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="tbl in availableTables"
+                  :key="tbl.id || tbl.name"
+                  type="button"
+                  @click="selectedTableNumber = tbl.name; isCustomTableInput = false;"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition"
+                  :class="selectedTableNumber === tbl.name && !isCustomTableInput ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
+                >
+                  {{ tbl.name }}
+                </button>
+              </div>
+
+              <!-- Custom table input toggle -->
+              <div class="pt-1">
+                <div v-if="isCustomTableInput" class="flex gap-1.5">
+                  <input
+                    v-model="customTableNumber"
+                    type="text"
+                    placeholder="Masalan: Stol #7, VIP 2..."
+                    class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <button
+                  v-else
+                  type="button"
+                  @click="isCustomTableInput = true"
+                  class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                >
+                  + Boshqa stol nomini kiritish
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Payment Method Selection -->
@@ -332,6 +623,53 @@
             </div>
           </div>
 
+          <!-- Customer / Nasiya Selector in Checkout Modal (Only when allowDebt is true) -->
+          <div v-if="posSettings.allowDebt" class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Users class="w-4 h-4 text-amber-500" />
+                <span>Mijoz (Nasiya / Qarzga yozish uchun):</span>
+              </span>
+              <button
+                v-if="selectedCustomerId"
+                type="button"
+                @click="selectedCustomerId = ''"
+                class="text-[11px] text-rose-500 hover:underline font-bold"
+              >
+                Tozalash
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="flex-1">
+                <AppSelect
+                  v-model="selectedCustomerId"
+                  :options="customerSelectOptions"
+                  :searchable="true"
+                  placeholder="Mijozni qidiring yoki tanlang..."
+                />
+              </div>
+              <button
+                type="button"
+                @click="isNewCustomerModalOpen = true"
+                class="px-3 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-xs shrink-0 transition"
+                title="Yangi mijoz qo'shish"
+              >
+                + Yangi
+              </button>
+            </div>
+
+            <div v-if="selectedCustomer" class="p-2 rounded-xl bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300 font-semibold space-y-1">
+              <p>👤 Tanlangan: <b>{{ selectedCustomer.fullName }}</b> ({{ selectedCustomer.phone || 'Tel yo\'q' }})</p>
+              <p v-if="selectedPaymentMethod === '1' && cashReceived < cartStore.grandTotal" class="text-rose-600 dark:text-rose-400 font-bold">
+                ⚠️ Qolgan {{ formatCurrency(cartStore.grandTotal - (cashReceived || 0)) }} summa ushbu mijozning Nasiya hisobiga yoziladi.
+              </p>
+              <p v-else class="text-emerald-600 dark:text-emerald-400 font-bold">
+                ✅ To'lov to'liq amalga oshiriladi.
+              </p>
+            </div>
+          </div>
+
           <button
             @click="handleCompleteOrder"
             :disabled="isProcessing"
@@ -343,6 +681,7 @@
         </div>
       </div>
     </div>
+    </Teleport>
 
     <!-- Unified Receipt Modal (Matching Image 3 with Print/Thermal support) -->
     <ReceiptModal
@@ -350,16 +689,103 @@
       :order="completedOrder"
       @close="completedOrder = null"
     />
+
+    <!-- Shift Modal (Open / Close / Z-Report) -->
+    <ShiftModal
+      :is-open="shiftModal.open"
+      :mode="shiftModal.mode"
+      :shift-data="currentShift"
+      @close="shiftModal.open = false"
+      @shift-opened="onShiftOpened"
+      @shift-closed="onShiftClosed"
+    />
+
+    <!-- Mobile Floating Checkout Bar (< lg) -->
+    <div
+      v-if="cartStore.itemCount > 0 && mobileViewTab === 'catalog'"
+      class="lg:hidden fixed bottom-16 left-3 right-3 z-30 p-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-2xl flex items-center justify-between animate-in slide-in-from-bottom-3 duration-200"
+    >
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-xs">
+          {{ cartStore.itemCount }}
+        </div>
+        <div>
+          <p class="text-xs font-bold leading-tight">{{ formatCurrency(cartStore.grandTotal) }}</p>
+          <p class="text-[10px] text-emerald-100">Savatda tovarlar bor</p>
+        </div>
+      </div>
+      <button
+        @click="mobileViewTab = 'cart'"
+        class="px-3.5 py-1.5 rounded-xl bg-white text-emerald-700 font-black text-xs shadow-md transition active:scale-95 flex items-center gap-1"
+      >
+        <span>Savatga O'tish</span>
+        <ArrowRight class="w-3.5 h-3.5" />
+      </button>
+    </div>
+    <!-- QUICK NEW CUSTOMER MODAL IN POS -->
+    <Teleport to="body">
+      <div v-if="isNewCustomerModalOpen" @click.self="isNewCustomerModalOpen = false" class="modal-overlay">
+        <div class="modal-container max-w-sm" @click.stop>
+          <div class="modal-header">
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <Users class="w-4 h-4 text-amber-500" />
+              <span>Yangi Mijoz Qo'shish</span>
+            </h3>
+            <button @click="isNewCustomerModalOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <form @submit.prevent="saveNewCustomer" class="p-4 space-y-3 text-xs">
+            <AppInput
+              v-model="newCustomerForm.fullName"
+              label="Mijoz Ismi-Familiyasi *"
+              placeholder="Masalan: Alisher Vohidov"
+              :required="true"
+            />
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Telefon Raqami *</label>
+              <PhoneInput
+                v-model="newCustomerForm.phone"
+                placeholder="90 123 45 67"
+                :required="true"
+              />
+            </div>
+            <div class="pt-2">
+              <AppButton
+                type="submit"
+                variant="primary"
+                class="w-full"
+                :loading="savingCustomer"
+              >
+                {{ savingCustomer ? 'Saqlanmoqda...' : 'Mijozni Saqlash & Tanlash' }}
+              </AppButton>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api from '../../services/api';
 import { useCartStore } from '../../stores/cart.store';
 import { useDataStore } from '../../stores/data.store';
+import { useShiftStore } from '../../stores/shift.store';
+import { useAuthStore } from '../../stores/auth.store';
 import { useFormat } from '../../composables/useFormat';
 import { useToast } from '../../composables/useToast';
+import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppInput from '../../components/AppInput.vue';
+import AppButton from '../../components/AppButton.vue';
+import AppSelect from '../../components/AppSelect.vue';
+import PhoneInput from '../../components/PhoneInput.vue';
+import CurrencyInput from '../../components/CurrencyInput.vue';
+import ReceiptModal from '../../components/ReceiptModal.vue';
+import ShiftModal from '../../components/ShiftModal.vue';
+import { usePosSettings } from '../../composables/usePosSettings';
 import {
   Search,
   ShoppingCart,
@@ -371,30 +797,173 @@ import {
   CheckCircle,
   Printer,
   Flame,
+  Sun,
+  Moon,
+  Receipt,
+  AlertTriangle,
+  Lock,
+  ArrowRight,
+  Users,
 } from 'lucide-vue-next';
 
-import SkeletonLoader from '../../components/SkeletonLoader.vue';
-import CurrencyInput from '../../components/CurrencyInput.vue';
-import ReceiptModal from '../../components/ReceiptModal.vue';
-
+const mobileViewTab = ref<'catalog' | 'cart'>('catalog');
 const cartStore = useCartStore();
 const dataStore = useDataStore();
+const shiftStore = useShiftStore();
+const authStore = useAuthStore();
 const toast = useToast();
-const { formatCurrency, formatDate } = useFormat();
+const { formatCurrency, formatDate, formatDateTime } = useFormat();
 
 const loading = ref(false);
 const products = computed(() => dataStore.products);
 const categories = computed(() => dataStore.categories);
+const customers = computed(() => dataStore.customers || []);
 const bestsellers = ref<any[]>([]);
+
+// Customer Selection & Quick Add State
+const selectedCustomerId = ref('');
+const selectedCustomer = computed(() => customers.value.find((c) => c.id === selectedCustomerId.value) || null);
+const isNewCustomerModalOpen = ref(false);
+const newCustomerForm = ref({ fullName: '', phone: '' });
+const savingCustomer = ref(false);
+
+const customerSelectOptions = computed(() => {
+  return [
+    { value: '', label: '— Mijoz tanlanmagan (Oddiy to\'lov) —' },
+    ...customers.value.map((c) => ({
+      value: c.id,
+      label: `${c.fullName} (${c.phone || 'Tel yo\'q'})`,
+      badge: Number(c.debt || 0) > 0 ? `Qarzi: ${formatCurrency(c.debt)}` : undefined,
+    })),
+  ];
+});
+
+const saveNewCustomer = async () => {
+  if (!newCustomerForm.value.fullName) {
+    toast.warning('Mijoz ismini kiriting!', 'Ogohlantirish');
+    return;
+  }
+  savingCustomer.value = true;
+  try {
+    const { data } = await api.post('/customers', {
+      fullName: newCustomerForm.value.fullName,
+      phone: newCustomerForm.value.phone || undefined,
+    });
+    toast.success(`"${data.fullName}" muvaffaqiyatli saqlandi!`, 'Yangi Mijoz');
+    dataStore.invalidate('customers');
+    await dataStore.fetchCustomers(true);
+    selectedCustomerId.value = data.id;
+    isNewCustomerModalOpen.value = false;
+    newCustomerForm.value = { fullName: '', phone: '' };
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || err.message || 'Mijozni saqlashda xatolik', 'Xatolik');
+  } finally {
+    savingCustomer.value = false;
+  }
+};
+
+const currentShift = computed(() => shiftStore.currentShift);
+const shiftModal = ref<{ open: boolean; mode: 'open' | 'close' | 'report' }>({
+  open: false,
+  mode: 'open',
+});
+
+const openShiftModal = (mode: 'open' | 'close' | 'report') => {
+  shiftModal.value = { open: true, mode };
+};
+
+const onShiftOpened = (newShift: any) => {
+  shiftStore.currentShift = newShift;
+  shiftModal.value.open = false;
+};
+
+const onShiftClosed = () => {
+  shiftStore.currentShift = null;
+  shiftModal.value.open = false;
+};
+
+const fetchCurrentShift = async () => {
+  await shiftStore.fetchCurrentShift();
+};
 
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const searchInputRef = ref<HTMLInputElement | null>(null);
 
+const isRestaurant = computed(() => {
+  const type = (authStore.businessType || authStore.activeBusiness?.businessType || '').toLowerCase();
+  return ['restaurant', 'cafe', 'fastfood', 'coffee', 'restaran'].includes(type);
+});
+
+const { posSettings } = usePosSettings();
+
+const enabledServiceTypes = computed(() => {
+  const list: { key: 'dine_in' | 'takeaway' | 'delivery'; label: string; icon: string }[] = [];
+  if (posSettings.value.allowDineIn) list.push({ key: 'dine_in', label: 'Zalda', icon: '🍽️' });
+  if (posSettings.value.allowTakeaway) list.push({ key: 'takeaway', label: 'Saboy', icon: '🥡' });
+  if (posSettings.value.allowDelivery) list.push({ key: 'delivery', label: 'Dostavka', icon: '🛵' });
+  return list;
+});
+
+const orderType = ref<'dine_in' | 'takeaway' | 'delivery'>(
+  posSettings.value.allowDineIn ? 'dine_in' : posSettings.value.allowTakeaway ? 'takeaway' : 'delivery'
+);
+
+watch(
+  enabledServiceTypes,
+  (types) => {
+    if (types.length > 0 && !types.some((t) => t.key === orderType.value)) {
+      orderType.value = types[0].key;
+    }
+  },
+  { immediate: true }
+);
+
+const selectedTableNumber = ref<string>('');
+const customTableNumber = ref<string>('');
+const isCustomTableInput = ref<boolean>(false);
+
+const currentTableDisplayName = computed(() => {
+  if (isCustomTableInput.value && customTableNumber.value) {
+    return customTableNumber.value;
+  }
+  return selectedTableNumber.value || '';
+});
+
+const availableTables = computed(() => {
+  if (dataStore.tables && dataStore.tables.length > 0) {
+    return dataStore.tables.map((t: any) => ({
+      id: t.id,
+      name: t.name || `Stol #${t.number || t.id}`,
+    }));
+  }
+  return [
+    { id: '1', name: 'Stol 1' },
+    { id: '2', name: 'Stol 2' },
+    { id: '3', name: 'Stol 3' },
+    { id: '4', name: 'Stol 4' },
+    { id: '5', name: 'Stol 5' },
+    { id: '6', name: 'Stol 6' },
+    { id: 'vip-1', name: 'VIP 1' },
+    { id: 'vip-2', name: 'VIP 2' },
+    { id: 'terrace-1', name: 'Terassa 1' },
+  ];
+});
+
 const isCheckoutOpen = ref(false);
 const isProcessing = ref(false);
 const completedOrder = ref<any | null>(null);
 const cashReceived = ref<number>(0);
+
+const openCheckoutModal = () => {
+  if (cartStore.items.length === 0) return;
+  if (isRestaurant.value && orderType.value === 'dine_in' && !currentTableDisplayName.value) {
+    toast.warning('Iltimos, avval qaysi stol band qilinganligini belgilang!', 'Stol belgilanmagan');
+    return;
+  }
+  cashReceived.value = cartStore.grandTotal;
+  isCheckoutOpen.value = true;
+};
 
 const paymentMethods = ref([
   { id: '1', name: 'Naqd pul', type: 'cash' },
@@ -403,21 +972,19 @@ const paymentMethods = ref([
 ]);
 const selectedPaymentMethod = ref('1');
 
-const openCheckoutModal = () => {
-  cashReceived.value = cartStore.grandTotal;
-  isCheckoutOpen.value = true;
-};
-
 const loadProducts = async () => {
   if (dataStore.products.length === 0) {
     loading.value = true;
   }
   try {
-    await Promise.all([
+    const promises: Promise<any>[] = [
       dataStore.fetchProducts(),
       dataStore.fetchCategories(),
-      fetchBestsellers(),
-    ]);
+    ];
+    if (isRestaurant.value) {
+      promises.push(dataStore.fetchTables());
+    }
+    await Promise.all(promises);
   } catch (err) {
     console.error(err);
   } finally {
@@ -542,17 +1109,22 @@ const handleCompleteOrder = async () => {
   let actualPaid = total;
 
   if (selectedPaymentMethod.value === '1') {
-    // Cash — use what the customer actually gave (or grandTotal if they gave more/equal)
-    actualPaid = Math.min(cashReceived.value || 0, total);
-  }
-
-  // Warn if underpaying without a customer selected (no way to track debt)
-  if (actualPaid < total && actualPaid > 0) {
-    const nasiyaAmount = total - actualPaid;
-    toast.info(
-      `Mijoz ${formatCurrency(actualPaid)} to'ladi. Qolgan ${formatCurrency(nasiyaAmount)} nasiyaga yozildi.`,
-      'Qisman to\'lov'
-    );
+    // If cash received is entered
+    if (cashReceived.value && cashReceived.value < total) {
+      if (selectedCustomer.value) {
+        actualPaid = cashReceived.value;
+        const nasiyaAmount = total - actualPaid;
+        toast.info(
+          `Mijoz ${formatCurrency(actualPaid)} to'ladi. Qolgan ${formatCurrency(nasiyaAmount)} mijozning (${selectedCustomer.value.fullName}) nasiya hisobiga yozildi.`,
+          'Qisman to\'lov / Nasiya'
+        );
+      } else {
+        toast.warning('Nasiyaga (qisman to\'lovga) sotish uchun avval Mijozni tanlang!', 'Mijoz tanlanmagan');
+        return;
+      }
+    } else {
+      actualPaid = total;
+    }
   }
 
   if (actualPaid <= 0) {
@@ -560,10 +1132,24 @@ const handleCompleteOrder = async () => {
     return;
   }
 
+  if (isRestaurant.value && orderType.value === 'dine_in' && !currentTableDisplayName.value) {
+    toast.warning('Iltimos, buyurtma qaysi stol uchun ekanligini belgilang!', 'Stol belgilanmagan');
+    return;
+  }
+
+  const resolvedTableNumber = (isRestaurant.value && orderType.value === 'dine_in')
+    ? currentTableDisplayName.value
+    : null;
+
+  const apiOrderType = isRestaurant.value ? 'restaurant' : 'pos';
+
   isProcessing.value = true;
   try {
     const { data } = await api.post('/orders', {
-      orderType: 'pos',
+      orderType: apiOrderType,
+      customerId: selectedCustomerId.value || undefined,
+      tableNumber: resolvedTableNumber,
+      tableName: resolvedTableNumber,
       items: cartStore.items.map((i) => ({
         productId: i.productId || i.id,
         serviceId: i.serviceId,
@@ -578,12 +1164,27 @@ const handleCompleteOrder = async () => {
       ],
     });
 
+    data.orderType = orderType.value;
+    data.tableNumber = resolvedTableNumber;
+    if (selectedCustomer.value) {
+      data.customer = selectedCustomer.value;
+    }
+
     completedOrder.value = data;
     isCheckoutOpen.value = false;
     cartStore.clearCart();
+    selectedCustomerId.value = '';
+    selectedTableNumber.value = '';
+    customTableNumber.value = '';
+
+    shiftStore.recordSale(
+      actualPaid,
+      selectedPaymentMethod.value === '1' ? 'cash' : (selectedPaymentMethod.value === '2' ? 'card' : 'other')
+    );
     toast.success(`Savdo muvaffaqiyatli yakunlandi! Chek: ${data.orderNumber || '#001'}`, 'Kassa (POS)');
     dataStore.invalidate('products');
-    await loadProducts(); // refresh inventory and bestsellers
+    dataStore.invalidate('customers');
+    await Promise.allSettled([loadProducts(), fetchCurrentShift(), dataStore.fetchCustomers()]);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Savdoni yakunlashda xatolik', 'Xatolik');
   } finally {
@@ -597,6 +1198,8 @@ const printReceipt = () => {
 
 onMounted(() => {
   loadProducts();
+  fetchCurrentShift();
+  dataStore.fetchCustomers();
   searchInputRef.value?.focus();
 });
 </script>

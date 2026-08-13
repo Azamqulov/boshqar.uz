@@ -36,6 +36,8 @@ export interface CreateCategoryDto {
   name: string;
   parentId?: string;
   icon?: string;
+  color?: string;
+  description?: string;
   sortOrder?: number;
 }
 

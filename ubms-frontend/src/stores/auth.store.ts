@@ -154,5 +154,16 @@ export const useAuthStore = defineStore('auth', {
         // ignore
       }
     },
+    async updateBusinessCurrency(currency: string) {
+      if (this.activeBusiness) {
+        this.activeBusiness = { ...this.activeBusiness, currency };
+        localStorage.setItem('ubms_active_business', JSON.stringify(this.activeBusiness));
+        try {
+          await api.patch(`/businesses/${this.activeBusiness.id}`, { currency });
+        } catch (err) {
+          // fallback
+        }
+      }
+    },
   },
 });

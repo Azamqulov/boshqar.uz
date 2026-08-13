@@ -7,12 +7,71 @@ import {
   Query,
 } from '@nestjs/common';
 import { OrdersService, CreateOrderDto, FindOrdersQueryDto } from './orders.service';
+import { ShiftsService } from '../shifts/shifts.service';
+import { OpenShiftDto, CloseShiftDto } from '../shifts/dto/shift.dto';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly shiftsService: ShiftsService,
+  ) {}
+
+  @Get('shifts/current')
+  getCurrentShift(
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId?: string,
+    @CurrentUser() user?: any,
+  ) {
+    return this.shiftsService.getCurrentShift(businessId, branchId, user?.userId || user?.id);
+  }
+
+  @Post('shifts/open')
+  openShift(
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
+    @CurrentUser() user: any,
+    @Body() dto: OpenShiftDto,
+  ) {
+    return this.shiftsService.openShift(businessId, branchId, user?.userId || user?.id, dto);
+  }
+
+  @Get('shifts/:id/summary')
+  getShiftSummary(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') shiftId: string,
+  ) {
+    return this.shiftsService.getShiftSummary(businessId, shiftId);
+  }
+
+  @Post('shifts/:id/close')
+  closeShift(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') shiftId: string,
+    @CurrentUser() user: any,
+    @Body() dto: CloseShiftDto,
+  ) {
+    return this.shiftsService.closeShift(businessId, shiftId, user?.userId || user?.id, dto);
+  }
+
+  @Get('shifts/:id/report')
+  getShiftReport(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') shiftId: string,
+  ) {
+    return this.shiftsService.getShiftReport(businessId, shiftId);
+  }
+
+  @Get('shifts')
+  findAllShifts(
+    @CurrentBusinessId() businessId: string,
+    @Query('branchId') branchId?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.shiftsService.findAll(businessId, branchId, status);
+  }
 
   @Get()
   @RequirePermission('orders.view')

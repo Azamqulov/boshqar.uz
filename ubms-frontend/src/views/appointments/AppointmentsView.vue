@@ -13,6 +13,41 @@
       </div>
     </div>
 
+    <!-- Top Stat Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <AppStatCard
+        title="Jami Bandlovlar"
+        :value="`${appointments.length} ta`"
+        subtitle="Jami yozilgan bandlovlar"
+        :icon="Calendar"
+        variant="blue"
+      />
+
+      <AppStatCard
+        title="Kutilayotganlar"
+        :value="`${appointments.filter((a: any) => a.status === 'pending' || a.status === 'confirmed').length} ta`"
+        subtitle="Kelishi kutilayotganlar"
+        :icon="Clock"
+        variant="amber"
+      />
+
+      <AppStatCard
+        title="Bajarilganlar"
+        :value="`${appointments.filter((a: any) => a.status === 'completed').length} ta`"
+        subtitle="Muvaffaqiyatli yakunlangan"
+        :icon="CheckCircle2"
+        variant="emerald"
+      />
+
+      <AppStatCard
+        title="Bekor Qilinganlar"
+        :value="`${appointments.filter((a: any) => a.status === 'cancelled').length} ta`"
+        subtitle="Bekor qilingan yozuvlar"
+        :icon="XCircle"
+        variant="rose"
+      />
+    </div>
+
     <!-- Appointments Timeline List with Skeleton Loader -->
     <SkeletonLoader v-if="loading" variant="grid" :count="6" />
 
@@ -157,10 +192,11 @@
 import { ref, computed, onMounted } from 'vue';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
-import { Plus, Clock, Check, X } from 'lucide-vue-next';
+import { Plus, Clock, Check, X, Calendar, CheckCircle2, XCircle } from 'lucide-vue-next';
 import AppButton from '../../components/AppButton.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
+import AppStatCard from '../../components/AppStatCard.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 

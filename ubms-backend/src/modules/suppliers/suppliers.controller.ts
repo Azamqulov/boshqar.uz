@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
@@ -13,6 +13,12 @@ export class SuppliersController {
   @RequirePermission('suppliers.view')
   findAll(@CurrentBusinessId() businessId: string) {
     return this.suppliersService.findAll(businessId);
+  }
+
+  @Get(':id/payments')
+  @RequirePermission('suppliers.view')
+  getPayments(@CurrentBusinessId() businessId: string, @Param('id') id: string) {
+    return this.suppliersService.getPayments(businessId, id);
   }
 
   @Get(':id')
@@ -43,5 +49,11 @@ export class SuppliersController {
     @Body('amount') amount: number,
   ) {
     return this.suppliersService.paySupplier(businessId, branchId, userId, id, amount);
+  }
+
+  @Delete(':id')
+  @RequirePermission('suppliers.manage')
+  remove(@CurrentBusinessId() businessId: string, @Param('id') id: string) {
+    return this.suppliersService.remove(businessId, id);
   }
 }

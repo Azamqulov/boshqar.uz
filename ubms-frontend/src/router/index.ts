@@ -10,11 +10,13 @@ const OnboardingWizard = () => import('../views/onboarding/OnboardingWizard.vue'
 const DashboardView = () => import('../views/dashboard/DashboardView.vue');
 const POSView = () => import('../views/pos/POSView.vue');
 const ProductsView = () => import('../views/products/ProductsView.vue');
+const CategoriesView = () => import('../views/products/CategoriesView.vue');
 const InventoryView = () => import('../views/inventory/InventoryView.vue');
 const WaiterView = () => import('../views/restaurant/WaiterView.vue');
 const KDSView = () => import('../views/restaurant/KDSView.vue');
 const AppointmentsView = () => import('../views/appointments/AppointmentsView.vue');
 const CustomersView = () => import('../views/customers/CustomersView.vue');
+const SuppliersView = () => import('../views/suppliers/SuppliersView.vue');
 const FinanceView = () => import('../views/finance/FinanceView.vue');
 const SettingsView = () => import('../views/settings/SettingsView.vue');
 const SuperAdminView = () => import('../views/superadmin/SuperAdminView.vue');
@@ -42,6 +44,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: DashboardView },
       { path: 'pos', component: POSView },
       { path: 'products', component: ProductsView },
+      { path: 'categories', component: CategoriesView },
+      { path: 'products/categories', component: CategoriesView },
       { path: 'inventory', component: InventoryView },
       { path: 'restaurant/tables', component: WaiterView },
       { path: 'restaurant/waiter', component: WaiterView },
@@ -49,7 +53,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'appointments', component: AppointmentsView },
       { path: 'appointments/services', component: AppointmentsView },
       { path: 'customers', component: CustomersView },
-      { path: 'suppliers', component: CustomersView },
+      { path: 'suppliers', component: SuppliersView },
       { path: 'finance', component: FinanceView },
       { path: 'settings', component: SettingsView },
       { path: 'superadmin', component: SuperAdminView },

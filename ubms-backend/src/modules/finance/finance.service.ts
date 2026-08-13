@@ -199,4 +199,16 @@ export class FinanceService {
       },
     });
   }
+
+  async deleteExpense(businessId: string, expenseId: string) {
+    const expense = await this.prisma.expense.findFirst({
+      where: { id: expenseId, businessId },
+    });
+    if (!expense) {
+      throw new NotFoundException('Xarajat topilmadi');
+    }
+    return this.prisma.expense.delete({
+      where: { id: expenseId },
+    });
+  }
 }

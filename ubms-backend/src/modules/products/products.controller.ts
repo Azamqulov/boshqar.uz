@@ -62,6 +62,31 @@ export class ProductsController {
     return this.productsService.getCategories(businessId);
   }
 
+  @Post('categories')
+  @RequirePermission('products.create')
+  createCategory(@CurrentBusinessId() businessId: string, @Body() body: CreateCategoryDto) {
+    return this.productsService.createCategory(businessId, body);
+  }
+
+  @Patch('categories/:id')
+  @RequirePermission('products.update')
+  updateCategory(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') id: string,
+    @Body() body: UpdateCategoryDto,
+  ) {
+    return this.productsService.updateCategory(businessId, id, body);
+  }
+
+  @Delete('categories/:id')
+  @RequirePermission('products.delete')
+  removeCategory(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') id: string,
+  ) {
+    return this.productsService.deleteCategory(businessId, id);
+  }
+
   @Get(':id')
   @RequirePermission('products.view')
   findOne(

@@ -21,90 +21,54 @@
     <!-- KPI Summary Grid (6 Cards) -->
     <SkeletonLoader v-if="loading" variant="kpi" />
 
-    <div v-else class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
-      <!-- 1. Bugungi Savdo -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bugungi Savdo</span>
-          <div class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <DollarSign class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(summary.todaySales) }}</h3>
-          <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Yopilgan cheklar</p>
-        </div>
-      </div>
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-3.5">
+      <AppStatCard
+        title="Bugungi Savdo"
+        :value="formatCurrency(summary.todaySales)"
+        subtitle="Yopilgan cheklar"
+        :icon="DollarSign"
+        variant="emerald"
+      />
 
-      <!-- 2. Bugungi Xarajat -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bugungi Xarajat</span>
-          <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-            <TrendingDown class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(summary.todayExpenses) }}</h3>
-          <p class="text-[10px] text-rose-600 dark:text-rose-400 font-medium mt-0.5">Operatsion xarajatlar</p>
-        </div>
-      </div>
+      <AppStatCard
+        title="Bugungi Xarajat"
+        :value="formatCurrency(summary.todayExpenses)"
+        subtitle="Operatsion xarajatlar"
+        :icon="TrendingDown"
+        variant="rose"
+      />
 
-      <!-- 3. Bugungi Sof Foyda -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sof Foyda</span>
-          <div class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <TrendingUp class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(summary.todayProfit) }}</h3>
-          <p class="text-[10px] text-blue-600 dark:text-blue-400 font-medium mt-0.5">Savdo − COGS − Xarajat</p>
-        </div>
-      </div>
+      <AppStatCard
+        title="Sof Foyda"
+        :value="formatCurrency(summary.todayProfit)"
+        subtitle="Savdo − COGS − Xarajat"
+        :icon="TrendingUp"
+        variant="blue"
+      />
 
-      <!-- 4. Buyurtmalar Soni -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Buyurtmalar</span>
-          <div class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-            <ShoppingBag class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white">{{ summary.todayOrdersCount }} ta</h3>
-          <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">Bugungi kassa tranzaksiyalari</p>
-        </div>
-      </div>
+      <AppStatCard
+        title="Buyurtmalar"
+        :value="`${summary.todayOrdersCount} ta`"
+        subtitle="Bugungi kassa tranzaksiyalari"
+        :icon="ShoppingBag"
+        variant="purple"
+      />
 
-      <!-- 5. Ombor Qiymati -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ombor Qiymati</span>
-          <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-            <Boxes class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(summary.totalInventoryValue) }}</h3>
-          <p class="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">Tannarx bo'yicha qoldiq</p>
-        </div>
-      </div>
+      <AppStatCard
+        title="Ombor Qiymati"
+        :value="formatCurrency(summary.totalInventoryValue)"
+        subtitle="Tannarx bo'yicha qoldiq"
+        :icon="Boxes"
+        variant="amber"
+      />
 
-      <!-- 6. Nasiyalar / Qarzlar -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mijoz Qarzdorligi</span>
-          <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-            <Users class="w-4 h-4" />
-          </div>
-        </div>
-        <div class="mt-3">
-          <h3 class="text-lg font-black text-slate-900 dark:text-white truncate">{{ formatCurrency(summary.totalCustomerDebt) }}</h3>
-          <p class="text-[10px] text-purple-600 dark:text-purple-400 font-medium mt-0.5">Nasiya daftari</p>
-        </div>
-      </div>
+      <AppStatCard
+        title="Mijoz Qarzdorligi"
+        :value="formatCurrency(summary.totalCustomerDebt)"
+        subtitle="Nasiya daftari"
+        :icon="Users"
+        variant="indigo"
+      />
     </div>
 
     <!-- Middle Section: Chart & Bestsellers / Alerts -->
@@ -177,39 +141,47 @@
         </div>
 
         <!-- Dual Bar Chart -->
-        <div v-else class="h-64 flex items-end gap-px pt-6 px-1 overflow-x-auto">
+        <div v-else class="h-64 flex items-end gap-1 pt-12 px-2 relative overflow-visible">
           <div
             v-for="(item, idx) in chartData"
             :key="idx"
             class="flex-1 flex flex-col items-center group relative h-full justify-end"
-            :style="{ minWidth: chartData.length > 30 ? '16px' : '24px' }"
           >
-            <!-- Tooltip -->
-            <div class="absolute -top-12 hidden group-hover:flex flex-col items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] p-2 rounded-xl text-slate-900 dark:text-white shadow-xl z-20 whitespace-nowrap gap-0.5">
-              <span class="font-bold text-slate-600 dark:text-slate-300">{{ formatChartDate(item.date) }}</span>
-              <span class="text-emerald-600 dark:text-emerald-400 font-bold">Savdo: {{ formatCurrency(item.sales) }}</span>
-              <span class="text-blue-600 dark:text-blue-400 font-bold">Foyda: {{ formatCurrency(item.profit) }}</span>
+            <!-- Tooltip with Boundary Clamping -->
+            <div
+              class="absolute -top-14 hidden group-hover:flex flex-col bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-700/80 text-[10px] p-2.5 rounded-xl text-white shadow-2xl z-30 whitespace-nowrap gap-0.5 pointer-events-none transition-all"
+              :class="[
+                idx >= chartData.length - 2
+                  ? 'right-0 items-end'
+                  : idx <= 1
+                  ? 'left-0 items-start'
+                  : 'left-1/2 -translate-x-1/2 items-center'
+              ]"
+            >
+              <span class="font-bold text-slate-300">{{ formatChartDate(item.date) }}</span>
+              <span class="text-emerald-400 font-black">Savdo: {{ formatCurrency(item.sales) }}</span>
+              <span class="text-sky-400 font-bold">Foyda: {{ formatCurrency(item.profit) }}</span>
               <span class="text-slate-400 text-[9px]">{{ item.count || 0 }} ta chek</span>
             </div>
 
             <!-- Dual Bars Container -->
-            <div class="w-full flex items-end justify-center gap-[2px] h-full">
+            <div class="w-full flex items-end justify-center gap-[3px] h-full pb-1">
               <!-- Sales Bar -->
               <div
-                class="flex-1 max-w-[12px] bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-sm transition-all duration-300 group-hover:opacity-80"
+                class="flex-1 max-w-[14px] bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all duration-300 group-hover:brightness-110"
                 :style="{ height: `${Math.max(4, (item.sales / maxChartSalesValue) * 100)}%` }"
               ></div>
               <!-- Profit Bar -->
               <div
-                class="flex-1 max-w-[12px] bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-sm transition-all duration-300 group-hover:opacity-80"
+                class="flex-1 max-w-[14px] bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-md transition-all duration-300 group-hover:brightness-110"
                 :style="{ height: `${Math.max(4, ((item.profit || 0) / maxChartSalesValue) * 100)}%` }"
               ></div>
             </div>
 
             <!-- Date Labels -->
             <span
-              class="text-[8px] text-slate-400 dark:text-slate-500 mt-1.5 truncate"
-              :class="{ 'font-bold': isToday(item.date) }"
+              class="text-[9px] text-slate-400 dark:text-slate-500 mt-1 truncate"
+              :class="{ 'font-black text-emerald-600 dark:text-emerald-400': isToday(item.date) }"
               :style="{ transform: chartData.length > 20 ? 'rotate(45deg)' : 'none', transformOrigin: 'left top' }"
             >
               {{ formatChartDateShort(item.date) }}
@@ -328,6 +300,7 @@ import {
 
 import { useDataStore } from '../../stores/data.store';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppStatCard from '../../components/AppStatCard.vue';
 
 const { formatCurrency } = useFormat();
 const dataStore = useDataStore();
@@ -336,8 +309,9 @@ const loading = ref(false);
 const chartLoading = ref(false);
 const topBestsellers = ref<any[]>([]);
 
-// Chart period state
-const selectedChartPeriod = ref(14);
+// Chart period state with localStorage persistence
+const savedPeriod = localStorage.getItem('dashboard_sales_period');
+const selectedChartPeriod = ref(savedPeriod ? Number(savedPeriod) : 14);
 const chartPeriods = [
   { days: 7, label: '7 kun' },
   { days: 14, label: '14 kun' },
@@ -406,8 +380,8 @@ const isToday = (dateStr: string) => {
 };
 
 const changeChartPeriod = async (days: number) => {
-  if (days === selectedChartPeriod.value) return;
   selectedChartPeriod.value = days;
+  localStorage.setItem('dashboard_sales_period', String(days));
   chartLoading.value = true;
   try {
     await dataStore.fetchChartData(days);
@@ -422,7 +396,7 @@ const loadDashboard = async (force = false) => {
   }
   try {
     const [dashRes, bestRes] = await Promise.all([
-      dataStore.fetchDashboard(force),
+      dataStore.fetchDashboard(force, selectedChartPeriod.value),
       api.get('/products/bestsellers?limit=5&period=30d').catch(() => ({ data: [] })),
     ]);
     topBestsellers.value = bestRes.data || [];

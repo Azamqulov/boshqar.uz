@@ -55,14 +55,14 @@ export const useDataStore = defineStore('ubms_data', () => {
   };
 
   // 3. Fetch Dashboard Summary & Charts
-  const fetchDashboard = async (force = false) => {
+  const fetchDashboard = async (force = false, days = 14) => {
     if (!force && dashboardSummary.value && isCacheValid('dashboard', 30000)) {
       return { summary: dashboardSummary.value, charts: dashboardCharts.value };
     }
     try {
       const [sumRes, chartRes] = await Promise.all([
         api.get('/dashboard/summary'),
-        api.get('/dashboard/charts?days=14'),
+        api.get(`/dashboard/charts?days=${days}`),
       ]);
       dashboardSummary.value = sumRes.data;
       dashboardCharts.value = chartRes.data;
@@ -134,6 +134,21 @@ export const useDataStore = defineStore('ubms_data', () => {
     return customers.value;
   };
 
+  // 6b. Fetch Suppliers
+  const fetchSuppliers = async (force = false) => {
+    if (!force && suppliers.value.length > 0 && isCacheValid('suppliers', 60000)) {
+      return suppliers.value;
+    }
+    try {
+      const { data } = await api.get('/suppliers');
+      suppliers.value = data || [];
+      lastFetched.value['suppliers'] = Date.now();
+    } catch (e) {
+      console.error(e);
+    }
+    return suppliers.value;
+  };
+
   // 7. Fetch Appointments
   const fetchAppointments = async (force = false) => {
     if (!force && appointments.value.length > 0 && isCacheValid('appointments', 60000)) {
@@ -169,6 +184,46 @@ export const useDataStore = defineStore('ubms_data', () => {
     delete lastFetched.value[key];
   };
 
+  // 10. Smart Background Prefetcher (Instant Loading across entire app)
+  const prefetchAll = async (businessType = 'shop') => {
+    const promises: Promise<any>[] = [
+      fetchCategories(),
+      fetchProducts(),
+      fetchCustomers(),
+      fetchSuppliers(),
+      fetchInventory(),
+      fetchFinance(),
+    ];
+
+    if (businessType === 'restaurant' || businessType === 'cafe') {
+      promises.push(fetchTables());
+    } else if (businessType === 'barbershop' || businessType === 'service') {
+      promises.push(fetchAppointments());
+    }
+
+    try {
+      await Promise.allSettled(promises);
+    } catch (err) {
+      console.warn('Prefetch warning:', err);
+    }
+  };
+
+  // 11. Clear all on logout
+  const clearAll = () => {
+    products.value = [];
+    categories.value = [];
+    tables.value = [];
+    customers.value = [];
+    suppliers.value = [];
+    dashboardSummary.value = null;
+    dashboardCharts.value = null;
+    inventory.value = [];
+    financeSummary.value = null;
+    financeExpenses.value = [];
+    appointments.value = [];
+    lastFetched.value = {};
+  };
+
   return {
     products,
     categories,
@@ -188,8 +243,11 @@ export const useDataStore = defineStore('ubms_data', () => {
     fetchInventory,
     fetchFinance,
     fetchCustomers,
+    fetchSuppliers,
     fetchAppointments,
     fetchTables,
     invalidate,
+    prefetchAll,
+    clearAll,
   };
 });

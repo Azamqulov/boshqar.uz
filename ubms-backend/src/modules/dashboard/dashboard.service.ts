@@ -112,7 +112,7 @@ export class DashboardService {
     today.setHours(23, 59, 59, 999);
 
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    startDate.setDate(startDate.getDate() - (days - 1));
     startDate.setHours(0, 0, 0, 0);
 
     const where: any = {
@@ -139,7 +139,7 @@ export class DashboardService {
 
     const dailyMap = new Map<string, { date: string; sales: number; profit: number; count: number }>();
 
-    for (let i = 0; i <= days; i++) {
+    for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
       const year = d.getFullYear();

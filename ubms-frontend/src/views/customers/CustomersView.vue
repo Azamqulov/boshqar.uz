@@ -21,61 +21,41 @@
 
     <!-- Quick Stats Cards (Debt & Customers Overview) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total Customers -->
-      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-        <div>
-          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Jami Mijozlar</span>
-          <div class="text-xl font-black text-slate-900 dark:text-white font-mono mt-1">
-            {{ customers.length }} ta
-          </div>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
-          <Users class="w-5 h-5" />
-        </div>
-      </div>
+      <AppStatCard
+        title="Jami Mijozlar"
+        :value="`${customers.length} ta`"
+        subtitle="CRM mijozlar ro'yxati"
+        :icon="Users"
+        variant="blue"
+      />
 
-      <!-- Total Outstanding Debt -->
-      <div class="glass-card rounded-2xl p-4 flex items-center justify-between border-rose-500/20 bg-rose-500/[0.02]">
-        <div>
-          <span class="text-xs font-semibold text-rose-600 dark:text-rose-400">Jami Nasiya / Qarzlar</span>
-          <div class="text-xl font-black text-rose-600 dark:text-rose-400 font-mono mt-1">
-            {{ formatCurrency(totalDebtAmount) }}
-          </div>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
-          <TrendingDown class="w-5 h-5" />
-        </div>
-      </div>
+      <AppStatCard
+        title="Jami Nasiya / Qarzlar"
+        :value="formatCurrency(totalDebtAmount)"
+        subtitle="Mijozlar qarzdorligi"
+        :icon="TrendingDown"
+        variant="rose"
+      />
 
-      <!-- Debtors Count -->
-      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-        <div>
-          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Qarzdor Mijozlar</span>
-          <div class="text-xl font-black text-slate-900 dark:text-white font-mono mt-1">
-            {{ debtorCustomersCount }} ta
-          </div>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-          <AlertCircle class="w-5 h-5" />
-        </div>
-      </div>
+      <AppStatCard
+        title="Qarzdor Mijozlar"
+        :value="`${debtorCustomersCount} ta`"
+        subtitle="Faol nasiyadorlar"
+        :icon="AlertCircle"
+        variant="amber"
+      />
 
-      <!-- Total Sales to CRM Customers -->
-      <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-        <div>
-          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Jami Savdo Summasi</span>
-          <div class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-            {{ formatCurrency(totalCustomersSpent) }}
-          </div>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-          <DollarSign class="w-5 h-5" />
-        </div>
-      </div>
+      <AppStatCard
+        title="Jami Savdo Summasi"
+        :value="formatCurrency(totalCustomersSpent)"
+        subtitle="Mijozlar xaridlari"
+        :icon="DollarSign"
+        variant="emerald"
+      />
     </div>
 
     <!-- Filters & Search Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <!-- Search Input -->
       <div class="w-full sm:w-80">
         <AppInput
@@ -85,41 +65,46 @@
         />
       </div>
 
-      <!-- Filter Tabs -->
-      <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
-        <button
-          type="button"
-          @click="activeFilter = 'all'"
-          class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
-          :class="activeFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
-        >
-          Barchasi ({{ customers.length }})
-        </button>
-        <button
-          type="button"
-          @click="activeFilter = 'debtors'"
-          class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center gap-1.5 btn-interactive"
-          :class="activeFilter === 'debtors' ? 'bg-rose-500 text-white shadow-sm' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10'"
-        >
-          <AlertCircle class="w-3.5 h-3.5" />
-          <span>Qarzdorlar ({{ debtorCustomersCount }})</span>
-        </button>
-        <button
-          type="button"
-          @click="activeFilter = 'clear'"
-          class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
-          :class="activeFilter === 'clear' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
-        >
-          Qarzsiz
-        </button>
+      <div class="flex items-center gap-2">
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+          <button
+            type="button"
+            @click="activeFilter = 'all'"
+            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
+            :class="activeFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+          >
+            Barchasi ({{ customers.length }})
+          </button>
+          <button
+            type="button"
+            @click="activeFilter = 'debtors'"
+            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center gap-1.5 btn-interactive"
+            :class="activeFilter === 'debtors' ? 'bg-rose-500 text-white shadow-sm' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10'"
+          >
+            <AlertCircle class="w-3.5 h-3.5" />
+            <span>Qarzdorlar ({{ debtorCustomersCount }})</span>
+          </button>
+          <button
+            type="button"
+            @click="activeFilter = 'clear'"
+            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
+            :class="activeFilter === 'clear' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+          >
+            Qarzsiz
+          </button>
+        </div>
+
+        <!-- View Mode Toggle -->
+        <AppViewToggle v-model="viewMode" />
       </div>
     </div>
 
     <!-- Customer Table Skeleton -->
     <SkeletonLoader v-if="loading" variant="table" :rows="6" />
 
-    <!-- Customer Table -->
-    <div v-else class="glass-card rounded-2xl overflow-hidden shadow-sm">
+    <!-- 1. Table View -->
+    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold">
@@ -249,8 +234,91 @@
       </div>
     </div>
 
+    <!-- 2. Grid/Cards View -->
+    <div v-else-if="viewMode === 'grid'">
+      <div v-if="filteredCustomers.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+        <Users class="w-10 h-10 mx-auto mb-2 opacity-30" />
+        <span>Mijozlar topilmadi</span>
+      </div>
+
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div
+          v-for="c in filteredCustomers"
+          :key="c.id"
+          class="glass-card rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-black text-sm flex items-center justify-center shadow-sm">
+                  {{ c.fullName.charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1">
+                    {{ c.fullName }}
+                  </h4>
+                  <p class="text-[11px] font-mono text-slate-500">
+                    {{ c.phone || "Telefon kiritilmagan" }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Jami Xarid:</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {{ formatCurrency(c.totalSpent || 0) }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-400">Nasiya / Qarz:</span>
+                <span
+                  class="font-black font-mono"
+                  :class="Number(c.debt) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'"
+                >
+                  {{ formatCurrency(c.debt || 0) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <button
+              v-if="Number(c.debt) > 0"
+              type="button"
+              @click="openPayDebtModal(c)"
+              class="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition flex items-center gap-1 btn-interactive"
+            >
+              <CreditCard class="w-3.5 h-3.5" />
+              <span>Qarz Yopish</span>
+            </button>
+            <span v-else class="text-[11px] text-slate-400 italic">Qarzi yo'q</span>
+
+            <div class="flex items-center gap-1">
+              <button
+                @click="openHistoryModal(c)"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
+                title="Tarix"
+              >
+                <History class="w-4 h-4" />
+              </button>
+              <button
+                @click="openEditModal(c)"
+                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
+                title="Tahrirlash"
+              >
+                <Edit2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 1. Create / Edit Customer Modal -->
-    <div v-if="isCustomerModalOpen" @click.self="isCustomerModalOpen = false" class="modal-overlay">
+    <Teleport to="body">
+      <div v-if="isCustomerModalOpen" @click.self="isCustomerModalOpen = false" class="modal-overlay">
       <div class="modal-container max-w-md" @click.stop>
         <div class="modal-header">
           <h3 class="text-base font-bold text-slate-900 dark:text-white">
@@ -311,9 +379,11 @@
         </div>
       </div>
     </div>
+  </Teleport>
 
     <!-- 2. Add Debt Modal (+ Qarz Kiritish) -->
-    <div v-if="isAddDebtModalOpen" @click.self="isAddDebtModalOpen = false" class="modal-overlay">
+    <Teleport to="body">
+      <div v-if="isAddDebtModalOpen" @click.self="isAddDebtModalOpen = false" class="modal-overlay">
       <div class="modal-container max-w-md" @click.stop>
         <div class="modal-header border-b border-rose-500/20">
           <div class="flex items-center gap-2">
@@ -426,9 +496,11 @@
         </div>
       </div>
     </div>
+  </Teleport>
 
     <!-- 3. Pay Debt Modal (Qarz To'lovini Qabul Qilish) -->
-    <div v-if="isPayDebtModalOpen" @click.self="isPayDebtModalOpen = false" class="modal-overlay">
+    <Teleport to="body">
+      <div v-if="isPayDebtModalOpen" @click.self="isPayDebtModalOpen = false" class="modal-overlay">
       <div class="modal-container max-w-md" @click.stop>
         <div class="modal-header border-b border-emerald-500/20">
           <div class="flex items-center gap-2">
@@ -536,9 +608,11 @@
         </div>
       </div>
     </div>
+  </Teleport>
 
     <!-- 4. Customer History & Debt Journal Modal -->
-    <div v-if="isHistoryModalOpen" @click.self="isHistoryModalOpen = false" class="modal-overlay">
+    <Teleport to="body">
+      <div v-if="isHistoryModalOpen" @click.self="isHistoryModalOpen = false" class="modal-overlay">
       <div class="modal-container max-w-2xl" @click.stop>
         <div class="modal-header">
           <div>
@@ -584,9 +658,11 @@
 
           <!-- Orders History -->
           <div class="space-y-2">
-            <h4 class="font-bold text-xs text-slate-700 dark:text-slate-300">Oxirgi Xarid Cheklari:</h4>
-            <div v-if="customerOrdersLoading" class="py-4 text-center text-xs text-slate-400">
-              Yuklanmoqda...
+            <div v-if="customerOrdersLoading" class="py-6 text-center space-y-2">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-sm">
+                <RefreshCw class="w-4 h-4 animate-spin stroke-[2.2]" />
+              </div>
+              <span class="text-xs text-slate-500 font-medium block">Xaridlar yuklanmoqda...</span>
             </div>
             <div v-else-if="customerOrders.length === 0" class="py-6 text-center text-xs text-slate-400">
               Ushbu mijoz bo'yicha xaridlar topilmadi
@@ -623,6 +699,7 @@
         </div>
       </div>
     </div>
+  </Teleport>
   </div>
 </template>
 
@@ -642,10 +719,13 @@ import {
   Edit2,
   Trash2,
   History,
+  RefreshCw,
 } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppButton from '../../components/AppButton.vue';
 import AppInput from '../../components/AppInput.vue';
+import AppStatCard from '../../components/AppStatCard.vue';
+import AppViewToggle from '../../components/AppViewToggle.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
@@ -656,6 +736,7 @@ const toast = useToast();
 const dataStore = useDataStore();
 const { formatCurrency, formatDate } = useFormat();
 
+const viewMode = ref<'table' | 'grid'>('table');
 const loading = ref(false);
 const submitting = ref(false);
 const searchQuery = ref('');

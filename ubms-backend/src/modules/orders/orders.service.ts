@@ -278,6 +278,35 @@ export class OrdersService {
 
     const isImmediateComplete = preparedPayments.length > 0;
 
+    // Safely map orderType enum (Prisma enum: 'pos' | 'restaurant' | 'service')
+    let validOrderType: OrderType = 'pos';
+    const rawType = String(dto.orderType || '').toLowerCase();
+    if (rawType === 'restaurant' || rawType === 'dine_in' || rawType === 'takeaway' || rawType === 'delivery') {
+      validOrderType = 'restaurant';
+    } else if (rawType === 'service') {
+      validOrderType = 'service';
+    } else {
+      validOrderType = 'pos';
+    }
+
+    let resolvedTableId = dto.tableId || null;
+    if (!resolvedTableId && (dto as any).tableNumber) {
+      const foundTable = await this.prisma.table.findFirst({
+        where: {
+          branchId,
+          name: { contains: String((dto as any).tableNumber), mode: 'insensitive' },
+        },
+      });
+      if (foundTable) {
+        resolvedTableId = foundTable.id;
+      }
+    }
+
+    // Check active open shift for this branch
+    const activeShift = await this.prisma.posShift.findFirst({
+      where: { businessId, branchId, status: 'open' },
+    });
+
     return this.prisma.$transaction(
       async (tx) => {
         // 2. Create Order
@@ -286,10 +315,11 @@ export class OrdersService {
             businessId,
             branchId,
             orderNumber,
-            orderType: dto.orderType || 'pos',
+            orderType: validOrderType,
             customerId: dto.customerId || null,
             cashierId: employee?.id || null,
-            tableId: dto.tableId || null,
+            tableId: resolvedTableId,
+            shiftId: activeShift?.id || null,
             subtotal,
             discountAmount: totalDiscount,
             taxAmount,
@@ -437,6 +467,26 @@ export class OrdersService {
           totalPaid += Number(p.amount);
         }
 
+        if (order.tableId) {
+          await tx.table.update({
+            where: { id: order.tableId },
+            data: { status: 'available' },
+          });
+        }
+
+        if (order.customerId) {
+          const underpaid = Math.max(0, Number(order.total) - totalPaid);
+          await tx.customer.update({
+            where: { id: order.customerId },
+            data: {
+              totalPurchases: { increment: 1 },
+              totalSpent: { increment: totalPaid },
+              debt: { increment: underpaid },
+              lastPurchaseAt: new Date(),
+            },
+          });
+        }
+
         return tx.order.update({
           where: { id: order.id },
           data: {
@@ -447,6 +497,7 @@ export class OrdersService {
             items: { include: { product: true, service: true } },
             payments: { include: { paymentMethod: true } },
             customer: true,
+            table: true,
           },
         });
       },

@@ -1,48 +1,46 @@
 <template>
-  <!-- KPI Skeleton Cards -->
-  <div v-if="variant === 'kpi'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div v-for="i in 4" :key="i" class="glass-card rounded-2xl p-5 space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="h-3.5 w-24 rounded-lg skeleton"></div>
-        <div class="w-8 h-8 rounded-xl skeleton"></div>
+  <div class="relative w-full overflow-hidden rounded-2xl">
+    <!-- Centered Animated Rotating Sync / Refresh Badge -->
+    <div class="glass-card rounded-2xl p-8 border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 shadow-sm flex flex-col items-center justify-center text-center my-2 space-y-3">
+      <!-- Animated Spinning Circular Arrows Icon -->
+      <div class="relative flex items-center justify-center">
+        <!-- Glow ring -->
+        <div class="absolute inset-0 w-12 h-12 rounded-2xl bg-emerald-500/20 blur-md animate-pulse"></div>
+        
+        <!-- Rotating Sync Icon Container -->
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500/15 via-teal-500/20 to-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
+          <RefreshCw class="w-6 h-6 animate-spin [animation-duration:1.2s] stroke-[2.2]" />
+        </div>
       </div>
-      <div class="h-7 w-36 rounded-lg skeleton"></div>
-      <div class="h-3 w-28 rounded-lg skeleton"></div>
-    </div>
-  </div>
 
-  <!-- Table Skeleton -->
-  <div v-else-if="variant === 'table'" class="glass-card rounded-2xl overflow-hidden p-4 space-y-3">
-    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-      <div class="h-4 w-32 rounded skeleton"></div>
-      <div class="h-8 w-48 rounded-xl skeleton"></div>
-    </div>
-    <div class="space-y-2">
-      <div v-for="i in rows || 6" :key="i" class="h-12 w-full rounded-xl skeleton"></div>
-    </div>
-  </div>
+      <!-- Text -->
+      <div class="space-y-0.5">
+        <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200">
+          {{ text || "Ma'lumotlar yuklanmoqda..." }}
+        </h4>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+          Iltimos, kuting...
+        </p>
+      </div>
 
-  <!-- Cards Grid Skeleton -->
-  <div v-else-if="variant === 'grid'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-    <div v-for="i in count || 10" :key="i" class="glass-card rounded-xl p-3 space-y-3">
-      <div class="w-full h-24 rounded-lg skeleton"></div>
-      <div class="h-4 w-3/4 rounded skeleton"></div>
-      <div class="flex justify-between items-center pt-2">
-        <div class="h-4 w-16 rounded skeleton"></div>
-        <div class="h-5 w-8 rounded skeleton"></div>
+      <!-- Subtle Skeleton Wireframe underneath for visual structure -->
+      <div v-if="variant === 'table'" class="w-full max-w-md pt-2 space-y-1.5 opacity-60">
+        <div class="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full skeleton"></div>
+        <div class="h-2.5 w-4/5 mx-auto bg-slate-200 dark:bg-slate-800 rounded-full skeleton"></div>
       </div>
     </div>
   </div>
-
-  <!-- Generic Box Skeleton -->
-  <div v-else class="w-full rounded-2xl skeleton" :style="{ height: height || '200px' }"></div>
 </template>
 
 <script setup lang="ts">
+import { RefreshCw } from 'lucide-vue-next';
+
 defineProps<{
-  variant?: 'kpi' | 'table' | 'grid' | 'box';
+  variant?: 'kpi' | 'table' | 'grid' | 'cards' | 'box' | 'spinner';
   rows?: number;
   count?: number;
   height?: string;
+  text?: string;
 }>();
 </script>
+

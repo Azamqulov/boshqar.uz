@@ -141,6 +141,11 @@ enum ExpenseCategory {
   other
 }
 
+enum ShiftStatus {
+  open
+  closed
+}
+
 enum TableStatus {
   available
   occupied
@@ -218,6 +223,7 @@ model User {
   inventoryTx     InventoryTransaction[]
   stockTransfers  StockTransfer[]
   refunds         Refund[]
+  posShifts       PosShift[]
 
   @@map("users")
 }
@@ -291,6 +297,7 @@ model Business {
   auditLogs     AuditLog[]
   subscriptions Subscription[]
   employees     Employee[]
+  posShifts     PosShift[]
 
   @@map("businesses")
 }
@@ -319,6 +326,7 @@ model Branch {
   expenses        Expense[]
   tables          Table[]
   appointments    Appointment[]
+  posShifts       PosShift[]
 
   @@map("branches")
 }
@@ -549,9 +557,27 @@ model Supplier {
   notes       String?  @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payments SupplierPayment[]
 
   @@map("suppliers")
+}
+
+model SupplierPayment {
+  id            String   @id @default(uuid()) @db.Uuid
+  supplierId    String   @map("supplier_id") @db.Uuid
+  businessId    String   @map("business_id") @db.Uuid
+  amount        Decimal  @db.Decimal(14, 2)
+  balanceBefore Decimal  @map("balance_before") @db.Decimal(14, 2)
+  balanceAfter  Decimal  @map("balance_after") @db.Decimal(14, 2)
+  description   String?  @db.VarChar(255)
+  createdBy     String   @map("created_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId, createdAt])
+  @@map("supplier_payments")
 }
 
 // -------------------------------------------------------------
@@ -590,6 +616,7 @@ model Order {
   cashierId      String?     @map("cashier_id") @db.Uuid
   waiterId       String?     @map("waiter_id") @db.Uuid
   tableId        String?     @map("table_id") @db.Uuid
+  shiftId        String?     @map("shift_id") @db.Uuid
   subtotal       Decimal     @db.Decimal(14, 2)
   discountAmount Decimal     @default(0) @map("discount_amount") @db.Decimal(14, 2)
   taxAmount      Decimal     @default(0) @map("tax_amount") @db.Decimal(14, 2)
@@ -604,6 +631,7 @@ model Order {
   cashier         Employee?        @relation("OrderCashier", fields: [cashierId], references: [id])
   waiter          Employee?        @relation("OrderWaiter", fields: [waiterId], references: [id])
   table           Table?           @relation(fields: [tableId], references: [id])
+  shift           PosShift?        @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   items           OrderItem[]
   payments        Payment[]
   refunds         Refund[]
@@ -742,6 +770,38 @@ model Table {
   orders Order[]
 
   @@map("tables")
+}
+
+model PosShift {
+  id           String      @id @default(uuid()) @db.Uuid
+  businessId   String      @map("business_id") @db.Uuid
+  branchId     String      @map("branch_id") @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  openedAt     DateTime    @default(now()) @map("opened_at")
+  closedAt     DateTime?   @map("closed_at")
+  startingCash Decimal     @default(0) @map("starting_cash") @db.Decimal(14, 2)
+  cashSales    Decimal     @default(0) @map("cash_sales") @db.Decimal(14, 2)
+  cardSales    Decimal     @default(0) @map("card_sales") @db.Decimal(14, 2)
+  otherSales   Decimal     @default(0) @map("other_sales") @db.Decimal(14, 2)
+  debtSales    Decimal     @default(0) @map("debt_sales") @db.Decimal(14, 2)
+  totalSales   Decimal     @default(0) @map("total_sales") @db.Decimal(14, 2)
+  cashExpenses Decimal     @default(0) @map("cash_expenses") @db.Decimal(14, 2)
+  expectedCash Decimal     @default(0) @map("expected_cash") @db.Decimal(14, 2)
+  actualCash   Decimal?    @map("actual_cash") @db.Decimal(14, 2)
+  difference   Decimal?    @db.Decimal(14, 2)
+  status       ShiftStatus @default(open)
+  notes        String?     @db.Text
+  ordersCount  Int         @default(0) @map("orders_count")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+  orders   Order[]
+
+  @@index([businessId, branchId, status])
+  @@map("pos_shifts")
 }
 
 model RestaurantOrder {
