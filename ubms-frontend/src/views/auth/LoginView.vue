@@ -46,8 +46,8 @@ import PasswordInput from '../../components/PasswordInput.vue';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const phone = ref(formatUzbekPhone('901234567'));
-const password = ref('Admin12345!');
+const phone = ref('');
+const password = ref('');
 const errorMessage = ref('');
 const isLoading = ref(false);
 
