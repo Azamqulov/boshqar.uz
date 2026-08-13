@@ -6,32 +6,22 @@
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Real-time qoldiqlar, kirim va chiqim operatsiyalari</p>
       </div>
 
-      <div class="flex items-center space-x-2">
-        <button
-          @click="openStockInModal"
-          class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive"
-        >
-          <ArrowDownLeft class="w-4 h-4" />
-          <span>Kirim Qilish</span>
-        </button>
-        <button
-          @click="openStockOutModal"
-          class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-lg shadow-rose-500/20 transition btn-interactive"
-        >
-          <ArrowUpRight class="w-4 h-4" />
-          <span>Chiqim Qilish</span>
-        </button>
+      <div class="flex items-center gap-2">
+        <AppButton variant="primary" size="md" :icon="ArrowDownLeft" @click="openStockInModal">
+          Kirim Qilish
+        </AppButton>
+        <AppButton variant="danger" size="md" :icon="ArrowUpRight" @click="openStockOutModal">
+          Chiqim Qilish
+        </AppButton>
       </div>
     </div>
 
     <!-- Search input -->
-    <div class="relative max-w-md">
-      <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <input
+    <div class="max-w-md">
+      <AppInput
         v-model="searchQuery"
-        type="text"
         placeholder="Mahsulot nomi yoki SKU bo'yicha qidiruv..."
-        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+        :icon="Search"
       />
     </div>
 
@@ -86,9 +76,9 @@
         </div>
 
         <div class="modal-body">
-          <form @submit.prevent="submitStockIn" class="space-y-3 text-xs">
+          <form @submit.prevent="submitStockIn" class="space-y-3.5 text-xs">
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mahsulotni tanlang *</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mahsulotni tanlang *</label>
               <AppSelect
                 v-model="stockForm.productId"
                 :options="inventoryInOptions"
@@ -99,12 +89,15 @@
             </div>
 
             <div class="grid grid-cols-2 gap-3">
+              <AppInput
+                v-model="stockForm.quantity"
+                label="Kirim Miqdori *"
+                type="number"
+                placeholder="0"
+                :required="true"
+              />
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kirim Miqdori *</label>
-                <input type="number" step="any" required v-model.number="stockForm.quantity" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
-              </div>
-              <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kirim Narxi (Tannarx)</label>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kirim Narxi (Tannarx)</label>
                 <CurrencyInput
                   v-model="stockForm.purchasePrice"
                   placeholder="0"
@@ -114,7 +107,7 @@
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kirim Sababi</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kirim Sababi</label>
               <AppSelect
                 v-model="stockForm.reason"
                 :options="[
@@ -124,13 +117,11 @@
               />
             </div>
 
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-4 btn-interactive"
-            >
-              {{ submitting ? 'Kirim qilinmoqda...' : 'Kirimni Tasdiqlash' }}
-            </button>
+            <div class="pt-2">
+              <AppButton type="submit" variant="primary" size="lg" class="w-full" :loading="submitting">
+                {{ submitting ? 'Kirim qilinmoqda...' : 'Kirimni Tasdiqlash' }}
+              </AppButton>
+            </div>
           </form>
         </div>
       </div>
@@ -145,9 +136,9 @@
         </div>
 
         <div class="modal-body">
-          <form @submit.prevent="submitStockOut" class="space-y-3 text-xs">
+          <form @submit.prevent="submitStockOut" class="space-y-3.5 text-xs">
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mahsulotni tanlang *</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mahsulotni tanlang *</label>
               <AppSelect
                 v-model="stockOutForm.productId"
                 :options="inventoryOutOptions"
@@ -157,13 +148,16 @@
               />
             </div>
 
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chiqim Miqdori *</label>
-              <input type="number" step="any" required v-model.number="stockOutForm.quantity" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20" />
-            </div>
+            <AppInput
+              v-model="stockOutForm.quantity"
+              label="Chiqim Miqdori *"
+              type="number"
+              placeholder="0"
+              :required="true"
+            />
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chiqim Sababi</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Chiqim Sababi</label>
               <AppSelect
                 v-model="stockOutForm.reason"
                 :options="[
@@ -175,13 +169,11 @@
               />
             </div>
 
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="w-full py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm shadow-lg shadow-rose-500/25 transition mt-4 btn-interactive"
-            >
-              {{ submitting ? 'Chiqim qilinmoqda...' : 'Chiqimni Tasdiqlash' }}
-            </button>
+            <div class="pt-2">
+              <AppButton type="submit" variant="danger" size="lg" class="w-full" :loading="submitting">
+                {{ submitting ? 'Chiqim qilinmoqda...' : 'Chiqimni Tasdiqlash' }}
+              </AppButton>
+            </div>
           </form>
         </div>
       </div>
@@ -196,6 +188,8 @@ import { useFormat } from '../../composables/useFormat';
 import { ArrowDownLeft, ArrowUpRight, X, Search } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
+import AppInput from '../../components/AppInput.vue';
+import AppButton from '../../components/AppButton.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
@@ -213,14 +207,14 @@ const isStockOutOpen = ref(false);
 
 const stockForm = ref({
   productId: '',
-  quantity: 1,
+  quantity: 1 as number,
   purchasePrice: 0,
   reason: 'manual',
 });
 
 const stockOutForm = ref({
   productId: '',
-  quantity: 1,
+  quantity: 1 as number,
   reason: 'damage',
 });
 
@@ -265,6 +259,7 @@ const openStockInModal = () => {
     stockForm.value.productId = inventory.value[0].productId || inventory.value[0].product?.id;
     stockForm.value.purchasePrice = Number(inventory.value[0].purchasePrice || inventory.value[0].product?.purchasePrice) || 0;
   }
+  stockForm.value.quantity = 1;
   isStockInOpen.value = true;
 };
 
@@ -272,6 +267,7 @@ const openStockOutModal = () => {
   if (inventory.value.length > 0) {
     stockOutForm.value.productId = inventory.value[0].productId || inventory.value[0].product?.id;
   }
+  stockOutForm.value.quantity = 1;
   isStockOutOpen.value = true;
 };
 
@@ -295,6 +291,7 @@ const submitStockIn = async () => {
     toast.success('Omborga muvaffaqiyatli kirim qilindi!', 'Omborxona');
     isStockInOpen.value = false;
     dataStore.invalidate('products');
+    dataStore.invalidate('inventory');
     dataStore.invalidate('dashboard');
     await loadInventory(true);
   } catch (err: any) {
@@ -323,6 +320,7 @@ const submitStockOut = async () => {
     toast.success('Ombordan muvaffaqiyatli chiqim qilindi!', 'Omborxona');
     isStockOutOpen.value = false;
     dataStore.invalidate('products');
+    dataStore.invalidate('inventory');
     dataStore.invalidate('dashboard');
     await loadInventory(true);
   } catch (err: any) {

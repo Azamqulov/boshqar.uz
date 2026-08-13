@@ -103,13 +103,11 @@
       <div class="flex-1 flex flex-col glass-card rounded-2xl p-4 overflow-hidden">
         <!-- Category Selector & Search -->
         <div class="flex flex-col sm:flex-row gap-3 mb-4">
-          <div class="relative flex-1">
-            <Search class="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
-            <input
+          <div class="flex-1">
+            <AppInput
               v-model="menuSearch"
-              type="text"
               placeholder="Taom yoki ichimlik qidirish..."
-              class="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+              :icon="Search"
             />
           </div>
 
@@ -342,6 +340,7 @@ import {
 } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppInput from '../../components/AppInput.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 

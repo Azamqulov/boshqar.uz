@@ -6,13 +6,9 @@
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tushumlar, tannarx (COGS) va sof foyda hisoboti</p>
       </div>
 
-      <button
-        @click="isExpenseModalOpen = true"
-        class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-lg shadow-rose-500/20 transition btn-interactive"
-      >
-        <Plus class="w-4 h-4" />
-        <span>Xarajat Kiritish</span>
-      </button>
+      <AppButton variant="danger" size="md" :icon="Plus" @click="isExpenseModalOpen = true">
+        Xarajat Kiritish
+      </AppButton>
     </div>
 
     <!-- Financial Cards Skeleton -->
@@ -114,13 +110,11 @@
               <textarea v-model="expenseForm.description" rows="2" placeholder="Xarajat haqida izoh..." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"></textarea>
             </div>
 
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="w-full py-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm shadow-lg shadow-rose-500/25 transition mt-4 btn-interactive"
-            >
-              {{ submitting ? 'Saqlanmoqda...' : 'Xarajatni Saqlash' }}
-            </button>
+            <div class="mt-4">
+              <AppButton type="submit" variant="danger" size="lg" class="w-full" :loading="submitting">
+                {{ submitting ? 'Saqlanmoqda...' : 'Xarajatni Saqlash' }}
+              </AppButton>
+            </div>
           </form>
         </div>
       </div>
@@ -133,6 +127,7 @@ import { ref, computed, onMounted } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, X } from 'lucide-vue-next';
+import AppButton from '../../components/AppButton.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';

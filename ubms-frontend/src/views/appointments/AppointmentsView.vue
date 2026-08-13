@@ -7,13 +7,9 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button
-          @click="openCreateModal"
-          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive"
-        >
-          <Plus class="w-4 h-4" />
-          <span>Yangi Bandlov Qo'shish</span>
-        </button>
+      <AppButton variant="primary" size="md" :icon="Plus" @click="openCreateModal">
+        Yangi Bandlov Qo'shish
+      </AppButton>
       </div>
     </div>
 
@@ -65,19 +61,22 @@
 
           <!-- Quick status update buttons -->
           <div v-if="app.status !== 'completed' && app.status !== 'cancelled'" class="flex items-center gap-1.5 pt-1">
-            <button
+            <AppButton
+              variant="success"
+              size="sm"
+              :icon="Check"
+              class="flex-1"
               @click="updateAppointmentStatus(app.id, 'completed')"
-              class="flex-1 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold transition flex items-center justify-center gap-1"
             >
-              <Check class="w-3 h-3" />
-              <span>Bajarildi</span>
-            </button>
-            <button
+              Bajarildi
+            </AppButton>
+            <AppButton
+              variant="danger"
+              size="sm"
               @click="updateAppointmentStatus(app.id, 'cancelled')"
-              class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[11px] font-bold transition"
             >
               Bekor qilish
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -142,13 +141,11 @@
               ></textarea>
             </div>
 
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-4 btn-interactive"
-            >
-              {{ submitting ? 'Saqlanmoqda...' : 'Bandlovni Saqlash' }}
-            </button>
+            <div class="mt-4">
+              <AppButton type="submit" variant="primary" size="lg" class="w-full" :loading="submitting">
+                {{ submitting ? 'Saqlanmoqda...' : 'Bandlovni Saqlash' }}
+              </AppButton>
+            </div>
           </form>
         </div>
       </div>
@@ -161,6 +158,7 @@ import { ref, computed, onMounted } from 'vue';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, Clock, Check, X } from 'lucide-vue-next';
+import AppButton from '../../components/AppButton.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import { useDataStore } from '../../stores/data.store';

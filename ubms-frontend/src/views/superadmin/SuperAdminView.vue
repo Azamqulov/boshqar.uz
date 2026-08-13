@@ -140,14 +140,12 @@
     <div v-if="activeTab === 'owners'" class="space-y-4">
       <!-- Search & Filters -->
       <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1">
-          <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
+        <div class="flex-1">
+          <AppInput
             v-model="ownerSearch"
-            @input="loadOwners"
-            type="text"
             placeholder="Owner ismi, telefon yoki biznes nomi bo'yicha qidiruv..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+            :icon="Search"
+            @input="loadOwners"
           />
         </div>
 
@@ -250,13 +248,11 @@
     <div v-if="activeTab === 'businesses'" class="space-y-4">
       <!-- Search & Filters -->
       <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1">
-          <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
+        <div class="flex-1">
+          <AppInput
             v-model="businessSearch"
-            type="text"
             placeholder="Biznes nomi, egasi yoki telefon raqami bo'yicha qidiruv..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+            :icon="Search"
           />
         </div>
         <div class="w-full sm:w-56">
@@ -355,13 +351,11 @@
 
     <!-- TAB 3: USERS -->
     <div v-if="activeTab === 'users'" class="space-y-4">
-      <div class="relative max-w-md">
-        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
+      <div class="max-w-md">
+        <AppInput
           v-model="userSearch"
-          type="text"
           placeholder="Ism, telefon yoki email bo'yicha qidiruv..."
-          class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+          :icon="Search"
         />
       </div>
 
@@ -676,6 +670,7 @@ import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { useToast } from '../../composables/useToast';
 import AppSelect from '../../components/AppSelect.vue';
+import AppInput from '../../components/AppInput.vue';
 import {
   ShieldCheck,
   Building2,

@@ -28,13 +28,11 @@
 
     <!-- Search and Category Filter -->
     <div class="flex flex-col sm:flex-row gap-3">
-      <div class="relative flex-1">
-        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
+      <div class="flex-1">
+        <AppInput
           v-model="searchQuery"
-          type="text"
           placeholder="Mahsulot nomi, SKU yoki shtrix-kod bo'yicha qidiruv..."
-          class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+          :icon="Search"
         />
       </div>
       <div class="w-full sm:w-64">
@@ -250,10 +248,12 @@
               </div>
             </div>
 
-            <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Nomi *</label>
-              <input v-model="form.name" required placeholder="Masalan: Pitsa Pepperoni, Coca-Cola 0.5L" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
-            </div>
+            <AppInput
+              v-model="form.name"
+              label="Nomi *"
+              placeholder="Masalan: Pitsa Pepperoni, Coca-Cola 0.5L"
+              :required="true"
+            />
 
             <!-- Category & Barcode -->
             <div class="grid grid-cols-2 gap-3">
@@ -273,8 +273,11 @@
                 />
               </div>
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Shtrix-kod</label>
-                <input v-model="form.barcode" placeholder="EAN-13 / Barcode" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                <AppInput
+                  v-model="form.barcode"
+                  label="Shtrix-kod"
+                  placeholder="EAN-13 / Barcode"
+                />
               </div>
             </div>
 
@@ -300,16 +303,20 @@
               </div>
             </div>
 
-            <!-- Stock Controls (Only for 'goods') -->
             <div v-if="form.productType === 'goods'" class="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-              <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Min. Qoldiq ogohlantirish</label>
-                <input type="number" v-model.number="form.minStock" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500" />
-              </div>
-              <div v-if="!editingId">
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Boshlang'ich qoldiq</label>
-                <input type="number" v-model.number="form.initialStock" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500" />
-              </div>
+              <AppInput
+                v-model="form.minStock"
+                label="Min. Qoldiq ogohlantirish"
+                type="number"
+                placeholder="5"
+              />
+              <AppInput
+                v-if="!editingId"
+                v-model="form.initialStock"
+                label="Boshlang'ich qoldiq"
+                type="number"
+                placeholder="10"
+              />
             </div>
 
             <!-- Notice for Dish / Kitchen / Service -->
@@ -323,9 +330,11 @@
               </div>
             </div>
 
-            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-4 btn-interactive">
-              Saqlash
-            </button>
+            <div class="mt-4">
+              <AppButton type="submit" variant="primary" size="lg" class="w-full">
+                Saqlash
+              </AppButton>
+            </div>
           </form>
         </div>
       </div>
@@ -373,12 +382,11 @@
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategoriya Nomi *</label>
-              <input
+              <AppInput
                 v-model="catForm.name"
-                required
+                label="Kategoriya Nomi *"
                 placeholder="Masalan: Pitsa & Fast Food, Issiq taomlar, Ichimliklar"
-                class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                :required="true"
               />
             </div>
 
@@ -430,13 +438,11 @@
               </div>
             </div>
 
-            <button
-              type="submit"
-              :disabled="savingCategory"
-              class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition btn-interactive"
-            >
-              {{ savingCategory ? 'Saqlanmoqda...' : (editingCatId ? 'Kategoriyani Yangilash' : 'Kategoriyani Saqlash') }}
-            </button>
+            <div class="mt-2">
+              <AppButton type="submit" variant="primary" size="md" class="w-full" :loading="savingCategory">
+                {{ savingCategory ? 'Saqlanmoqda...' : (editingCatId ? 'Kategoriyani Yangilash' : 'Kategoriyani Saqlash') }}
+              </AppButton>
+            </div>
           </form>
 
           <!-- Existing Categories List -->
@@ -445,13 +451,13 @@
               <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
                 Mavjud Kategoriyalar ({{ categories.length }} ta)
               </span>
-              <input
-                v-if="categories.length > 4"
-                v-model="categorySearch"
-                type="text"
-                placeholder="Kategoriyalardan qidirish..."
-                class="px-2.5 py-1 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-              />
+              <div v-if="categories.length > 4" class="w-52">
+                <AppInput
+                  v-model="categorySearch"
+                  placeholder="Kategoriyalardan qidirish..."
+                  :icon="Search"
+                />
+              </div>
             </div>
 
             <div v-if="filteredModalCategories.length === 0" class="p-6 text-center rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 text-xs">
@@ -517,6 +523,8 @@ import { Plus, Edit2, Trash2, X, Search, Package, Image as ImageIcon, FolderTree
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
+import AppInput from '../../components/AppInput.vue';
+import AppButton from '../../components/AppButton.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useToast } from '../../composables/useToast';
