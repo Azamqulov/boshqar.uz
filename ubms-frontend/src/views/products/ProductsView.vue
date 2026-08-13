@@ -311,9 +311,8 @@
                 placeholder="5"
               />
               <AppInput
-                v-if="!editingId"
                 v-model="form.initialStock"
-                label="Boshlang'ich qoldiq"
+                :label="editingId ? 'Do\'kondagi qoldiq (soni)' : 'Boshlang\'ich qoldiq (soni)'"
                 type="number"
                 placeholder="10"
               />
@@ -703,7 +702,7 @@ const editProduct = (prod: any) => {
     purchasePrice: Number(prod.purchasePrice) || 0,
     salePrice: Number(prod.salePrice) || 0,
     minStock: Number(prod.minStock) || 0,
-    initialStock: 0,
+    initialStock: prod.stockQty !== undefined ? Number(prod.stockQty) : 0,
   };
   isModalOpen.value = true;
 };
@@ -755,7 +754,7 @@ const saveProduct = async () => {
     dataStore.invalidate('products');
     dataStore.invalidate('dashboard');
     dataStore.invalidate('inventory');
-    loadProducts(true); // fire-and-forget background refresh
+    await dataStore.fetchProducts(true);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Mahsulotni saqlashda xatolik yuz berdi'), 'Xatolik');
   }

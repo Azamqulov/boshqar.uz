@@ -12,12 +12,9 @@ import * as bcrypt from 'bcrypt';
 
 function normalizePhone(raw: string): string {
   if (!raw) return '';
-  let digits = raw.replace(/\D/g, '');
-  if (digits.startsWith('998')) {
-    digits = digits.substring(3);
-  }
-  digits = digits.substring(0, 9);
-  return '+998' + digits;
+  const digits = raw.replace(/\D/g, '');
+  const last9 = digits.length >= 9 ? digits.slice(-9) : digits;
+  return '+998' + last9;
 }
 
 @Injectable()
@@ -29,15 +26,14 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const cleanPhone = normalizePhone(dto.phone);
-    const rawDigits = cleanPhone.replace(/\D/g, '');
+    const last9 = cleanPhone.replace(/\D/g, '').slice(-9);
 
     const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [
           { phone: cleanPhone },
-          { phone: dto.phone },
-          { phone: rawDigits },
-          { phone: { contains: rawDigits.substring(3) } },
+          { phone: { endsWith: last9 } },
+          ...(dto.email ? [{ email: dto.email }] : []),
         ],
       },
     });
@@ -265,6 +261,24 @@ export class AuthService {
     }
   }
 
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        avatarUrl: true,
+        isSuperAdmin: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
+    return user;
+  }
+
   async updateProfile(userId: string, dto: { fullName?: string; phone?: string; email?: string }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -311,8 +325,8 @@ export class AuthService {
       throw new BadRequestException({ code: 'INVALID_CURRENT_PASSWORD', message: 'Amaldagi parol noto\'g\'ri kiritildi' });
     }
 
-    if (!dto.newPassword || dto.newPassword.length < 6) {
-      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
+    if (!dto.newPassword || dto.newPassword.length < 4) {
+      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak' });
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);

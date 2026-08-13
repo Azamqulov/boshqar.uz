@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CurrentBusinessId, CurrentBranchId } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
@@ -31,6 +31,17 @@ export class CustomersController {
     return this.customersService.update(businessId, id, body);
   }
 
+  @Post(':id/add-debt')
+  @RequirePermission('customers.manage')
+  addDebt(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') id: string,
+    @Body('amount') amount: number,
+    @Body('notes') notes?: string,
+  ) {
+    return this.customersService.addDebt(businessId, id, Number(amount), notes);
+  }
+
   @Post(':id/pay-debt')
   @RequirePermission('customers.manage')
   payDebt(
@@ -38,7 +49,14 @@ export class CustomersController {
     @CurrentBranchId() branchId: string,
     @Param('id') id: string,
     @Body('amount') amount: number,
+    @Body('notes') notes?: string,
   ) {
-    return this.customersService.payDebt(businessId, branchId, id, amount);
+    return this.customersService.payDebt(businessId, branchId, id, Number(amount), notes);
+  }
+
+  @Delete(':id')
+  @RequirePermission('customers.manage')
+  delete(@CurrentBusinessId() businessId: string, @Param('id') id: string) {
+    return this.customersService.delete(businessId, id);
   }
 }

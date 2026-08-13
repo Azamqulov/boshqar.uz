@@ -115,5 +115,44 @@ export const useAuthStore = defineStore('auth', {
       const { data } = await api.post('/auth/change-password', passwordData);
       return data;
     },
+    async fetchBusinesses() {
+      try {
+        const { data } = await api.get('/businesses');
+        if (Array.isArray(data)) {
+          this.businesses = data;
+          localStorage.setItem('ubms_businesses', JSON.stringify(data));
+
+          if (data.length > 0) {
+            const currentValid = data.find((b: any) => b.id === this.activeBusiness?.id);
+            if (currentValid) {
+              this.setActiveBusiness(currentValid);
+            } else {
+              this.setActiveBusiness(data[0]);
+            }
+          } else {
+            this.activeBusiness = null;
+            this.activeBranchId = null;
+            localStorage.removeItem('ubms_active_business');
+            localStorage.removeItem('ubms_active_business_id');
+            localStorage.removeItem('ubms_active_branch_id');
+          }
+        }
+        return data;
+      } catch (err) {
+        console.error('Failed to fetch user businesses:', err);
+      }
+    },
+    async fetchProfile() {
+      try {
+        const { data } = await api.get('/auth/profile/me');
+        if (data) {
+          this.user = { ...this.user, ...data };
+          localStorage.setItem('ubms_user', JSON.stringify(this.user));
+        }
+        return data;
+      } catch (err) {
+        // ignore
+      }
+    },
   },
 });

@@ -36,8 +36,8 @@ async function runSecurityAudit() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        login: '+998901234567',
-        password: process.env.SEED_ADMIN_PASSWORD || 'Admin12345!',
+        login: '+998770404624',
+        password: process.env.SEED_ADMIN_PASSWORD || '1111',
       }),
     });
     const loginData = await loginRes.json();

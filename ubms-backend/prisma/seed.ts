@@ -153,15 +153,15 @@ async function main() {
   }
 
   // 5. Default Demo Admin User
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || generateTempPassword();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || '1111';
   const passwordHash = await bcrypt.hash(adminPassword, 10);
   const demoUser = await prisma.user.upsert({
-    where: { phone: '+998901234567' },
+    where: { phone: '+998770404624' },
     update: { passwordHash, status: 'active', isSuperAdmin: true },
     create: {
-      fullName: 'Demo Administrator',
+      fullName: 'Boshqaruvchi Admin',
       email: 'admin@boshqar.uz',
-      phone: '+998901234567',
+      phone: '+998770404624',
       passwordHash,
       status: 'active',
       isSuperAdmin: true,

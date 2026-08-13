@@ -157,7 +157,7 @@ export class ProductsService {
     return product;
   }
 
-  async create(businessId: string, userId: string, data: CreateProductDto) {
+  async create(businessId: string, branchId: string | undefined, userId: string, data: CreateProductDto) {
     // Generate SKU if not provided — use random suffix to avoid race conditions
     let sku = data.sku?.trim() || null;
     if (!sku) {
@@ -193,11 +193,22 @@ export class ProductsService {
     const effectiveBrand = data.productType || data.brand || (data.isKitchenItem ? 'dish' : 'goods');
     const effectiveImage = data.imageUrl || data.image || null;
 
+    // Resolve target branch for stock tracking
+    let targetBranchId = data.branchId || branchId;
+    if (!targetBranchId) {
+      const defaultBranch = await this.prisma.branch.findFirst({
+        where: { businessId, isMain: true },
+      }) || await this.prisma.branch.findFirst({
+        where: { businessId },
+      });
+      targetBranchId = defaultBranch?.id;
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
           businessId,
-          branchId: data.branchId || null,
+          branchId: targetBranchId || null,
           name: data.name,
           sku,
           barcode: data.barcode || null,
@@ -214,56 +225,168 @@ export class ProductsService {
         include: { category: true, unit: true },
       });
 
-      // If initial stock provided, initialize inventory
-      if (data.initialStock && Number(data.initialStock) > 0 && data.branchId) {
-        await tx.inventory.create({
-          data: {
-            branchId: data.branchId,
+      const initialQty = Number(data.initialStock) || 0;
+
+      // If initial stock provided, initialize inventory in target branch
+      if (initialQty > 0 && targetBranchId) {
+        await tx.inventory.upsert({
+          where: {
+            branchId_productId: {
+              branchId: targetBranchId,
+              productId: product.id,
+            },
+          },
+          update: {
+            quantity: initialQty,
+          },
+          create: {
+            branchId: targetBranchId,
             productId: product.id,
-            quantity: Number(data.initialStock),
+            quantity: initialQty,
             reservedQty: 0,
           },
         });
 
         await tx.inventoryTransaction.create({
           data: {
-            branchId: data.branchId,
+            branchId: targetBranchId,
             productId: product.id,
             type: 'in',
             reason: 'manual',
-            quantity: Number(data.initialStock),
+            quantity: initialQty,
             quantityBefore: 0,
-            quantityAfter: Number(data.initialStock),
+            quantityAfter: initialQty,
             referenceType: 'initial_stock',
-            createdBy: userId,
+            createdBy: userId || 'system',
           },
         });
       }
 
-      return product;
+      const isMadeToOrder =
+        product.brand === 'dish' ||
+        product.brand === 'kitchen' ||
+        product.brand === 'service' ||
+        product.unit?.shortName === 'por' ||
+        product.unitId === '00000000-0000-0000-0000-000000000024';
+
+      const effectiveStockQty = isMadeToOrder ? (product.status === 'active' ? 9999 : 0) : initialQty;
+
+      return {
+        ...product,
+        isMadeToOrder,
+        isAvailable: product.status === 'active',
+        stockQty: effectiveStockQty,
+        availableQty: effectiveStockQty,
+        rawInventoryQty: initialQty,
+        inventory: targetBranchId ? [{ branchId: targetBranchId, quantity: initialQty, reservedQty: 0 }] : [],
+      };
     });
   }
 
-  async update(businessId: string, id: string, data: UpdateProductDto) {
+  async update(businessId: string, branchId: string | undefined, userId: string, id: string, data: UpdateProductDto) {
     const product = await this.findOne(businessId, id);
     const effectiveBrand = data.productType || data.brand || product.brand;
     const effectiveImage = data.imageUrl !== undefined ? data.imageUrl : data.image !== undefined ? data.image : product.imageUrl;
 
-    return this.prisma.product.update({
-      where: { id: product.id },
-      data: {
-        name: data.name,
-        categoryId: data.categoryId,
-        brand: effectiveBrand,
-        unitId: data.unitId,
-        purchasePrice: data.purchasePrice,
-        salePrice: data.salePrice,
-        minStock: data.minStockLevel,
-        imageUrl: effectiveImage,
-        description: data.description,
-        status: data.status,
-      },
-      include: { category: true, unit: true },
+    let targetBranchId = data.branchId || branchId;
+    if (!targetBranchId) {
+      const defaultBranch = await this.prisma.branch.findFirst({
+        where: { businessId, isMain: true },
+      }) || await this.prisma.branch.findFirst({
+        where: { businessId },
+      });
+      targetBranchId = defaultBranch?.id;
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedProduct = await tx.product.update({
+        where: { id: product.id },
+        data: {
+          name: data.name,
+          categoryId: data.categoryId,
+          brand: effectiveBrand,
+          unitId: data.unitId,
+          purchasePrice: data.purchasePrice,
+          salePrice: data.salePrice,
+          minStock: data.minStockLevel,
+          imageUrl: effectiveImage,
+          description: data.description,
+          status: data.status,
+        },
+        include: { category: true, unit: true },
+      });
+
+      if (data.initialStock !== undefined && data.initialStock !== null && Number(data.initialStock) >= 0 && targetBranchId) {
+        const newQty = Number(data.initialStock);
+        const existingInv = await tx.inventory.findUnique({
+          where: {
+            branchId_productId: {
+              branchId: targetBranchId,
+              productId: id,
+            },
+          },
+        });
+
+        const oldQty = existingInv ? Number(existingInv.quantity) : 0;
+        if (!existingInv || newQty !== oldQty) {
+          await tx.inventory.upsert({
+            where: {
+              branchId_productId: {
+                branchId: targetBranchId,
+                productId: id,
+              },
+            },
+            update: { quantity: newQty },
+            create: {
+              branchId: targetBranchId,
+              productId: id,
+              quantity: newQty,
+              reservedQty: 0,
+            },
+          });
+
+          await tx.inventoryTransaction.create({
+            data: {
+              branchId: targetBranchId,
+              productId: id,
+              type: newQty >= oldQty ? 'in' : 'out',
+              reason: 'manual',
+              quantity: Math.abs(newQty - oldQty),
+              quantityBefore: oldQty,
+              quantityAfter: newQty,
+              referenceType: 'stock_adjustment',
+              createdBy: userId || 'system',
+            },
+          });
+        }
+      }
+
+      // Re-fetch all inventory for accurate stock count
+      const currentInventories = await tx.inventory.findMany({
+        where: { productId: id },
+      });
+      const stockQty = currentInventories.reduce((acc, curr) => acc + Number(curr.quantity), 0);
+      const reservedQty = currentInventories.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
+
+      const isMadeToOrder =
+        updatedProduct.brand === 'dish' ||
+        updatedProduct.brand === 'kitchen' ||
+        updatedProduct.brand === 'service' ||
+        updatedProduct.unit?.shortName === 'por' ||
+        updatedProduct.unitId === '00000000-0000-0000-0000-000000000024';
+
+      const effectiveStockQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : stockQty;
+      const effectiveAvailableQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
+
+      return {
+        ...updatedProduct,
+        isMadeToOrder,
+        isAvailable: updatedProduct.status === 'active',
+        stockQty: effectiveStockQty,
+        availableQty: effectiveAvailableQty,
+        rawInventoryQty: stockQty,
+        inventory: currentInventories,
+      };
     });
   }
 

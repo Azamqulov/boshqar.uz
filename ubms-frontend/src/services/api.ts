@@ -31,7 +31,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
+    const isAuthRoute =
+      error.config?.url?.includes('/auth/login') ||
+      error.config?.url?.includes('/auth/register') ||
+      error.config?.url?.includes('/auth/refresh') ||
+      error.config?.url?.includes('/auth/forgot-password') ||
+      error.config?.url?.includes('/auth/reset-password');
+
+    if (error.response?.status === 401 && !error.config?._retry && !isAuthRoute) {
       error.config._retry = true;
       const refreshToken = localStorage.getItem('ubms_refresh_token');
       if (refreshToken) {
@@ -47,11 +54,15 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem('ubms_access_token');
           localStorage.removeItem('ubms_refresh_token');
-          window.location.href = '/auth/login';
+          if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/auth/register') {
+            window.location.href = '/auth/login';
+          }
         }
       } else {
         localStorage.removeItem('ubms_access_token');
-        window.location.href = '/auth/login';
+        if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/auth/register') {
+          window.location.href = '/auth/login';
+        }
       }
     }
     return Promise.reject(error);

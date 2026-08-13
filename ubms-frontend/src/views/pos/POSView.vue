@@ -312,6 +312,24 @@
                 {{ formatCurrency(cashReceived - cartStore.grandTotal) }}
               </span>
             </div>
+
+            <div v-else-if="cashReceived > 0 && cashReceived < cartStore.grandTotal" class="pt-1 border-t border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold">To'langan:</span>
+                <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+                  {{ formatCurrency(cashReceived) }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-amber-600 dark:text-amber-400 font-semibold">Nasiya qoldig'i:</span>
+                <span class="font-bold font-mono text-amber-600 dark:text-amber-400 text-sm">
+                  {{ formatCurrency(cartStore.grandTotal - cashReceived) }}
+                </span>
+              </div>
+              <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-medium">
+                ⚠️ Mijoz to'liq summa bermayapti. Qolgan qism nasiyaga yoziladi.
+              </div>
+            </div>
           </div>
 
           <button
@@ -326,49 +344,12 @@
       </div>
     </div>
 
-    <!-- Thermal Print Receipt Modal -->
-    <div v-if="completedOrder" @click.self="completedOrder = null" class="modal-overlay">
-      <div class="modal-container max-w-sm" @click.stop>
-        <div class="modal-header">
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white font-sans">boshqar.uz POS</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-[11px]">Chek №: {{ completedOrder.orderNumber }}</p>
-          </div>
-          <button @click="completedOrder = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X class="w-5 h-5" /></button>
-        </div>
-
-        <div class="modal-body font-mono text-xs space-y-3">
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 flex justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-            <span>Sana:</span>
-            <span>{{ formatDate(completedOrder.createdAt) }}</span>
-          </div>
-
-          <div class="divide-y divide-slate-200 dark:divide-slate-800 space-y-1">
-            <div v-for="item in completedOrder.items" :key="item.id" class="flex justify-between py-1 text-slate-800 dark:text-slate-200">
-              <span>{{ item.product?.name || item.service?.name }} x{{ item.quantity }}</span>
-              <span class="font-bold">{{ formatCurrency(item.total) }}</span>
-            </div>
-          </div>
-
-          <div class="border-t border-slate-200 dark:border-slate-800 pt-2 space-y-1 text-slate-700 dark:text-slate-300">
-            <div class="flex justify-between font-bold text-sm text-slate-900 dark:text-white pt-1">
-              <span>JAMI:</span>
-              <span class="text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(completedOrder.total) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer font-sans">
-          <button @click="completedOrder = null" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs">
-            Yopish
-          </button>
-          <button @click="printReceipt" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold flex items-center gap-1.5 text-xs shadow-md shadow-emerald-500/20 btn-interactive">
-            <Printer class="w-4 h-4" />
-            <span>Chop Etish</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Unified Receipt Modal (Matching Image 3 with Print/Thermal support) -->
+    <ReceiptModal
+      v-if="completedOrder"
+      :order="completedOrder"
+      @close="completedOrder = null"
+    />
   </div>
 </template>
 
@@ -394,6 +375,7 @@ import {
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
+import ReceiptModal from '../../components/ReceiptModal.vue';
 
 const cartStore = useCartStore();
 const dataStore = useDataStore();
@@ -554,6 +536,30 @@ const handleBarcodeScan = async () => {
 
 const handleCompleteOrder = async () => {
   if (cartStore.items.length === 0) return;
+
+  // Determine actual paid amount based on payment method
+  const total = cartStore.grandTotal;
+  let actualPaid = total;
+
+  if (selectedPaymentMethod.value === '1') {
+    // Cash — use what the customer actually gave (or grandTotal if they gave more/equal)
+    actualPaid = Math.min(cashReceived.value || 0, total);
+  }
+
+  // Warn if underpaying without a customer selected (no way to track debt)
+  if (actualPaid < total && actualPaid > 0) {
+    const nasiyaAmount = total - actualPaid;
+    toast.info(
+      `Mijoz ${formatCurrency(actualPaid)} to'ladi. Qolgan ${formatCurrency(nasiyaAmount)} nasiyaga yozildi.`,
+      'Qisman to\'lov'
+    );
+  }
+
+  if (actualPaid <= 0) {
+    toast.warning('To\'lov summasi 0 bo\'lishi mumkin emas!', 'Xatolik');
+    return;
+  }
+
   isProcessing.value = true;
   try {
     const { data } = await api.post('/orders', {
@@ -567,7 +573,7 @@ const handleCompleteOrder = async () => {
       payments: [
         {
           paymentMethodId: selectedPaymentMethod.value,
-          amount: cartStore.grandTotal,
+          amount: actualPaid,
         },
       ],
     });

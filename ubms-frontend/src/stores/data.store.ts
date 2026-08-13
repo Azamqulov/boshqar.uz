@@ -73,6 +73,18 @@ export const useDataStore = defineStore('ubms_data', () => {
     return { summary: dashboardSummary.value, charts: dashboardCharts.value };
   };
 
+  // 3b. Fetch Chart Data with custom period (bypasses cache)
+  const fetchChartData = async (days: number) => {
+    try {
+      const { data } = await api.get(`/dashboard/charts?days=${days}`);
+      dashboardCharts.value = data;
+      return data;
+    } catch (e) {
+      console.error(e);
+      return dashboardCharts.value || [];
+    }
+  };
+
   // 4. Fetch Inventory
   const fetchInventory = async (force = false) => {
     if (!force && inventory.value.length > 0 && isCacheValid('inventory', 60000)) {
@@ -172,6 +184,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     fetchProducts,
     fetchCategories,
     fetchDashboard,
+    fetchChartData,
     fetchInventory,
     fetchFinance,
     fetchCustomers,

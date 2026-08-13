@@ -23,13 +23,13 @@
       <!-- 2. Telefon Raqam (+998 90 123 45 67) -->
       <div>
         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Telefon raqam</label>
-        <PhoneInput v-model="phone" required placeholder="+998 90 123 45 67" />
+        <PhoneInput v-model="phone" required placeholder=" 90 123 45 67" />
       </div>
 
       <!-- 3. Parol with Show/Hide Toggle -->
       <div>
         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Parol</label>
-        <PasswordInput v-model="password" required placeholder="Kamida 8 ta belgi" />
+        <PasswordInput v-model="password" required placeholder="Kamida 4 yoki 6 ta belgi" />
       </div>
 
       <button
@@ -53,6 +53,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
+import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { getErrorMessage } from '../../services/api';
 import PhoneInput from '../../components/PhoneInput.vue';
@@ -60,6 +61,7 @@ import PasswordInput from '../../components/PasswordInput.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const fullName = ref('');
 const phone = ref('+998 ');
@@ -71,18 +73,24 @@ const handleRegister = async () => {
   errorMessage.value = '';
 
   if (!fullName.value.trim()) {
-    errorMessage.value = 'Iltimos, ism va familiyangizni kiriting';
+    const msg = 'Iltimos, ism va familiyangizni kiriting';
+    errorMessage.value = msg;
+    toast.warning(msg, 'Ism Familiya');
     return;
   }
 
   const clean = cleanUzbekPhone(phone.value);
   if (clean.length < 13) {
-    errorMessage.value = 'Iltimos, telefon raqamni to\'liq 9 ta raqamda kiriting (+998 90 123 45 67)';
+    const msg = 'Iltimos, telefon raqamni to\'liq 9 ta raqamda kiriting (+998 90 123 45 67)';
+    errorMessage.value = msg;
+    toast.warning(msg, 'Telefon raqam');
     return;
   }
 
-  if (!password.value || password.value.length < 8) {
-    errorMessage.value = 'Parol kamida 8 ta belgidan iborat bo\'lishi shart (kamida 8 ta belgi kiriting)';
+  if (!password.value || password.value.length < 4) {
+    const msg = 'Parol kamida 4 ta belgidan iborat bo\'lishi shart';
+    errorMessage.value = msg;
+    toast.warning(msg, 'Parol');
     return;
   }
 
@@ -93,9 +101,12 @@ const handleRegister = async () => {
       phone: clean,
       password: password.value,
     });
+    toast.success('Hisobingiz muvaffaqiyatli yaratildi!', 'Xush kelibsiz');
     router.push('/onboarding');
   } catch (err: any) {
-    errorMessage.value = getErrorMessage(err, 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+    const msg = getErrorMessage(err, 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
+    errorMessage.value = msg;
+    toast.error(msg, 'Xatolik');
   } finally {
     isLoading.value = false;
   }

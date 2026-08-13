@@ -111,31 +111,109 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Sales Chart (2 cols) -->
       <div class="lg:col-span-2 glass-card rounded-2xl p-5">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h3 class="font-bold text-base text-slate-900 dark:text-white">Savdo va Foyda Dinamikasi</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Oxirgi 14 kunlik sotuvlar grafigi</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              Oxirgi {{ chartPeriodLabel }} — sotuvlar va sof foyda grafigi
+            </p>
+          </div>
+
+          <!-- Period Filter Tabs -->
+          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+            <button
+              v-for="period in chartPeriods"
+              :key="period.days"
+              @click="changeChartPeriod(period.days)"
+              class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap"
+              :class="[
+                selectedChartPeriod === period.days
+                  ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+              ]"
+            >
+              {{ period.label }}
+            </button>
           </div>
         </div>
 
-        <div class="h-64 flex items-end justify-between gap-1 pt-6 px-2">
+        <!-- Period Totals Summary (mini KPIs) -->
+        <div class="grid grid-cols-3 gap-2.5 mb-4">
+          <div class="p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Jami Savdo</span>
+            <p class="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{{ formatCurrency(chartTotalSales) }}</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Sof Foyda</span>
+            <p class="text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5">{{ formatCurrency(chartTotalProfit) }}</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Buyurtmalar</span>
+            <p class="text-sm font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{{ chartTotalOrders }} ta</p>
+          </div>
+        </div>
+
+        <!-- Chart Legend -->
+        <div class="flex items-center gap-4 mb-3 px-1">
+          <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+            <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-teal-400 inline-block"></span>
+            Savdo
+          </div>
+          <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+            <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-blue-600 to-sky-400 inline-block"></span>
+            Sof Foyda
+          </div>
+        </div>
+
+        <!-- Chart Loading State -->
+        <div v-if="chartLoading" class="h-64 flex items-center justify-center">
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Grafik ma'lumotlari yuklanmoqda...
+          </div>
+        </div>
+
+        <!-- Dual Bar Chart -->
+        <div v-else class="h-64 flex items-end gap-px pt-6 px-1 overflow-x-auto">
           <div
             v-for="(item, idx) in chartData"
             :key="idx"
             class="flex-1 flex flex-col items-center group relative h-full justify-end"
+            :style="{ minWidth: chartData.length > 30 ? '16px' : '24px' }"
           >
             <!-- Tooltip -->
-            <div class="absolute -top-10 hidden group-hover:flex flex-col items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] p-1.5 rounded-lg text-slate-900 dark:text-white shadow-xl z-20 whitespace-nowrap">
-              <span>{{ item.date }}</span>
-              <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(item.sales) }}</span>
+            <div class="absolute -top-12 hidden group-hover:flex flex-col items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[10px] p-2 rounded-xl text-slate-900 dark:text-white shadow-xl z-20 whitespace-nowrap gap-0.5">
+              <span class="font-bold text-slate-600 dark:text-slate-300">{{ formatChartDate(item.date) }}</span>
+              <span class="text-emerald-600 dark:text-emerald-400 font-bold">Savdo: {{ formatCurrency(item.sales) }}</span>
+              <span class="text-blue-600 dark:text-blue-400 font-bold">Foyda: {{ formatCurrency(item.profit) }}</span>
+              <span class="text-slate-400 text-[9px]">{{ item.count || 0 }} ta chek</span>
             </div>
 
-            <!-- Bar -->
-            <div
-              class="w-full max-w-[24px] bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all group-hover:opacity-80"
-              :style="{ height: `${Math.max(8, (item.sales / maxChartValue) * 100)}%` }"
-            ></div>
-            <span class="text-[9px] text-slate-400 dark:text-slate-500 mt-2 rotate-45 truncate">{{ item.date.slice(5) }}</span>
+            <!-- Dual Bars Container -->
+            <div class="w-full flex items-end justify-center gap-[2px] h-full">
+              <!-- Sales Bar -->
+              <div
+                class="flex-1 max-w-[12px] bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-sm transition-all duration-300 group-hover:opacity-80"
+                :style="{ height: `${Math.max(4, (item.sales / maxChartSalesValue) * 100)}%` }"
+              ></div>
+              <!-- Profit Bar -->
+              <div
+                class="flex-1 max-w-[12px] bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-sm transition-all duration-300 group-hover:opacity-80"
+                :style="{ height: `${Math.max(4, ((item.profit || 0) / maxChartSalesValue) * 100)}%` }"
+              ></div>
+            </div>
+
+            <!-- Date Labels -->
+            <span
+              class="text-[8px] text-slate-400 dark:text-slate-500 mt-1.5 truncate"
+              :class="{ 'font-bold': isToday(item.date) }"
+              :style="{ transform: chartData.length > 20 ? 'rotate(45deg)' : 'none', transformOrigin: 'left top' }"
+            >
+              {{ formatChartDateShort(item.date) }}
+            </span>
           </div>
         </div>
       </div>
@@ -255,7 +333,18 @@ const { formatCurrency } = useFormat();
 const dataStore = useDataStore();
 
 const loading = ref(false);
+const chartLoading = ref(false);
 const topBestsellers = ref<any[]>([]);
+
+// Chart period state
+const selectedChartPeriod = ref(14);
+const chartPeriods = [
+  { days: 7, label: '7 kun' },
+  { days: 14, label: '14 kun' },
+  { days: 30, label: '30 kun' },
+  { days: 90, label: '3 oy' },
+  { days: 180, label: '6 oy' },
+];
 
 const defaultSummary = {
   todaySales: 0,
@@ -272,11 +361,60 @@ const defaultSummary = {
 const summary = computed(() => dataStore.dashboardSummary || defaultSummary);
 const chartData = computed(() => dataStore.dashboardCharts || []);
 
-const maxChartValue = computed(() => {
+const chartPeriodLabel = computed(() => {
+  const found = chartPeriods.find(p => p.days === selectedChartPeriod.value);
+  return found ? found.label : `${selectedChartPeriod.value} kun`;
+});
+
+const maxChartSalesValue = computed(() => {
   if (chartData.value.length === 0) return 1;
-  const max = Math.max(...chartData.value.map((c: any) => Number(c.sales) || 0));
+  const max = Math.max(...chartData.value.map((c: any) => Math.max(Number(c.sales) || 0, Number(c.profit) || 0)));
   return max === 0 ? 100000 : max;
 });
+
+const chartTotalSales = computed(() => {
+  return chartData.value.reduce((sum: number, c: any) => sum + (Number(c.sales) || 0), 0);
+});
+
+const chartTotalProfit = computed(() => {
+  return chartData.value.reduce((sum: number, c: any) => sum + (Number(c.profit) || 0), 0);
+});
+
+const chartTotalOrders = computed(() => {
+  return chartData.value.reduce((sum: number, c: any) => sum + (Number(c.count) || 0), 0);
+});
+
+// Date formatting helpers
+const formatChartDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const months = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+  return `${d.getDate()}-${months[d.getMonth()]}`;
+};
+
+const formatChartDateShort = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const months = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+  if (selectedChartPeriod.value <= 30) {
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  }
+  return `${d.getDate()}-${months[d.getMonth()]}`;
+};
+
+const isToday = (dateStr: string) => {
+  const today = new Date().toISOString().split('T')[0];
+  return dateStr === today;
+};
+
+const changeChartPeriod = async (days: number) => {
+  if (days === selectedChartPeriod.value) return;
+  selectedChartPeriod.value = days;
+  chartLoading.value = true;
+  try {
+    await dataStore.fetchChartData(days);
+  } finally {
+    chartLoading.value = false;
+  }
+};
 
 const loadDashboard = async (force = false) => {
   if (!dataStore.dashboardSummary) {
@@ -299,3 +437,4 @@ onMounted(() => {
   loadDashboard();
 });
 </script>
+

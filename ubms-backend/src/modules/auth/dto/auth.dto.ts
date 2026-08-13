@@ -14,7 +14,7 @@ export class RegisterDto {
   email?: string;
 
   @IsString()
-  @MinLength(8, { message: 'Parol kamida 8 ta belgidan iborat bo\'lishi shart' })
+  @MinLength(4, { message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart' })
   password: string;
 }
 
@@ -50,6 +50,6 @@ export class ResetPasswordDto {
   resetToken: string;
 
   @IsString()
-  @MinLength(8, { message: 'Yangi parol kamida 8 ta belgidan iborat bo\'lishi shart' })
+  @MinLength(4, { message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi shart' })
   newPassword: string;
 }

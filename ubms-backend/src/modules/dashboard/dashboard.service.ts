@@ -108,6 +108,9 @@ export class DashboardService {
   }
 
   async getChartData(businessId: string, branchId?: string, days = 14) {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
@@ -115,7 +118,7 @@ export class DashboardService {
     const where: any = {
       businessId,
       status: 'completed',
-      completedAt: { gte: startDate },
+      completedAt: { gte: startDate, lte: today },
     };
     if (branchId) where.branchId = branchId;
 
@@ -136,16 +139,24 @@ export class DashboardService {
 
     const dailyMap = new Map<string, { date: string; sales: number; profit: number; count: number }>();
 
-    for (let i = 0; i < days; i++) {
+    for (let i = 0; i <= days; i++) {
       const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const dateKey = d.toISOString().split('T')[0];
+      d.setDate(startDate.getDate() + i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
       dailyMap.set(dateKey, { date: dateKey, sales: 0, profit: 0, count: 0 });
     }
 
     for (const order of orders) {
       if (!order.completedAt) continue;
-      const dateKey = order.completedAt.toISOString().split('T')[0];
+      const d = new Date(order.completedAt);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+
       const entry = dailyMap.get(dateKey);
       if (entry) {
         const orderSales = Number(order.total);

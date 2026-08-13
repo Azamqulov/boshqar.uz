@@ -33,6 +33,49 @@ export interface UpdateEmployeeDto extends Partial<CreateEmployeeDto> {
   status?: EmployeeStatus;
 }
 
+const UI_MODULE_TO_PERM_MODULES: Record<string, string[]> = {
+  pos: ['orders', 'refunds', 'products', 'inventory', 'customers'],
+  products: ['products', 'inventory'],
+  inventory: ['inventory', 'products'],
+  customers: ['customers'],
+  suppliers: ['suppliers'],
+  finance: ['finance', 'reports'],
+  employees: ['employees'],
+  reports: ['reports'],
+  restaurant: ['restaurant', 'orders'],
+  appointments: ['appointments', 'orders'],
+  settings: ['settings', 'audit'],
+};
+
+function resolvePermissionModules(uiModules: string[]): string[] {
+  const dbModules = new Set<string>();
+  for (const mod of uiModules) {
+    if (UI_MODULE_TO_PERM_MODULES[mod]) {
+      UI_MODULE_TO_PERM_MODULES[mod].forEach((m) => dbModules.add(m));
+    } else {
+      dbModules.add(mod);
+    }
+  }
+  return Array.from(dbModules);
+}
+
+function mapPermModulesToUiModules(permModules: string[]): string[] {
+  const uiModules = new Set<string>();
+  const dbSet = new Set(permModules);
+  if (dbSet.has('orders') || dbSet.has('refunds')) uiModules.add('pos');
+  if (dbSet.has('products')) uiModules.add('products');
+  if (dbSet.has('inventory')) uiModules.add('inventory');
+  if (dbSet.has('customers')) uiModules.add('customers');
+  if (dbSet.has('suppliers')) uiModules.add('suppliers');
+  if (dbSet.has('finance')) uiModules.add('finance');
+  if (dbSet.has('employees')) uiModules.add('employees');
+  if (dbSet.has('reports')) uiModules.add('reports');
+  if (dbSet.has('restaurant')) uiModules.add('restaurant');
+  if (dbSet.has('appointments')) uiModules.add('appointments');
+  if (dbSet.has('settings')) uiModules.add('settings');
+  return Array.from(uiModules);
+}
+
 @Injectable()
 export class EmployeesService {
   constructor(private prisma: PrismaService) {}
@@ -73,7 +116,7 @@ export class EmployeesService {
     return employees.map((emp) => {
       const bu = emp.user?.businessUsers?.[0];
       const perms = bu?.role?.rolePermissions?.map((rp) => rp.permission.module) || [];
-      const allowedModules = Array.from(new Set(perms));
+      const allowedModules = mapPermModulesToUiModules(perms);
 
       return {
         id: emp.id,
@@ -98,15 +141,46 @@ export class EmployeesService {
     }
 
     const cleanPhone = normalizePhone(data.phone);
+
+    // 1. Check if employee with this phone already exists in this business
+    const existingEmp = await this.prisma.employee.findFirst({
+      where: {
+        businessId,
+        OR: [
+          { phone: cleanPhone },
+          { phone: data.phone },
+        ],
+      },
+    });
+
+    if (existingEmp) {
+      throw new BadRequestException(
+        `"${cleanPhone}" raqamiga ega xodim ushbu biznesda allaqachon mavjud!`,
+      );
+    }
+
+    // Check if phone belongs to business owner
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      include: { owner: true },
+    });
+
+    if (business?.owner?.phone === cleanPhone) {
+      throw new BadRequestException(
+        'Ushbu raqam biznes egasiga tegishli. Egasi barcha huquqlarga avtomatik ega.',
+      );
+    }
+
     const tempPassword = data.password || generateTempPassword();
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     const selectedModules: string[] = data.allowedModules || ['pos'];
+    const resolvedDbModules = resolvePermissionModules(selectedModules);
 
-    // 1. Pre-fetch permissions and default branch outside transaction for maximum speed
+    // 2. Pre-fetch permissions and default branch outside transaction for maximum speed
     const [permissions, defaultBranch] = await Promise.all([
       this.prisma.permission.findMany({
         where: {
-          module: { in: selectedModules },
+          module: { in: resolvedDbModules },
         },
       }),
       this.prisma.branch.findFirst({
@@ -116,7 +190,7 @@ export class EmployeesService {
 
     const branchId = data.branchId || defaultBranch?.id;
 
-    // 2. Execute fast writes inside transaction with generous timeout
+    // 3. Execute fast writes inside transaction with generous timeout
     return this.prisma.$transaction(
       async (tx) => {
         // Find or create user
@@ -229,27 +303,61 @@ export class EmployeesService {
       throw new NotFoundException('Xodim topilmadi');
     }
 
+    if (data.phone) {
+      const cleanPhone = normalizePhone(data.phone);
+      const duplicate = await this.prisma.employee.findFirst({
+        where: {
+          businessId,
+          phone: cleanPhone,
+          id: { not: id },
+        },
+      });
+      if (duplicate) {
+        throw new BadRequestException(
+          `"${cleanPhone}" raqamiga ega boshqa xodim allaqachon mavjud!`,
+        );
+      }
+    }
+
     const selectedModules = data.allowedModules;
     let permissions: Array<{ id: string; code: string; module: string; description: string }> = [];
     if (selectedModules) {
+      const resolvedDbModules = resolvePermissionModules(selectedModules);
       permissions = await this.prisma.permission.findMany({
-        where: { module: { in: selectedModules } },
+        where: { module: { in: resolvedDbModules } },
       });
     }
 
     return this.prisma.$transaction(
       async (tx) => {
+        const cleanPhone = data.phone ? normalizePhone(data.phone) : employee.phone;
+
         // Update employee details
         const updated = await tx.employee.update({
           where: { id },
           data: {
-            fullName: data.fullName,
-            phone: data.phone ? normalizePhone(data.phone) : employee.phone,
-            position: data.position,
-            salary: data.salary ? Number(data.salary) : employee.salary,
+            fullName: data.fullName || employee.fullName,
+            phone: cleanPhone,
+            position: data.position || employee.position,
+            salary: data.salary !== undefined ? (data.salary ? Number(data.salary) : null) : employee.salary,
             status: data.status || employee.status,
           },
         });
+
+        // Update User table if employee has linked user
+        if (employee.userId) {
+          const userUpdateData: any = {
+            fullName: data.fullName || employee.fullName,
+            phone: cleanPhone,
+          };
+          if (data.password && data.password.trim()) {
+            userUpdateData.passwordHash = await bcrypt.hash(data.password.trim(), 10);
+          }
+          await tx.user.update({
+            where: { id: employee.userId },
+            data: userUpdateData,
+          });
+        }
 
         // If allowedModules updated, update role permissions
         if (selectedModules && employee.userId) {

@@ -225,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 import ThemeToggle from '../components/ThemeToggle.vue';
@@ -343,6 +343,10 @@ const visibleNavItems = computed(() => {
 
 const handleLogout = () => {
   authStore.logout();
-  router.push('/auth/login');
+  window.location.href = '/auth/login';
 };
+
+onMounted(async () => {
+  await authStore.fetchBusinesses();
+});
 </script>

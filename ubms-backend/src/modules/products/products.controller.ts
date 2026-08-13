@@ -75,20 +75,23 @@ export class ProductsController {
   @RequirePermission('products.create')
   create(
     @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
     @CurrentUser('userId') userId: string,
     @Body() body: CreateProductDto,
   ) {
-    return this.productsService.create(businessId, userId, body);
+    return this.productsService.create(businessId, branchId, userId, body);
   }
 
   @Put(':id')
   @RequirePermission('products.update')
   update(
     @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
+    @CurrentUser('userId') userId: string,
     @Param('id') id: string,
     @Body() body: UpdateProductDto,
   ) {
-    return this.productsService.update(businessId, id, body);
+    return this.productsService.update(businessId, branchId, userId, id, body);
   }
 
   @Patch(':id/toggle-availability')

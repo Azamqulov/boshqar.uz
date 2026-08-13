@@ -10,7 +10,7 @@
     <form @submit.prevent="handleLogin" class="space-y-4">
       <div>
         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Telefon raqam</label>
-        <PhoneInput v-model="phone" required placeholder="+998 90 123 45 67" />
+        <PhoneInput v-model="phone" required placeholder=" 90 123 45 67" />
       </div>
 
       <div>
@@ -39,6 +39,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
+import { useToast } from '../../composables/useToast';
 import { formatUzbekPhone, cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { getErrorMessage } from '../../services/api';
 import PhoneInput from '../../components/PhoneInput.vue';
@@ -46,6 +47,7 @@ import PasswordInput from '../../components/PasswordInput.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const phone = ref('');
 const password = ref('');
@@ -57,18 +59,23 @@ const handleLogin = async () => {
 
   const clean = cleanUzbekPhone(phone.value);
   if (clean.length < 13) {
-    errorMessage.value = 'Iltimos, telefon raqamni to\'liq kiriting (+998 90 123 45 67)';
+    const msg = 'Iltimos, telefon raqamingizni to\'liq kiriting (+998 90 123 45 67)';
+    errorMessage.value = msg;
+    toast.warning(msg, 'Telefon raqam');
     return;
   }
 
   if (!password.value) {
-    errorMessage.value = 'Parolni kiriting';
+    const msg = 'Iltimos, parolingizni kiriting';
+    errorMessage.value = msg;
+    toast.warning(msg, 'Parol');
     return;
   }
 
   isLoading.value = true;
   try {
     const data = await authStore.login({ login: clean, password: password.value });
+    toast.success(`Xush kelibsiz, ${data.user?.fullName || 'Foydalanuvchi'}!`, 'Muvaffaqiyatli');
     if (!data.activeBusiness) {
       router.push('/onboarding');
     } else {
@@ -81,7 +88,9 @@ const handleLogin = async () => {
       }
     }
   } catch (err: any) {
-    errorMessage.value = getErrorMessage(err, 'Kirishda xatolik yuz berdi');
+    const msg = getErrorMessage(err, 'Telefon raqam yoki parol noto\'g\'ri kiritildi');
+    errorMessage.value = msg;
+    toast.error(msg, 'Kirishda xatolik');
   } finally {
     isLoading.value = false;
   }

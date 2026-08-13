@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
@@ -51,6 +51,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   logout() {
     return { success: true, message: 'Tizimdan muvaffaqiyatli chiqildi' };
+  }
+
+  @Get('profile/me')
+  getProfile(@CurrentUser('userId') userId: string) {
+    return this.authService.getProfile(userId);
   }
 
   @Post('profile/me')

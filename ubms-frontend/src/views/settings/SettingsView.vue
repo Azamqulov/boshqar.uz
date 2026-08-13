@@ -44,6 +44,15 @@
       </button>
 
       <button
+        @click="activeTab = 'receipt'"
+        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
+        :class="activeTab === 'receipt' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        <Printer class="w-4 h-4" />
+        <span>Chek & Printer</span>
+      </button>
+
+      <button
         @click="activeTab = 'audit'"
         class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
         :class="activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
@@ -328,7 +337,15 @@
                     {{ emp.status === 'active' ? 'Faol' : 'Nofaol' }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="py-3 px-4 text-right space-x-1">
+                  <button
+                    v-if="!emp.isOwner"
+                    @click="editEmployee(emp)"
+                    class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
+                    title="Tahrirlash"
+                  >
+                    <Edit2 class="w-3.5 h-3.5" />
+                  </button>
                   <button
                     v-if="!emp.isOwner"
                     @click="deleteEmployee(emp)"
@@ -374,6 +391,225 @@
       </div>
     </div>
 
+    <!-- Tab: Chek va Printer Sozlamalari -->
+    <div v-if="activeTab === 'receipt'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-5xl">
+      <!-- Left 7 cols: Controls -->
+      <div class="lg:col-span-7 space-y-5">
+        <!-- Paper Size Cards -->
+        <div class="glass-card rounded-2xl p-5 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Printer class="w-4 h-4 text-emerald-500" />
+            <span>Chek Formati / O'lchami</span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            Kassangizdagi termal printer yoki standart printer qog'oz o'lchamini tanlang
+          </p>
+
+          <div class="grid grid-cols-3 gap-3 pt-1">
+            <!-- 58mm -->
+            <button
+              type="button"
+              @click="receiptSettings.paperSize = '58mm'"
+              class="p-3.5 rounded-xl border text-left transition relative"
+              :class="[
+                receiptSettings.paperSize === '58mm'
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-500/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-300'
+              ]"
+            >
+              <div class="text-sm font-black font-mono">58 mm</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Kichik kassa lentalari</div>
+            </button>
+
+            <!-- 80mm -->
+            <button
+              type="button"
+              @click="receiptSettings.paperSize = '80mm'"
+              class="p-3.5 rounded-xl border text-left transition relative"
+              :class="[
+                receiptSettings.paperSize === '80mm'
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-500/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-300'
+              ]"
+            >
+              <div class="text-sm font-black font-mono">80 mm</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Standart termal chek</div>
+            </button>
+
+            <!-- A4 -->
+            <button
+              type="button"
+              @click="receiptSettings.paperSize = 'A4'"
+              class="p-3.5 rounded-xl border text-left transition relative"
+              :class="[
+                receiptSettings.paperSize === 'A4'
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold ring-2 ring-emerald-500/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-300'
+              ]"
+            >
+              <div class="text-sm font-black font-mono">A4 Varaq</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Hisob-faktura / varaq</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Header & Footer Texts -->
+        <div class="glass-card rounded-2xl p-5 space-y-4 text-xs">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Chek Matnlari va Rekvizitlari</h3>
+
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chek Boshidagi Sarlavha (Do'kon nomi)</label>
+            <input
+              v-model="receiptSettings.headerTitle"
+              :placeholder="authStore.activeBusiness?.name || 'Do\'kon nomi'"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chek Ostidagi Izoh / Kontaktlar</label>
+            <input
+              v-model="receiptSettings.headerSubtitle"
+              placeholder="Masalan: Toshkent sh., Chilonzor tumani. Tel: +998 90 123 45 67"
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chek Tagidagi Minnatdorchilik Matni</label>
+            <textarea
+              v-model="receiptSettings.footerText"
+              rows="2"
+              placeholder="Masalan: Xaridingiz uchun rahmat! Qaytarish 24 soat ichida chek bilan."
+              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="glass-card rounded-2xl p-5 space-y-3 text-xs">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Chekdagi Qo'shimcha Bloklar</h3>
+
+          <div class="space-y-2.5">
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Chekda shtrix-kod ko'rsatish</span>
+              <input type="checkbox" v-model="receiptSettings.showBarcode" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Kassir / Mas'ul xodim ismini ko'rsatish</span>
+              <input type="checkbox" v-model="receiptSettings.showCashier" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Mijoz ma'lumotlarini (agar kiritilgan bo'lsa) ko'rsatish</span>
+              <input type="checkbox" v-model="receiptSettings.showCustomer" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            </label>
+
+            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Kassada to'lov qilingandan so'ng chekni darhol avtomatik chop etish</span>
+              <input type="checkbox" v-model="receiptSettings.autoPrint" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            @click="saveReceiptSettings"
+            class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs shadow-lg shadow-emerald-500/25 transition btn-interactive flex items-center justify-center gap-2"
+          >
+            <Save class="w-4 h-4" />
+            <span>Sozlamalarni Saqlash</span>
+          </button>
+
+          <button
+            type="button"
+            @click="triggerTestPrint"
+            class="py-3 px-5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition flex items-center gap-2 btn-interactive"
+          >
+            <Printer class="w-4 h-4" />
+            <span>Test Chek Chop Etish</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right 5 cols: Live Mock Receipt Preview -->
+      <div class="lg:col-span-5">
+        <div class="glass-card rounded-2xl p-5 sticky top-20 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase">Jonli Chek Ko'rinishi</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+              {{ receiptSettings.paperSize }}
+            </span>
+          </div>
+
+          <!-- Realistic Receipt Paper Preview -->
+          <div
+            class="bg-white text-slate-900 font-mono text-[11px] p-4 rounded-xl shadow-md border border-slate-200 mx-auto transition-all duration-300 overflow-hidden"
+            :style="{ maxWidth: receiptSettings.paperSize === '58mm' ? '220px' : receiptSettings.paperSize === 'A4' ? '100%' : '280px' }"
+          >
+            <div class="text-center space-y-1">
+              <div class="font-black text-sm uppercase">{{ receiptSettings.headerTitle || authStore.activeBusiness?.name || 'Do\'kon Nomi' }}</div>
+              <div v-if="receiptSettings.headerSubtitle" class="text-[10px] text-slate-500">{{ receiptSettings.headerSubtitle }}</div>
+              <div class="border-b border-dashed border-slate-400 my-2"></div>
+              <div class="text-[10px] text-left space-y-0.5">
+                <div>CHEK №: <strong>#0042</strong></div>
+                <div>SANA: 13-avgust, 2026 16:15</div>
+                <div v-if="receiptSettings.showCashier">KASSIR: BOT (Sotuvchi)</div>
+                <div v-if="receiptSettings.showCustomer">MIJOZ: Alisherjon H.</div>
+              </div>
+              <div class="border-b border-dashed border-slate-400 my-2"></div>
+            </div>
+
+            <!-- Items -->
+            <div class="space-y-1.5 py-1">
+              <div class="flex justify-between">
+                <span>Coca-Cola 1.5L x2</span>
+                <span class="font-bold">28 000</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Nestle Sut 1L x1</span>
+                <span class="font-bold">14 000</span>
+              </div>
+            </div>
+
+            <div class="border-t border-dashed border-slate-400 my-2 pt-1.5 space-y-1 text-[10px]">
+              <div class="flex justify-between">
+                <span>Oraliq summa:</span>
+                <span>42 000 so'm</span>
+              </div>
+              <div class="flex justify-between text-xs font-black text-slate-900 border-t border-slate-900 pt-1">
+                <span>JAMI TO'LOV:</span>
+                <span>42 000 SO'M</span>
+              </div>
+              <div class="flex justify-between pt-1">
+                <span>To'lov (Naqd pul):</span>
+                <span>42 000 so'm</span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center pt-2 space-y-1 border-t border-dashed border-slate-400 mt-2">
+              <div v-if="receiptSettings.showBarcode" class="text-[10px] tracking-widest font-bold py-1">
+                * #0042 *
+              </div>
+              <div class="text-[10px] text-slate-600 font-semibold">{{ receiptSettings.footerText || 'Xaridingiz uchun rahmat!' }}</div>
+              <div class="text-[8px] text-slate-400">boshqar.uz — Universal Tizim</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Receipt Modal for Test Print -->
+    <ReceiptModal
+      v-if="testOrderForReceipt"
+      :order="testOrderForReceipt"
+      @close="testOrderForReceipt = null"
+    />
+
     <!-- Tab 4: Danger Zone -->
     <div v-if="activeTab === 'danger'" class="space-y-4 max-w-xl">
       <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-3">
@@ -402,11 +638,11 @@
       </div>
     </div>
 
-    <!-- Add Employee Modal -->
+    <!-- Add/Edit Employee Modal -->
     <div v-if="showEmployeeModal" @click.self="showEmployeeModal = false" class="modal-overlay">
       <div class="modal-container max-w-md" @click.stop>
         <div class="modal-header">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Yangi Xodim Qo'shish</h3>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ editingEmpId ? 'Xodimni Tahrirlash' : 'Yangi Xodim Qo\'shish' }}</h3>
           <button @click="showEmployeeModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X class="w-5 h-5" /></button>
         </div>
 
@@ -428,12 +664,14 @@
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Vaqtinchalik Parol *</label>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                {{ editingEmpId ? 'Yangi Parol (ixtiyoriy)' : 'Vaqtinchalik Parol *' }}
+              </label>
               <input
                 type="password"
                 v-model="empForm.password"
-                required
-                placeholder="Kamida 6 ta belgi"
+                :required="!editingEmpId"
+                :placeholder="editingEmpId ? 'O\'zgarishsiz qoldirish uchun bo\'sh qoldiring' : 'Kamida 4 yoki 6 ta belgi'"
                 class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
@@ -473,7 +711,7 @@
               :disabled="savingEmp"
               class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-3 btn-interactive"
             >
-              {{ savingEmp ? 'Qo\'shilmoqda...' : 'Xodimni Saqlash' }}
+              {{ savingEmp ? (editingEmpId ? 'Saqlanmoqda...' : 'Qo\'shilmoqda...') : (editingEmpId ? 'O\'zgarishlarni Saqlash' : 'Xodimni Saqlash') }}
             </button>
           </form>
         </div>
@@ -532,7 +770,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
@@ -547,6 +785,7 @@ import {
   Users,
   ScrollText,
   Trash2,
+  Edit2,
   AlertTriangle,
   UserPlus,
   X,
@@ -566,9 +805,11 @@ import {
   Key,
   Save,
   ShieldCheck,
+  Printer,
 } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import ReceiptModal from '../../components/ReceiptModal.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -604,6 +845,20 @@ const profileForm = ref({
   email: authStore.user?.email || '',
 });
 
+watch(
+  () => authStore.user,
+  (u) => {
+    if (u) {
+      profileForm.value = {
+        fullName: u.fullName || '',
+        phone: u.phone || '',
+        email: u.email || '',
+      };
+    }
+  },
+  { immediate: true, deep: true },
+);
+
 const passwordForm = ref({
   currentPassword: '',
   newPassword: '',
@@ -632,8 +887,8 @@ const handleChangePassword = async () => {
     toast.warning('Yangi parol va tasdiqlovchi parol bir-biriga mos kelmadi!', 'Parol');
     return;
   }
-  if (passwordForm.value.newPassword.length < 6) {
-    toast.warning('Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak', 'Parol');
+  if (passwordForm.value.newPassword.length < 4) {
+    toast.warning('Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak', 'Parol');
     return;
   }
 
@@ -702,7 +957,10 @@ const loadEmployees = async () => {
   }
 };
 
+const editingEmpId = ref<string | null>(null);
+
 const openAddEmployeeModal = () => {
+  editingEmpId.value = null;
   empForm.value = {
     fullName: '',
     phone: '+998 ',
@@ -713,7 +971,24 @@ const openAddEmployeeModal = () => {
   showEmployeeModal.value = true;
 };
 
+const editEmployee = (emp: any) => {
+  editingEmpId.value = emp.id;
+  empForm.value = {
+    fullName: emp.fullName,
+    phone: emp.phone,
+    password: '',
+    position: emp.position || 'Sotuvchi',
+    allowedModules: emp.allowedModules && emp.allowedModules.length > 0 ? [...emp.allowedModules] : ['pos', 'products'],
+  };
+  showEmployeeModal.value = true;
+};
+
 const saveEmployee = async () => {
+  if (!empForm.value.fullName.trim()) {
+    toast.warning('Xodimning ism va familiyasini kiriting', 'Ism');
+    return;
+  }
+
   if (empForm.value.allowedModules.length === 0) {
     toast.warning('Kamida bitta bo\'limni tanlashingiz kerak', 'Ruxsat');
     return;
@@ -725,18 +1000,34 @@ const saveEmployee = async () => {
     return;
   }
 
+  if (!editingEmpId.value && (!empForm.value.password || empForm.value.password.length < 4)) {
+    toast.warning('Yangi xodim uchun kamida 4 yoki 6 xonali parol kiriting', 'Parol');
+    return;
+  }
+
   savingEmp.value = true;
   try {
-    const payload = {
-      ...empForm.value,
+    const payload: any = {
+      fullName: empForm.value.fullName.trim(),
       phone: clean,
+      position: empForm.value.position,
+      allowedModules: empForm.value.allowedModules,
     };
-    await api.post('/employees', payload);
-    toast.success(`"${empForm.value.fullName}" muvaffaqiyatli xodim sifatida qo'shildi!`, 'Xodim');
+    if (empForm.value.password && empForm.value.password.trim()) {
+      payload.password = empForm.value.password.trim();
+    }
+
+    if (editingEmpId.value) {
+      await api.put(`/employees/${editingEmpId.value}`, payload);
+      toast.success(`"${empForm.value.fullName}" ma'lumotlari muvaffaqiyatli yangilandi!`, 'Xodim');
+    } else {
+      await api.post('/employees', payload);
+      toast.success(`"${empForm.value.fullName}" muvaffaqiyatli xodim sifatida qo'shildi!`, 'Xodim');
+    }
     showEmployeeModal.value = false;
     await loadEmployees();
   } catch (err: any) {
-    toast.error(err.response?.data?.message || err.message || 'Xodimni qo\'shishda xatolik yuz berdi', 'Xatolik');
+    toast.error(err.response?.data?.message || err.message || 'Xodimni saqlashda xatolik yuz berdi', 'Xatolik');
   } finally {
     savingEmp.value = false;
   }
@@ -799,13 +1090,13 @@ const executeDeletion = async () => {
       
       // Refresh user auth state
       authStore.logout();
-      router.push('/auth/login');
+      window.location.href = '/auth/login';
     } else {
       await api.delete('/businesses/account/me');
       toast.success('Hisobingiz muvaffaqiyatli o\'chirildi', 'O\'chirildi');
       showConfirmModal.value = false;
       authStore.logout();
-      router.push('/auth/register');
+      window.location.href = '/auth/register';
     }
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'O\'chirishda xatolik yuz berdi', 'Xatolik');
@@ -814,7 +1105,72 @@ const executeDeletion = async () => {
   }
 };
 
-onMounted(() => {
+// Receipt & Printer Settings State
+const testOrderForReceipt = ref<any | null>(null);
+
+const receiptSettings = ref({
+  paperSize: '80mm',
+  headerTitle: '',
+  headerSubtitle: '',
+  footerText: 'Xaridingiz uchun rahmat! Qaytarish 24 soat ichida chek bilan.',
+  showBarcode: true,
+  showQrCode: true,
+  showCashier: true,
+  showCustomer: true,
+  autoPrint: false,
+});
+
+const loadReceiptSettings = () => {
+  try {
+    const raw = localStorage.getItem('ubms_receipt_settings');
+    if (raw) {
+      receiptSettings.value = { ...receiptSettings.value, ...JSON.parse(raw) };
+    }
+  } catch (e) {}
+};
+
+const saveReceiptSettings = () => {
+  localStorage.setItem('ubms_receipt_settings', JSON.stringify(receiptSettings.value));
+  toast.success('Chek va printer sozlamalari muvaffaqiyatli saqlandi!', 'Chek Sozlamalari');
+};
+
+const triggerTestPrint = () => {
+  testOrderForReceipt.value = {
+    orderNumber: '#0042',
+    createdAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    subtotal: 42000,
+    discountAmount: 0,
+    total: 42000,
+    cashier: { fullName: authStore.user?.fullName || 'BOT (Kassir)' },
+    customer: { fullName: 'Alisherjon Habibullayev', phone: '+998 90 123 45 67' },
+    items: [
+      { id: '1', product: { name: 'Coca-Cola 1.5L' }, quantity: 2, unitPrice: 14000, total: 28000 },
+      { id: '2', product: { name: 'Nestle Sut 1L' }, quantity: 1, unitPrice: 14000, total: 14000 },
+    ],
+    payments: [
+      { id: 'p1', paymentMethod: { name: 'Naqd pul', type: 'cash' }, amount: 42000 },
+    ],
+  };
+  setTimeout(() => {
+    window.print();
+  }, 150);
+};
+
+watch(
+  () => authStore.activeBusiness?.id,
+  (newId) => {
+    if (newId) {
+      loadEmployees();
+      loadAudit();
+    }
+  },
+);
+
+onMounted(async () => {
+  loadReceiptSettings();
+  await authStore.fetchBusinesses();
+  await authStore.fetchProfile();
   loadEmployees();
   loadAudit();
 });
