@@ -157,20 +157,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, Clock, Check, X } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
+import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 
 const toast = useToast();
+const dataStore = useDataStore();
 const { formatCurrency, formatDate } = useFormat();
 
 const loading = ref(false);
 const submitting = ref(false);
-const appointments = ref<any[]>([]);
+const appointments = computed(() => dataStore.appointments);
 const customers = ref<any[]>([]);
 const services = ref<any[]>([]);
 const employees = ref<any[]>([]);
@@ -185,16 +187,17 @@ const form = ref({
   notes: '',
 });
 
-const loadAppointments = async () => {
-  loading.value = true;
+const loadAppointments = async (force = false) => {
+  if (dataStore.appointments.length === 0) {
+    loading.value = true;
+  }
   try {
     const [appRes, custRes, servRes, empRes] = await Promise.all([
-      api.get('/appointments'),
+      dataStore.fetchAppointments(force),
       api.get('/customers').catch(() => ({ data: [] })),
       api.get('/appointments/services').catch(() => ({ data: [] })),
       api.get('/employees').catch(() => ({ data: [] })),
     ]);
-    appointments.value = appRes.data || [];
     customers.value = custRes.data || [];
     services.value = servRes.data || [];
     employees.value = empRes.data || [];
@@ -244,7 +247,9 @@ const saveAppointment = async () => {
     await api.post('/appointments', payload);
     toast.success('Yangi bandlov muvaffaqiyatli saqlandi!', 'Bandlov');
     isBookingModalOpen.value = false;
-    await loadAppointments();
+    dataStore.invalidate('appointments');
+    dataStore.invalidate('dashboard');
+    await loadAppointments(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Bandlovni saqlashda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -256,7 +261,9 @@ const updateAppointmentStatus = async (id: string, status: string) => {
   try {
     await api.put(`/appointments/${id}/status`, { status });
     toast.success(`Bandlov holati "${status}" ga o'zgartirildi!`, 'Bandlov');
-    await loadAppointments();
+    dataStore.invalidate('appointments');
+    dataStore.invalidate('dashboard');
+    await loadAppointments(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Holatni yangilashda xatolik', 'Xatolik');
   }

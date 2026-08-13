@@ -248,14 +248,16 @@ import {
   Flame,
 } from 'lucide-vue-next';
 
+import { useDataStore } from '../../stores/data.store';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 
 const { formatCurrency } = useFormat();
+const dataStore = useDataStore();
 
 const loading = ref(false);
 const topBestsellers = ref<any[]>([]);
 
-const summary = ref({
+const defaultSummary = {
   todaySales: 0,
   todayExpenses: 0,
   todayProfit: 0,
@@ -265,26 +267,26 @@ const summary = ref({
   lowStockItemsCount: 0,
   totalCustomerDebt: 0,
   totalSupplierDebt: 0,
-});
+};
 
-const chartData = ref<any[]>([]);
+const summary = computed(() => dataStore.dashboardSummary || defaultSummary);
+const chartData = computed(() => dataStore.dashboardCharts || []);
 
 const maxChartValue = computed(() => {
   if (chartData.value.length === 0) return 1;
-  const max = Math.max(...chartData.value.map((c) => c.sales));
+  const max = Math.max(...chartData.value.map((c: any) => Number(c.sales) || 0));
   return max === 0 ? 100000 : max;
 });
 
-const loadDashboard = async () => {
-  loading.value = true;
+const loadDashboard = async (force = false) => {
+  if (!dataStore.dashboardSummary) {
+    loading.value = true;
+  }
   try {
-    const [sumRes, chartRes, bestRes] = await Promise.all([
-      api.get('/dashboard/summary'),
-      api.get('/dashboard/charts?days=14'),
+    const [dashRes, bestRes] = await Promise.all([
+      dataStore.fetchDashboard(force),
       api.get('/products/bestsellers?limit=5&period=30d').catch(() => ({ data: [] })),
     ]);
-    summary.value = sumRes.data;
-    chartData.value = chartRes.data;
     topBestsellers.value = bestRes.data || [];
   } catch (err) {
     console.error('Failed to load dashboard data', err);

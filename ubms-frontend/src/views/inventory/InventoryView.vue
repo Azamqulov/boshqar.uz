@@ -197,15 +197,17 @@ import { ArrowDownLeft, ArrowUpRight, X, Search } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
+import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 
 const toast = useToast();
+const dataStore = useDataStore();
 const { formatCurrency } = useFormat();
 
 const loading = ref(false);
 const submitting = ref(false);
 const searchQuery = ref('');
-const inventory = ref<any[]>([]);
+const inventory = computed(() => dataStore.inventory);
 const isStockInOpen = ref(false);
 const isStockOutOpen = ref(false);
 
@@ -245,11 +247,12 @@ const filteredInventory = computed(() => {
   });
 });
 
-const loadInventory = async () => {
-  loading.value = true;
+const loadInventory = async (force = false) => {
+  if (dataStore.inventory.length === 0) {
+    loading.value = true;
+  }
   try {
-    const { data } = await api.get('/inventory');
-    inventory.value = data || [];
+    await dataStore.fetchInventory(force);
   } catch (err) {
     console.error(err);
   } finally {
@@ -260,6 +263,7 @@ const loadInventory = async () => {
 const openStockInModal = () => {
   if (inventory.value.length > 0) {
     stockForm.value.productId = inventory.value[0].productId || inventory.value[0].product?.id;
+    stockForm.value.purchasePrice = Number(inventory.value[0].purchasePrice || inventory.value[0].product?.purchasePrice) || 0;
   }
   isStockInOpen.value = true;
 };
@@ -290,7 +294,9 @@ const submitStockIn = async () => {
     });
     toast.success('Omborga muvaffaqiyatli kirim qilindi!', 'Omborxona');
     isStockInOpen.value = false;
-    await loadInventory();
+    dataStore.invalidate('products');
+    dataStore.invalidate('dashboard');
+    await loadInventory(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Kirim qilishda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -316,7 +322,9 @@ const submitStockOut = async () => {
     });
     toast.success('Ombordan muvaffaqiyatli chiqim qilindi!', 'Omborxona');
     isStockOutOpen.value = false;
-    await loadInventory();
+    dataStore.invalidate('products');
+    dataStore.invalidate('dashboard');
+    await loadInventory(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Chiqim qilishda xatolik yuz berdi', 'Xatolik');
   } finally {

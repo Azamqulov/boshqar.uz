@@ -129,28 +129,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, X } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect from '../../components/AppSelect.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
+import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 
 const toast = useToast();
+const dataStore = useDataStore();
 const { formatCurrency, formatDate } = useFormat();
 
 const loading = ref(false);
 const submitting = ref(false);
 
-const summary = ref({
+const defaultSummary = {
   totalRevenue: 0,
   totalExpenses: 0,
   cogs: 0,
   netProfit: 0,
-});
-const expenses = ref<any[]>([]);
+};
+
+const summary = computed(() => dataStore.financeSummary || defaultSummary);
+const expenses = computed(() => dataStore.financeExpenses);
 const isExpenseModalOpen = ref(false);
 
 const expenseForm = ref({
@@ -159,15 +163,12 @@ const expenseForm = ref({
   description: '',
 });
 
-const loadFinance = async () => {
-  loading.value = true;
+const loadFinance = async (force = false) => {
+  if (!dataStore.financeSummary) {
+    loading.value = true;
+  }
   try {
-    const [sumRes, expRes] = await Promise.all([
-      api.get('/finance/summary'),
-      api.get('/finance/expenses'),
-    ]);
-    summary.value = sumRes.data;
-    expenses.value = expRes.data || [];
+    await dataStore.fetchFinance(force);
   } catch (err) {
     console.error(err);
   } finally {
@@ -190,9 +191,11 @@ const createExpense = async () => {
     toast.success('Yangi xarajat muvaffaqiyatli saqlandi!', 'Moliya');
     isExpenseModalOpen.value = false;
     expenseForm.value = { category: 'rent', amount: 0, description: '' };
-    await loadFinance();
+    dataStore.invalidate('finance');
+    dataStore.invalidate('dashboard');
+    await loadFinance(true);
   } catch (err: any) {
-    toast.error(err.response?.data?.message || err.message || 'Xarajatni saqlashda xatolik yuz berdi', 'Xatolik');
+    toast.error(getErrorMessage(err, 'Xarajatni saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {
     submitting.value = false;
   }

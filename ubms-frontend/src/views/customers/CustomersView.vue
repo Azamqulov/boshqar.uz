@@ -117,17 +117,19 @@ import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, X, Search } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone, formatUzbekPhone } from '../../composables/usePhoneMask';
 import PhoneInput from '../../components/PhoneInput.vue';
 
 const toast = useToast();
+const dataStore = useDataStore();
 const { formatCurrency } = useFormat();
 
 const loading = ref(false);
 const submitting = ref(false);
 const searchQuery = ref('');
-const customers = ref<any[]>([]);
+const customers = computed(() => dataStore.customers);
 const isCreateModalOpen = ref(false);
 
 const form = ref({
@@ -144,11 +146,12 @@ const filteredCustomers = computed(() => {
   });
 });
 
-const loadCustomers = async () => {
-  loading.value = true;
+const loadCustomers = async (force = false) => {
+  if (dataStore.customers.length === 0) {
+    loading.value = true;
+  }
   try {
-    const { data } = await api.get('/customers');
-    customers.value = data || [];
+    await dataStore.fetchCustomers(force);
   } catch (err) {
     console.error(err);
   } finally {
@@ -172,7 +175,9 @@ const createCustomer = async () => {
     toast.success(`"${form.value.fullName}" mijozlar bazasiga qo'shildi!`, 'CRM');
     isCreateModalOpen.value = false;
     form.value = { fullName: '', phone: '+998 ', notes: '' };
-    await loadCustomers();
+    dataStore.invalidate('customers');
+    dataStore.invalidate('dashboard');
+    await loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Mijozni saqlashda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -188,7 +193,9 @@ const openPayDebtModal = async (customer: any) => {
       try {
         await api.post(`/customers/${customer.id}/pay-debt`, { amount });
         toast.success(`Qarzdan ${amount} so'm muvaffaqiyatli to'landi!`, 'Qarz Daftari');
-        await loadCustomers();
+        dataStore.invalidate('customers');
+        dataStore.invalidate('dashboard');
+        await loadCustomers(true);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
       }
