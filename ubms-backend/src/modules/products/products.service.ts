@@ -158,11 +158,12 @@ export class ProductsService {
   }
 
   async create(businessId: string, userId: string, data: CreateProductDto) {
-    // Generate SKU if not provided
-    let sku = data.sku;
+    // Generate SKU if not provided — use random suffix to avoid race conditions
+    let sku = data.sku?.trim() || null;
     if (!sku) {
+      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
       const count = await this.prisma.product.count({ where: { businessId } });
-      sku = `PRD-${String(count + 1).padStart(6, '0')}`;
+      sku = `PRD-${String(count + 1).padStart(6, '0')}-${randomSuffix}`;
     } else {
       const existingSku = await this.prisma.product.findFirst({
         where: { businessId, sku },

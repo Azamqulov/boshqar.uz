@@ -10,11 +10,11 @@
       type="button"
       @click="toggleDropdown"
       :disabled="disabled"
-      class="w-full flex items-center justify-between pl-3.5 pr-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-500/20 border"
+      class="w-full flex items-center justify-between pl-3.5 pr-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
       :class="[
         isOpen
-          ? 'border-emerald-500 bg-white dark:bg-slate-800 shadow-sm ring-2 ring-emerald-500/15'
-          : 'border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-white text-slate-900 dark:bg-slate-800/90 dark:hover:bg-slate-800 dark:text-slate-100',
+          ? 'border-emerald-500 bg-slate-50 dark:bg-slate-800 shadow-sm ring-2 ring-emerald-500/15'
+          : 'border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-white text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-800 dark:text-slate-100',
         customClass
       ]"
     >
@@ -69,10 +69,10 @@
     >
       <div
         v-if="isOpen"
-        class="absolute z-50 mt-1.5 w-full rounded-xl glass-dropdown p-1.5 text-xs shadow-2xl overflow-hidden max-h-64 flex flex-col"
+        class="absolute z-50 mt-1.5 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-64 flex flex-col"
       >
         <!-- Search Input -->
-        <div class="p-1 border-b border-slate-200 dark:border-slate-800 mb-1">
+        <div class="p-1 border-b border-slate-100 dark:border-slate-800 mb-1">
           <div class="relative">
             <Search class="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
             <input
@@ -80,7 +80,7 @@
               v-model="searchTerm"
               type="text"
               placeholder="Qidiruv..."
-              class="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 border border-slate-200 dark:border-slate-700"
+              class="w-full pl-8 pr-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 border border-slate-200 dark:border-slate-700"
               @keydown.esc="isOpen = false"
             />
           </div>
@@ -161,40 +161,101 @@
     </transition>
   </div>
 
-  <!-- 2. Standard Native Select Mode (Fast & accessible) -->
-  <div v-else class="relative w-full inline-block">
-    <select
-      :value="modelValue"
-      @change="handleChange"
+  <!-- 2. Non-searchable: Same Custom Styling (no native select!) -->
+  <div
+    v-else
+    ref="containerRef2"
+    class="relative w-full inline-block select-none"
+  >
+    <!-- Trigger Button (same style as searchable) -->
+    <button
+      type="button"
+      @click="toggleDropdown2"
       :disabled="disabled"
-      :required="required"
-      class="w-full appearance-none pl-3.5 pr-10 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-500/20 border"
+      class="w-full flex items-center justify-between pl-3.5 pr-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
       :class="[
-        'bg-slate-50 hover:bg-white text-slate-900 border-slate-300 focus:border-emerald-500 focus:bg-white',
-        'dark:bg-slate-800/90 dark:hover:bg-slate-800 dark:text-slate-100 dark:border-slate-700 dark:focus:border-emerald-500 dark:focus:bg-slate-800',
+        isOpen2
+          ? 'border-emerald-500 bg-slate-50 dark:bg-slate-800 shadow-sm ring-2 ring-emerald-500/15'
+          : 'border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-white text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-800 dark:text-slate-100',
         customClass
       ]"
     >
-      <slot>
-        <option v-if="placeholder" value="" disabled :selected="!modelValue">
-          {{ placeholder }}
-        </option>
-        <option
+      <div class="flex items-center gap-2 truncate flex-1 pr-2">
+        <slot name="selected" :option="selectedOption">
+          <span
+            v-if="selectedOption?.color"
+            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            :style="{ backgroundColor: selectedOption.color }"
+          ></span>
+          <component
+            v-if="selectedOption?.icon"
+            :is="selectedOption.icon"
+            class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0"
+          />
+          <span
+            class="truncate"
+            :class="!selectedOption ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white font-medium'"
+          >
+            {{ selectedOption ? selectedOption.label : (placeholder || 'Tanlang...') }}
+          </span>
+          <span
+            v-if="selectedOption?.badge"
+            class="ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+          >
+            {{ selectedOption.badge }}
+          </span>
+        </slot>
+      </div>
+      <ChevronDown
+        class="w-4 h-4 text-slate-400 transition-transform duration-200 flex-shrink-0"
+        :class="{ 'rotate-180 text-emerald-500': isOpen2 }"
+      />
+    </button>
+
+    <!-- Dropdown -->
+    <transition
+      enter-active-class="transition duration-150 ease-out"
+      enter-from-class="transform scale-95 opacity-0"
+      enter-to-class="transform scale-100 opacity-100"
+      leave-active-class="transition duration-100 ease-in"
+      leave-from-class="transform scale-100 opacity-100"
+      leave-to-class="transform scale-95 opacity-0"
+    >
+      <div
+        v-if="isOpen2"
+        class="absolute z-50 mt-1.5 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+      >
+        <button
           v-for="opt in options"
           :key="opt.value"
-          :value="opt.value"
+          type="button"
           :disabled="opt.disabled"
-          class="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100 py-1"
+          @click="selectOption2(opt)"
+          class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+          :class="[
+            modelValue === opt.value
+              ? 'bg-emerald-500 text-white font-bold'
+              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+          ]"
         >
-          {{ opt.label }}
-        </option>
-      </slot>
-    </select>
-
-    <!-- Custom Chevron Icon -->
-    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 dark:text-slate-400">
-      <ChevronDown class="w-4 h-4 transition-transform duration-200" />
-    </div>
+          <div class="flex items-center gap-2 truncate flex-1">
+            <span
+              v-if="opt.color"
+              class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              :style="{ backgroundColor: opt.color }"
+            ></span>
+            <component
+              v-if="opt.icon"
+              :is="opt.icon"
+              class="w-3.5 h-3.5 flex-shrink-0"
+              :class="modelValue === opt.value ? 'text-white' : 'text-emerald-500'"
+            />
+            <span class="truncate">{{ opt.label }}</span>
+          </div>
+          <Check v-if="modelValue === opt.value" class="w-3.5 h-3.5 text-white flex-shrink-0" />
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -233,10 +294,15 @@ const emit = defineEmits<{
   (e: 'change', val: any): void;
 }>();
 
+// === SEARCHABLE mode state ===
 const isOpen = ref(false);
 const searchTerm = ref('');
 const containerRef = ref<HTMLElement | null>(null);
 const searchInputRef = ref<HTMLInputElement | null>(null);
+
+// === NON-SEARCHABLE mode state ===
+const isOpen2 = ref(false);
+const containerRef2 = ref<HTMLElement | null>(null);
 
 const selectedOption = computed(() => {
   return props.options.find((opt) => opt.value === props.modelValue);
@@ -249,7 +315,6 @@ const filteredGroupedOptions = computed(() => {
     return opt.label.toLowerCase().includes(q) || (opt.group && opt.group.toLowerCase().includes(q));
   });
 
-  // Group items by group name if any
   const groupsMap = new Map<string, SelectOption[]>();
   for (const item of filtered) {
     const gName = item.group || '';
@@ -265,9 +330,11 @@ const filteredGroupedOptions = computed(() => {
   }));
 });
 
+// Searchable toggle
 const toggleDropdown = () => {
   if (props.disabled) return;
   isOpen.value = !isOpen.value;
+  if (isOpen2.value) isOpen2.value = false;
   if (isOpen.value) {
     searchTerm.value = '';
     nextTick(() => {
@@ -283,15 +350,27 @@ const selectOption = (opt: SelectOption) => {
   isOpen.value = false;
 };
 
-const handleChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  emit('update:modelValue', target.value);
-  emit('change', target.value);
+// Non-searchable toggle
+const toggleDropdown2 = () => {
+  if (props.disabled) return;
+  isOpen2.value = !isOpen2.value;
+  if (isOpen.value) isOpen.value = false;
+};
+
+const selectOption2 = (opt: SelectOption) => {
+  if (opt.disabled) return;
+  emit('update:modelValue', opt.value);
+  emit('change', opt.value);
+  isOpen2.value = false;
 };
 
 const handleClickOutside = (e: MouseEvent) => {
-  if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
+  const target = e.target as Node;
+  if (containerRef.value && !containerRef.value.contains(target)) {
     isOpen.value = false;
+  }
+  if (containerRef2.value && !containerRef2.value.contains(target)) {
+    isOpen2.value = false;
   }
 };
 
