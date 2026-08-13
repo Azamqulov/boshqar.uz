@@ -517,6 +517,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Dialog -->
+    <AppConfirmDialog
+      :open="confirmModal.open"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      variant="danger"
+      confirm-text="Ha, o'chirish"
+      @confirm="confirmModal.onConfirm"
+      @cancel="confirmModal.open = false"
+    />
   </div>
 </template>
 
@@ -530,6 +541,7 @@ import { useFormat } from '../../composables/useFormat';
 import api from '../../services/api';
 import { cleanUzbekPhone } from '../../utils/phone';
 import PhoneInput from '../../components/PhoneInput.vue';
+import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import {
   Building2,
   Users,
@@ -569,6 +581,18 @@ const loading = ref(false);
 const loadingEmployees = ref(false);
 const savingEmp = ref(false);
 const deleting = ref(false);
+
+const confirmModal = ref<{
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => Promise<void> | void;
+}>({
+  open: false,
+  title: 'Tasdiqlash',
+  message: '',
+  onConfirm: () => {},
+});
 
 // Phase 6: User profile & password states
 const savingProfile = ref(false);
@@ -718,16 +742,23 @@ const saveEmployee = async () => {
   }
 };
 
-const deleteEmployee = async (emp: any) => {
-  if (confirm(`Haqiqatan ham "${emp.fullName}" xodimini o'chirmoqchimisiz?`)) {
-    try {
-      await api.delete(`/employees/${emp.id}`);
-      toast.success('Xodim muvaffaqiyatli o\'chirildi', 'O\'chirildi');
-      await loadEmployees();
-    } catch (err) {
-      toast.error('Xodimni o\'chirishda xatolik yuz berdi', 'Xatolik');
-    }
-  }
+const deleteEmployee = (emp: any) => {
+  confirmModal.value = {
+    open: true,
+    title: "Xodimni o'chirish",
+    message: `Haqiqatan ham "${emp.fullName}" xodimini o'chirmoqchimisiz?`,
+    onConfirm: async () => {
+      try {
+        await api.delete(`/employees/${emp.id}`);
+        toast.success('Xodim muvaffaqiyatli o\'chirildi', 'O\'chirildi');
+        await loadEmployees();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || err.message || 'Xodimni o\'chirishda xatolik yuz berdi', 'Xatolik');
+      } finally {
+        confirmModal.value.open = false;
+      }
+    },
+  };
 };
 
 const loadAudit = async () => {

@@ -495,6 +495,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Dialog Component -->
+    <AppConfirmDialog
+      :open="confirmModal.open"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      variant="danger"
+      confirm-text="Ha, o'chirish"
+      @confirm="confirmModal.onConfirm"
+      @cancel="confirmModal.open = false"
+    />
   </div>
 </template>
 
@@ -507,6 +518,7 @@ import { Plus, Edit2, Trash2, X, Search, Package, Image as ImageIcon, FolderTree
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
 import CurrencyInput from '../../components/CurrencyInput.vue';
+import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 
@@ -523,6 +535,18 @@ const isCategoryModalOpen = ref(false);
 const editingId = ref<string | null>(null);
 const editingCatId = ref<string | null>(null);
 const savingCategory = ref(false);
+
+const confirmModal = ref<{
+  open: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => Promise<void> | void;
+}>({
+  open: false,
+  title: 'Tasdiqlash',
+  message: '',
+  onConfirm: () => {},
+});
 
 const searchQuery = ref('');
 const selectedCategoryId = ref('');
@@ -715,16 +739,29 @@ const saveProduct = async () => {
   }
 };
 
-const deleteProduct = async (id: string) => {
-  if (confirm("Mahsulotni o'chirishni tasdiqlaysizmi?")) {
-    try {
-      await api.delete(`/products/${id}`);
-      toast.success("Mahsulot o'chirildi", 'Mahsulot');
-      await loadProducts(true);
-    } catch (err: any) {
-      toast.error(getErrorMessage(err, "O'chirishda xatolik yuz berdi"), 'Xatolik');
-    }
-  }
+const deleteProduct = (prodIdOrProd: any) => {
+  const id = typeof prodIdOrProd === 'string' ? prodIdOrProd : prodIdOrProd.id;
+  const prod = products.value.find((p: any) => p.id === id);
+  const name = prod ? prod.name : 'Mahsulot';
+
+  confirmModal.value = {
+    open: true,
+    title: "Mahsulotni o'chirish",
+    message: `"${name}" mahsulotini o'chirishni tasdiqlaysizmi?`,
+    onConfirm: async () => {
+      try {
+        await api.delete(`/products/${id}`);
+        toast.success("Mahsulot o'chirildi", 'Mahsulot');
+        dataStore.invalidate('products');
+        dataStore.invalidate('dashboard');
+        await loadProducts(true);
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, "O'chirishda xatolik yuz berdi"), 'Xatolik');
+      } finally {
+        confirmModal.value.open = false;
+      }
+    },
+  };
 };
 
 const toggleAvailability = async (prod: any) => {
@@ -815,17 +852,25 @@ const saveCategory = async () => {
   }
 };
 
-const deleteCategory = async (cat: any) => {
-  if (confirm(`"${cat.name}" kategoriyasini o'chirishni tasdiqlaysizmi? (Unga tegishli tovarlar saqlanadi)`)) {
-    try {
-      await api.delete(`/categories/${cat.id}`);
-      toast.success(`"${cat.name}" kategoriyasi o'chirildi`, 'Kategoriya');
-      await loadCategories(true);
-      await loadProducts(true);
-    } catch (err: any) {
-      toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik'), 'Xatolik');
-    }
-  }
+const deleteCategory = (cat: any) => {
+  confirmModal.value = {
+    open: true,
+    title: "Kategoriyani o'chirish",
+    message: `"${cat.name}" kategoriyasini o'chirishni tasdiqlaysizmi? (Unga tegishli tovarlar saqlanadi)`,
+    onConfirm: async () => {
+      try {
+        await api.delete(`/categories/${cat.id}`);
+        toast.success(`"${cat.name}" kategoriyasi o'chirildi`, 'Kategoriya');
+        dataStore.invalidate('categories');
+        await loadCategories(true);
+        await loadProducts(true);
+      } catch (err: any) {
+        toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik'), 'Xatolik');
+      } finally {
+        confirmModal.value.open = false;
+      }
+    },
+  };
 };
 
 onMounted(() => {
