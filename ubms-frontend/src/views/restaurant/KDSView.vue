@@ -19,7 +19,7 @@
 
       <div class="flex items-center gap-2">
         <button
-          @click="loadKDS"
+          @click="loadKDS(true)"
           :disabled="loading"
           class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200 dark:border-slate-700"
         >
@@ -171,7 +171,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import api from '../../services/api';
 import { ChefHat, RefreshCw, Flame, CheckCircle, Clock } from 'lucide-vue-next';
+import { useToast } from '../../composables/useToast';
 
+const toast = useToast();
 const loading = ref(false);
 const kitchenOrders = ref<any[]>([]);
 let pollTimer: any = null;
@@ -180,24 +182,28 @@ const newOrders = computed(() => kitchenOrders.value.filter((k) => k.status === 
 const cookingOrders = computed(() => kitchenOrders.value.filter((k) => k.status === 'cooking'));
 const readyOrders = computed(() => kitchenOrders.value.filter((k) => k.status === 'ready'));
 
-const loadKDS = async () => {
-  loading.value = true;
+const loadKDS = async (isInitial = false) => {
+  if (isInitial) {
+    loading.value = true;
+  }
   try {
     const { data } = await api.get('/restaurant/kds');
     kitchenOrders.value = data || [];
   } catch (err) {
     console.error(err);
   } finally {
-    loading.value = false;
+    if (isInitial) {
+      loading.value = false;
+    }
   }
 };
 
 const changeStatus = async (id: string, status: string) => {
   try {
     await api.patch(`/restaurant/kds/${id}/status`, { status });
-    await loadKDS();
-  } catch (err) {
-    alert('Holatni o\'zgartirishda xatolik');
+    await loadKDS(false);
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || err.message || 'Holatni o\'zgartirishda xatolik', 'Oshxona (KDS)');
   }
 };
 
@@ -209,10 +215,10 @@ const formatTimeAgo = (dateStr: string) => {
 };
 
 onMounted(() => {
-  loadKDS();
-  // Auto-refresh every 6 seconds for kitchen tablets
+  loadKDS(true);
+  // Auto-refresh every 6 seconds for kitchen tablets without skeleton flicker
   pollTimer = setInterval(() => {
-    loadKDS();
+    loadKDS(false);
   }, 6000);
 });
 
