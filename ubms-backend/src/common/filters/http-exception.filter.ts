@@ -34,6 +34,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     response.status(status).json({
+      statusCode: status,
+      message,
       error: {
         code,
         message,

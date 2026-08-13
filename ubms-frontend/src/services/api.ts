@@ -58,4 +58,22 @@ api.interceptors.response.use(
   },
 );
 
+export function getErrorMessage(err: any, defaultMsg = 'Xatolik yuz berdi'): string {
+  if (!err) return defaultMsg;
+  if (typeof err === 'string') return err;
+
+  const res = err.response?.data;
+  if (res) {
+    if (typeof res === 'string') return res;
+    if (res.error?.message) {
+      return Array.isArray(res.error.message) ? res.error.message.join(', ') : res.error.message;
+    }
+    if (res.message) {
+      return Array.isArray(res.message) ? res.message.join(', ') : res.message;
+    }
+  }
+
+  return err.message || defaultMsg;
+}
+
 export default api;

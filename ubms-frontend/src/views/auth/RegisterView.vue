@@ -54,6 +54,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
+import { getErrorMessage } from '../../services/api';
 import PhoneInput from '../../components/PhoneInput.vue';
 import PasswordInput from '../../components/PasswordInput.vue';
 
@@ -69,22 +70,32 @@ const isLoading = ref(false);
 const handleRegister = async () => {
   errorMessage.value = '';
 
+  if (!fullName.value.trim()) {
+    errorMessage.value = 'Iltimos, ism va familiyangizni kiriting';
+    return;
+  }
+
   const clean = cleanUzbekPhone(phone.value);
   if (clean.length < 13) {
     errorMessage.value = 'Iltimos, telefon raqamni to\'liq 9 ta raqamda kiriting (+998 90 123 45 67)';
     return;
   }
 
+  if (!password.value || password.value.length < 8) {
+    errorMessage.value = 'Parol kamida 8 ta belgidan iborat bo\'lishi shart (kamida 8 ta belgi kiriting)';
+    return;
+  }
+
   isLoading.value = true;
   try {
     await authStore.register({
-      fullName: fullName.value,
+      fullName: fullName.value.trim(),
       phone: clean,
       password: password.value,
     });
     router.push('/onboarding');
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Ro\'yxatdan o\'tishda xatolik yuz berdi';
+    errorMessage.value = getErrorMessage(err, 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
   } finally {
     isLoading.value = false;
   }

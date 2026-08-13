@@ -40,6 +40,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
 import { formatUzbekPhone, cleanUzbekPhone } from '../../composables/usePhoneMask';
+import { getErrorMessage } from '../../services/api';
 import PhoneInput from '../../components/PhoneInput.vue';
 import PasswordInput from '../../components/PasswordInput.vue';
 
@@ -53,7 +54,17 @@ const isLoading = ref(false);
 
 const handleLogin = async () => {
   errorMessage.value = '';
+
   const clean = cleanUzbekPhone(phone.value);
+  if (clean.length < 13) {
+    errorMessage.value = 'Iltimos, telefon raqamni to\'liq kiriting (+998 90 123 45 67)';
+    return;
+  }
+
+  if (!password.value) {
+    errorMessage.value = 'Parolni kiriting';
+    return;
+  }
 
   isLoading.value = true;
   try {
@@ -70,7 +81,7 @@ const handleLogin = async () => {
       }
     }
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.message || err.message || 'Kirishda xatolik yuz berdi';
+    errorMessage.value = getErrorMessage(err, 'Kirishda xatolik yuz berdi');
   } finally {
     isLoading.value = false;
   }
