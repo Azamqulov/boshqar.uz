@@ -52,6 +52,10 @@ export const useAuthStore = defineStore('auth', {
         const { data } = await api.post('/auth/register', registerData);
         localStorage.setItem('ubms_access_token', data.accessToken);
         localStorage.setItem('ubms_refresh_token', data.refreshToken);
+        if (data.user) {
+          localStorage.setItem('ubms_user', JSON.stringify(data.user));
+          this.user = data.user;
+        }
         this.token = data.accessToken;
         return data;
       } finally {

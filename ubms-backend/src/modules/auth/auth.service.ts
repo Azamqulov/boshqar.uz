@@ -61,7 +61,18 @@ export class AuthService {
       },
     });
 
-    return this.generateTokens(user.id);
+    const tokens = await this.generateTokens(user.id);
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        phone: user.phone,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        isSuperAdmin: user.isSuperAdmin,
+      },
+    };
   }
 
   async login(dto: LoginDto) {
