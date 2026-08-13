@@ -63,20 +63,20 @@
             v-for="prod in filteredProducts"
             :key="prod.id"
             @click="handleProductClick(prod)"
-            class="p-2.5 rounded-xl border transition-all flex flex-col justify-between group relative"
+            class="p-2.5 rounded-xl border transition-all flex flex-col justify-between group relative select-none"
             :class="[
-              prod.stockQty <= 0
+              !isItemAvailable(prod)
                 ? 'bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 opacity-60 cursor-not-allowed'
                 : 'bg-slate-50 hover:bg-slate-100/90 dark:bg-slate-800/60 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 cursor-pointer shadow-sm hover:shadow-emerald-500/10 btn-interactive'
             ]"
           >
-            <!-- Out of stock overlay badge -->
+            <!-- Out of stock / Stop-list overlay badge -->
             <div
-              v-if="prod.stockQty <= 0"
+              v-if="!isItemAvailable(prod)"
               class="absolute inset-0 z-10 rounded-xl bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none"
             >
               <span class="px-2.5 py-1 rounded-lg bg-rose-500/90 text-white font-bold text-[10px] tracking-wider uppercase shadow-md">
-                Tugagan
+                {{ prod.status === 'inactive' ? 'Stop-List' : 'Tugagan' }}
               </span>
             </div>
 
@@ -90,12 +90,23 @@
               />
               <Package v-else class="w-8 h-8 text-slate-400 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition" />
               
-              <!-- Stock Indicator -->
+              <!-- Stock Indicator / Made-to-order badge -->
               <span
                 class="absolute bottom-1 right-1 text-[9px] font-bold px-1.5 py-0.5 rounded backdrop-blur-md"
-                :class="prod.stockQty <= 0 ? 'bg-rose-500 text-white' : 'bg-slate-900/80 text-white'"
+                :class="[
+                  !isItemAvailable(prod)
+                    ? 'bg-rose-500 text-white'
+                    : isDishItem(prod)
+                    ? 'bg-amber-500/90 text-slate-950 font-bold'
+                    : prod.brand === 'service'
+                    ? 'bg-sky-500/90 text-white'
+                    : 'bg-slate-900/80 text-white'
+                ]"
               >
-                {{ prod.stockQty <= 0 ? 'Qolmagan' : `${prod.stockQty} ${prod.unit?.shortName || 'dona'}` }}
+                <span v-if="prod.status === 'inactive'">Stop-list</span>
+                <span v-else-if="isDishItem(prod)">🍕 Taom</span>
+                <span v-else-if="prod.brand === 'service'">🛠 Xizmat</span>
+                <span v-else>{{ prod.stockQty <= 0 ? 'Qolmagan' : `${prod.stockQty} ${prod.unit?.shortName || 'dona'}` }}</span>
               </span>
 
               <!-- Bestseller Flame Badge if in top selling -->
@@ -118,7 +129,7 @@
               <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(prod.salePrice) }}</span>
               <span
                 class="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                :class="prod.stockQty <= 0 ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
+                :class="!isItemAvailable(prod) ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
               >+</span>
             </div>
           </div>
@@ -476,19 +487,41 @@ const filteredProducts = computed(() => {
   });
 });
 
+const isDishItem = (prod: any) => {
+  return (
+    prod.isMadeToOrder ||
+    prod.brand === 'dish' ||
+    prod.brand === 'kitchen' ||
+    prod.unit?.shortName === 'por' ||
+    prod.unitId === '00000000-0000-0000-0000-000000000024'
+  );
+};
+
+const isItemAvailable = (prod: any) => {
+  if (prod.status === 'inactive') return false;
+  if (isDishItem(prod) || prod.brand === 'service') return true;
+  return (prod.stockQty ?? 0) > 0;
+};
+
 const handleProductClick = (product: any) => {
-  if (product.stockQty <= 0) {
-    toast.warning(`"${product.name}" mahsulotidan omborda qoldiq qolmagan!`, 'Qoldiq tugagan');
+  if (!isItemAvailable(product)) {
+    if (product.status === 'inactive') {
+      toast.warning(`"${product.name}" hozirda stop-listda (oshxonada tugagan)!`, 'Stop-list');
+    } else {
+      toast.warning(`"${product.name}" mahsulotidan omborda qoldiq qolmagan!`, 'Qoldiq tugagan');
+    }
     return;
   }
   addToCart(product);
 };
 
 const addToCart = (product: any) => {
+  const isDish = isDishItem(product) || product.brand === 'service';
   const existingInCart = cartStore.items.find((i) => (i.productId || i.id) === product.id);
   const currentInCartQty = existingInCart ? existingInCart.quantity : 0;
 
-  if (currentInCartQty + 1 > product.stockQty) {
+  // Only check physical stock bounds for tracked goods
+  if (!isDish && currentInCartQty + 1 > product.stockQty) {
     toast.warning(
       `Omborda faqat ${product.stockQty} dona mavjud. Savatga bundan ortiq qo'shib bo'lmaydi!`,
       'Qoldiq chegarasi'
@@ -504,8 +537,12 @@ const handleBarcodeScan = async () => {
   if (!searchQuery.value) return;
   const exact = products.value.find((p) => p.barcode === searchQuery.value || p.sku === searchQuery.value);
   if (exact) {
-    if (exact.stockQty <= 0) {
-      toast.warning(`"${exact.name}" mahsulotidan omborda qoldiq qolmagan!`, 'Qoldiq tugagan');
+    if (!isItemAvailable(exact)) {
+      if (exact.status === 'inactive') {
+        toast.warning(`"${exact.name}" hozirda stop-listda (sotuv to'xtatilgan)!`, 'Stop-list');
+      } else {
+        toast.warning(`"${exact.name}" mahsulotidan omborda qoldiq qolmagan!`, 'Qoldiq tugagan');
+      }
     } else {
       addToCart(exact);
     }

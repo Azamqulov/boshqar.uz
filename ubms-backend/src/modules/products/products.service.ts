@@ -88,12 +88,27 @@ export class ProductsService {
     ]);
 
     const formattedItems = items.map((prod) => {
+      const isMadeToOrder =
+        prod.brand === 'dish' ||
+        prod.brand === 'kitchen' ||
+        prod.brand === 'service' ||
+        prod.unit?.shortName === 'por' ||
+        prod.unitId === '00000000-0000-0000-0000-000000000024';
+
       const stockQty = prod.inventory.reduce((acc, curr) => acc + Number(curr.quantity), 0);
       const reservedQty = prod.inventory.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
+
+      // For made-to-order items (food/dishes/services), stock is virtually unlimited unless marked inactive (stop-list)
+      const effectiveStockQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : stockQty;
+      const effectiveAvailableQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
+
       return {
         ...prod,
-        stockQty,
-        availableQty: stockQty - reservedQty,
+        isMadeToOrder,
+        isAvailable: prod.status === 'active',
+        stockQty: effectiveStockQty,
+        availableQty: effectiveAvailableQty,
+        rawInventoryQty: stockQty,
       };
     });
 
@@ -268,6 +283,17 @@ export class ProductsService {
 
     return this.prisma.product.delete({
       where: { id },
+    });
+  }
+
+  async toggleAvailability(businessId: string, id: string, targetStatus?: ProductStatus) {
+    const product = await this.findOne(businessId, id);
+    const newStatus: ProductStatus = targetStatus ? targetStatus : (product.status === 'active' ? 'inactive' : 'active');
+
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data: { status: newStatus },
+      include: { category: true, unit: true },
     });
   }
 

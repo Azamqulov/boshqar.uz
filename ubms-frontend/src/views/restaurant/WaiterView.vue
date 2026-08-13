@@ -392,6 +392,7 @@ const loadMenu = async () => {
 
 const filteredMenu = computed(() => {
   return products.value.filter((p) => {
+    if (p.status === 'inactive') return false;
     const matchSearch = !menuSearch.value || p.name.toLowerCase().includes(menuSearch.value.toLowerCase());
     const matchCat = !selectedCategory.value || p.categoryId === selectedCategory.value;
     return matchSearch && matchCat;

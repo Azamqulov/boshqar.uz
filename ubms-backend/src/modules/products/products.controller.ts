@@ -91,6 +91,26 @@ export class ProductsController {
     return this.productsService.update(businessId, id, body);
   }
 
+  @Patch(':id/toggle-availability')
+  @RequirePermission('products.update')
+  toggleAvailability(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') id: string,
+    @Body() body?: { status?: any },
+  ) {
+    return this.productsService.toggleAvailability(businessId, id, body?.status);
+  }
+
+  @Patch(':id/status')
+  @RequirePermission('products.update')
+  updateStatus(
+    @CurrentBusinessId() businessId: string,
+    @Param('id') id: string,
+    @Body('status') status: any,
+  ) {
+    return this.productsService.toggleAvailability(businessId, id, status);
+  }
+
   @Delete(':id')
   @RequirePermission('products.delete')
   remove(

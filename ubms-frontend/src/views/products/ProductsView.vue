@@ -62,12 +62,13 @@
               <th class="py-3 px-4">Tannarx</th>
               <th class="py-3 px-4">Sotuv Narxi</th>
               <th class="py-3 px-4">Qoldiq</th>
+              <th class="py-3 px-4 text-center">Sotuvda (Status)</th>
               <th class="py-3 px-4 text-right">Amallar</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
             <tr v-if="filteredProducts.length === 0">
-              <td colspan="8" class="py-8 text-center text-slate-400 dark:text-slate-500">Mahsulotlar topilmadi</td>
+              <td colspan="9" class="py-8 text-center text-slate-400 dark:text-slate-500">Mahsulotlar topilmadi</td>
             </tr>
             <tr v-for="prod in filteredProducts" :key="prod.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-3 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -138,6 +139,19 @@
                 >
                   {{ prod.stockQty <= 0 ? 'Tugagan (0)' : `${prod.stockQty} ${prod.unit?.shortName || 'dona'}` }}
                 </span>
+              </td>
+              <!-- Status / Stop-list Switch Button -->
+              <td class="py-3 px-4 text-center">
+                <button
+                  type="button"
+                  @click="toggleAvailability(prod)"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition cursor-pointer"
+                  :class="prod.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20'"
+                  :title="prod.status === 'active' ? 'Sotuvda bor (Stop-listga olish uchun bosing)' : 'Stop-listda (Sotuvga chiqarish uchun bosing)'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" :class="prod.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                  <span>{{ prod.status === 'active' ? 'Mavjud' : 'Stop-list' }}</span>
+                </button>
               </td>
               <td class="py-3 px-4 text-right space-x-1">
                 <button
@@ -710,6 +724,21 @@ const deleteProduct = async (id: string) => {
     } catch (err: any) {
       toast.error(getErrorMessage(err, "O'chirishda xatolik yuz berdi"), 'Xatolik');
     }
+  }
+};
+
+const toggleAvailability = async (prod: any) => {
+  try {
+    const nextStatus = prod.status === 'active' ? 'inactive' : 'active';
+    await api.patch(`/products/${prod.id}/toggle-availability`, { status: nextStatus });
+    prod.status = nextStatus;
+    toast.success(
+      `"${prod.name}" ${nextStatus === 'active' ? 'sotuvga chiqarildi (Mavjud)' : 'stop-listga olindi (Tugagan)'}!`,
+      'Status'
+    );
+    dataStore.invalidate('products');
+  } catch (err: any) {
+    toast.error(getErrorMessage(err, 'Statusni o\'zgartirishda xatolik'), 'Xatolik');
   }
 };
 
