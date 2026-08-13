@@ -3,7 +3,7 @@
 boshqar.uz — Universal Biznes Boshqaruv Tizimi uchun NestJS asosidagi Multi-tenant SaaS REST API.
 
 ## Xususiyatlari:
-- **Multi-Tenant Architecture**: Shared DB / Shared Schema bilan `business_id` va `branch_id` izolyatsiyasi.
+- **Multi-Tenant Architecture**: Shared DB / Shared Schema bilan `business_id` va `branch_id` izolyatsiyasi (application-level query scoping har bir so'rovda).
 - **Prisma ORM**: 32 ta ma'lumotlar bazasi jadvallari, to'liq munosabatlar va indekslar.
 - **RBAC (Role-Based Access Control)**: Modulli permission guardlar.
 - **Universal POS Engine**: Do'kon, restoran, kafe va sartaroshxona uchun bitta moslashuvchan sotuv tizimi.

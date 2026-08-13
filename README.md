@@ -9,7 +9,7 @@ Universal, multi-tenant SaaS boshqaruv platformasi — turli sohadagi bizneslar 
 Loyiha monorepo formatida quyidagi modullardan iborat:
 
 1. **[`ubms-shared-types/`](./ubms-shared-types)** — Umumiy TypeScript interfeyslar, DTO'lar, barcha 32 ta jadval enumlari va biznes-modullar konfiguratsiyasi.
-2. **[`ubms-backend/`](./ubms-backend)** — NestJS + TypeScript + PostgreSQL (Prisma, 32 ta jadval, RLS) + Redis + Socket.IO + JWT REST API backend.
+2. **[`ubms-backend/`](./ubms-backend)** — NestJS + TypeScript + PostgreSQL (Prisma, 32 ta jadval, application-level multi-tenant businessId scoping) + Redis + Socket.IO + JWT REST API backend.
 3. **[`ubms-frontend/`](./ubms-frontend)** — Vue 3 + TypeScript + Vite + Pinia + Tailwind CSS boshqaruv paneli va Universal POS kassa tizimi.
 4. **[`ubms-desktop/`](./ubms-desktop)** — Tauri 2 (Rust) + Vue 3 Windows Desktop ilovasi (80mm ESC/POS termal printer drayveri va offline kassa).
 5. **[`ubms-telegram-bot/`](./ubms-telegram-bot)** — Node.js / Telegraf kunlik 21:00 KPI hisobotlari va on-demand savdo boti.
