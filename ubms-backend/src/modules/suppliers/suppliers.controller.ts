@@ -3,6 +3,8 @@ import { SuppliersService } from './suppliers.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
+import { CreateSupplierDto, UpdateSupplierDto } from './suppliers.service';
+
 @Controller('suppliers')
 export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
@@ -21,13 +23,13 @@ export class SuppliersController {
 
   @Post()
   @RequirePermission('suppliers.manage')
-  create(@CurrentBusinessId() businessId: string, @Body() body: any) {
+  create(@CurrentBusinessId() businessId: string, @Body() body: CreateSupplierDto) {
     return this.suppliersService.create(businessId, body);
   }
 
   @Put(':id')
   @RequirePermission('suppliers.manage')
-  update(@CurrentBusinessId() businessId: string, @Param('id') id: string, @Body() body: any) {
+  update(@CurrentBusinessId() businessId: string, @Param('id') id: string, @Body() body: UpdateSupplierDto) {
     return this.suppliersService.update(businessId, id, body);
   }
 

@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { OrderType, OrderStatus } from '@prisma/client';
+import { OrderType, OrderStatus, Prisma } from '@prisma/client';
 
 export interface CreateOrderDto {
   orderType: OrderType;
@@ -26,6 +26,16 @@ export interface CreateOrderDto {
   }[];
 }
 
+export interface FindOrdersQueryDto {
+  status?: OrderStatus;
+  orderType?: OrderType;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
@@ -33,13 +43,13 @@ export class OrdersService {
   async findAll(
     businessId: string,
     branchId?: string,
-    query?: { status?: OrderStatus; orderType?: OrderType; dateFrom?: string; dateTo?: string; search?: string; page?: number; limit?: number },
+    query?: FindOrdersQueryDto,
   ) {
     const page = Number(query?.page) || 1;
     const limit = Number(query?.limit) || 30;
     const skip = (page - 1) * limit;
 
-    const where: any = { businessId };
+    const where: Prisma.OrderWhereInput = { businessId };
     if (branchId) where.branchId = branchId;
     if (query?.status) where.status = query.status;
     if (query?.orderType) where.orderType = query.orderType;
@@ -243,7 +253,7 @@ export class OrdersService {
   }
 
   private async completeOrderInternal(
-    tx: any,
+    tx: Prisma.TransactionClient,
     businessId: string,
     branchId: string,
     userId: string,

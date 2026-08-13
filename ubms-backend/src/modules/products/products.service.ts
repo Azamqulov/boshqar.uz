@@ -1,18 +1,60 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ProductStatus } from '@prisma/client';
+
+export interface FindProductsQueryDto {
+  search?: string;
+  categoryId?: string;
+  status?: ProductStatus | string;
+  page?: number;
+  limit?: number;
+}
+
+export interface CreateProductDto {
+  name: string;
+  sku?: string;
+  barcode?: string;
+  categoryId?: string;
+  unitId?: string;
+  branchId?: string;
+  salePrice: number;
+  purchasePrice?: number;
+  minStockLevel?: number;
+  initialStock?: number;
+  status?: ProductStatus;
+  description?: string;
+  image?: string;
+  isKitchenItem?: boolean;
+}
+
+export interface UpdateProductDto extends Partial<CreateProductDto> {}
+
+export interface CreateCategoryDto {
+  name: string;
+  parentId?: string;
+  icon?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateCategoryDto extends Partial<CreateCategoryDto> {}
+
+export interface CreateUnitDto {
+  name: string;
+  shortName: string;
+}
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(businessId: string, branchId?: string, query?: { search?: string; categoryId?: string; status?: string; page?: number; limit?: number }) {
+  async findAll(businessId: string, branchId?: string, query?: FindProductsQueryDto) {
     const page = Number(query?.page) || 1;
     const limit = Number(query?.limit) || 50;
     const skip = (page - 1) * limit;
 
     const where: any = {
       businessId,
-      status: (query?.status as any) || { not: 'archived' },
+      status: query?.status ? query.status : { not: 'archived' },
     };
 
     if (query?.categoryId) {
@@ -97,7 +139,7 @@ export class ProductsService {
     return product;
   }
 
-  async create(businessId: string, userId: string, data: any) {
+  async create(businessId: string, userId: string, data: CreateProductDto) {
     // Generate SKU if not provided
     let sku = data.sku;
     if (!sku) {
@@ -138,13 +180,11 @@ export class ProductsService {
           sku,
           barcode: data.barcode || null,
           categoryId: data.categoryId || null,
-          brand: data.brand || null,
           unitId,
           purchasePrice: data.purchasePrice || 0,
           salePrice: data.salePrice,
-          taxRate: data.taxRate || 0,
-          minStock: data.minStock || 0,
-          imageUrl: data.imageUrl || null,
+          minStock: data.minStockLevel || 0,
+          imageUrl: data.image || null,
           description: data.description || null,
           status: data.status || 'active',
         },
@@ -181,19 +221,18 @@ export class ProductsService {
     });
   }
 
-  async update(businessId: string, id: string, data: any) {
+  async update(businessId: string, id: string, data: UpdateProductDto) {
+    const product = await this.findOne(businessId, id);
     return this.prisma.product.update({
-      where: { id },
+      where: { id: product.id },
       data: {
         name: data.name,
         categoryId: data.categoryId,
-        brand: data.brand,
         unitId: data.unitId,
         purchasePrice: data.purchasePrice,
         salePrice: data.salePrice,
-        taxRate: data.taxRate,
-        minStock: data.minStock,
-        imageUrl: data.imageUrl,
+        minStock: data.minStockLevel,
+        imageUrl: data.image,
         description: data.description,
         status: data.status,
       },

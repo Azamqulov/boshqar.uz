@@ -1,6 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
+export interface CreateSupplierDto {
+  name: string;
+  companyName?: string;
+  phone?: string;
+  address?: string;
+  balance?: number;
+  notes?: string;
+}
+
+export interface UpdateSupplierDto extends Partial<CreateSupplierDto> {}
+
 @Injectable()
 export class SuppliersService {
   constructor(private prisma: PrismaService) {}
@@ -20,7 +31,7 @@ export class SuppliersService {
     return supplier;
   }
 
-  async create(businessId: string, data: any) {
+  async create(businessId: string, data: CreateSupplierDto) {
     return this.prisma.supplier.create({
       data: {
         businessId,
@@ -34,9 +45,10 @@ export class SuppliersService {
     });
   }
 
-  async update(businessId: string, id: string, data: any) {
+  async update(businessId: string, id: string, data: UpdateSupplierDto) {
+    const supplier = await this.findOne(businessId, id);
     return this.prisma.supplier.update({
-      where: { id },
+      where: { id: supplier.id },
       data,
     });
   }

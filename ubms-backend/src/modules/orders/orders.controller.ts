@@ -6,7 +6,7 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { OrdersService, CreateOrderDto } from './orders.service';
+import { OrdersService, CreateOrderDto, FindOrdersQueryDto } from './orders.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
@@ -19,7 +19,7 @@ export class OrdersController {
   findAll(
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
-    @Query() query: any,
+    @Query() query: FindOrdersQueryDto,
   ) {
     return this.ordersService.findAll(businessId, branchId, query);
   }

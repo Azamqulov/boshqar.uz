@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma, UserStatus, BusinessStatus } from '@prisma/client';
 
 @Injectable()
 export class SuperAdminService {
@@ -46,11 +47,15 @@ export class SuperAdminService {
   }
 
   // 2. Owners Monitoring (Phase 1)
-  async getOwners(search?: string, planFilter?: string, statusFilter?: string, page = 1, limit = 20) {
+  async getOwners(search?: string, planFilter?: string, statusFilter?: string | UserStatus, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       ownedBusinesses: { some: {} },
     };
+
+    if (statusFilter) {
+      where.status = statusFilter as UserStatus;
+    }
 
     if (search) {
       where.OR = [
@@ -59,10 +64,6 @@ export class SuperAdminService {
         { email: { contains: search, mode: 'insensitive' } },
         { ownedBusinesses: { some: { name: { contains: search, mode: 'insensitive' } } } },
       ];
-    }
-
-    if (statusFilter) {
-      where.status = statusFilter;
     }
 
     if (planFilter) {
@@ -248,23 +249,23 @@ export class SuperAdminService {
     };
   }
 
-  async updateOwnerStatus(ownerId: string, status: any) {
+  async updateOwnerStatus(ownerId: string, status: string | UserStatus) {
     const owner = await this.prisma.user.findUnique({
       where: { id: ownerId },
       include: { ownedBusinesses: true },
     });
     if (!owner) throw new NotFoundException('Firma egasi topilmadi');
 
-    const bizStatus = status === 'blocked' ? 'suspended' : 'active';
+    const bizStatus: BusinessStatus = status === 'blocked' ? 'suspended' : 'active';
 
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: ownerId },
-        data: { status },
+        data: { status: status as UserStatus },
       }),
       this.prisma.business.updateMany({
         where: { ownerId },
-        data: { status: bizStatus as any },
+        data: { status: bizStatus },
       }),
     ]);
 
@@ -287,8 +288,8 @@ export class SuperAdminService {
   }
 
   // 2. All Businesses List
-  async getAllBusinesses(search?: string, status?: string) {
-    const where: any = {};
+  async getAllBusinesses(search?: string, status?: string | BusinessStatus) {
+    const where: Prisma.BusinessWhereInput = {};
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -297,7 +298,7 @@ export class SuperAdminService {
       ];
     }
     if (status) {
-      where.status = status;
+      where.status = status as BusinessStatus;
     }
 
     const businesses = await this.prisma.business.findMany({
@@ -339,13 +340,13 @@ export class SuperAdminService {
   }
 
   // 3. Update Business Status (Block / Activate / Suspend)
-  async updateBusinessStatus(id: string, status: any) {
+  async updateBusinessStatus(id: string, status: string | BusinessStatus) {
     const business = await this.prisma.business.findUnique({ where: { id } });
     if (!business) throw new NotFoundException('Biznes topilmadi');
 
     return this.prisma.business.update({
       where: { id },
-      data: { status },
+      data: { status: status as BusinessStatus },
     });
   }
 
@@ -363,7 +364,7 @@ export class SuperAdminService {
 
   // 5. All Users List Across Entire Platform
   async getAllUsers(search?: string, roleFilter?: string) {
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     if (search) {
       where.OR = [
         { fullName: { contains: search, mode: 'insensitive' } },
@@ -375,17 +376,17 @@ export class SuperAdminService {
     const users = await this.prisma.user.findMany({
       where,
       include: {
+        ownedBusinesses: { select: { id: true, name: true, status: true } },
         businessUsers: {
           include: {
-            business: { select: { id: true, name: true, businessType: true } },
-            role: { select: { id: true, name: true } },
+            business: { select: { id: true, name: true } },
+            role: { select: { name: true } },
           },
         },
-        _count: {
-          select: { ownedBusinesses: true },
-        },
+        _count: { select: { ownedBusinesses: true } },
       },
       orderBy: { createdAt: 'desc' },
+      take: 100,
     });
 
     return users.map((u) => ({
@@ -406,13 +407,13 @@ export class SuperAdminService {
   }
 
   // 6. Update User Status (Block / Unblock globally)
-  async updateUserStatus(id: string, status: any) {
+  async updateUserStatus(id: string, status: string | UserStatus) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
 
     return this.prisma.user.update({
       where: { id },
-      data: { status },
+      data: { status: status as UserStatus },
     });
   }
 

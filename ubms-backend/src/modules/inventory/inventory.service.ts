@@ -1,11 +1,34 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
+export interface FindInventoryQueryDto {
+  lowStockOnly?: boolean;
+  search?: string;
+}
+
+export interface StockInDto {
+  productId: string;
+  quantity: number;
+  reason?: 'purchase' | 'manual';
+  supplierId?: string;
+  purchasePrice?: number;
+  notes?: string;
+  branchId?: string;
+}
+
+export interface StockOutDto {
+  productId: string;
+  quantity: number;
+  reason: 'damage' | 'expired' | 'manual';
+  notes?: string;
+  branchId?: string;
+}
+
 @Injectable()
 export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
-  async getInventory(businessId: string, branchId?: string, query?: { lowStockOnly?: boolean; search?: string }) {
+  async getInventory(businessId: string, branchId?: string, query?: FindInventoryQueryDto) {
     const where: any = {
       product: {
         businessId,
@@ -74,14 +97,7 @@ export class InventoryService {
     businessId: string,
     branchId: string,
     userId: string,
-    data: {
-      productId: string;
-      quantity: number;
-      reason?: 'purchase' | 'manual';
-      supplierId?: string;
-      purchasePrice?: number;
-      notes?: string;
-    },
+    data: StockInDto,
   ) {
     if (data.quantity <= 0) {
       throw new BadRequestException({ code: 'INVALID_QTY', message: 'Miqdor 0 dan katta bo\'lishi shart' });
@@ -157,12 +173,7 @@ export class InventoryService {
     businessId: string,
     branchId: string,
     userId: string,
-    data: {
-      productId: string;
-      quantity: number;
-      reason: 'damage' | 'expired' | 'manual';
-      notes?: string;
-    },
+    data: StockOutDto,
   ) {
     if (data.quantity <= 0) {
       throw new BadRequestException({ code: 'INVALID_QTY', message: 'Miqdor 0 dan katta bo\'lishi shart' });

@@ -9,7 +9,15 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
+import {
+  ProductsService,
+  FindProductsQueryDto,
+  CreateProductDto,
+  UpdateProductDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CreateUnitDto,
+} from './products.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
@@ -22,7 +30,7 @@ export class ProductsController {
   findAll(
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
-    @Query() query: any,
+    @Query() query: FindProductsQueryDto,
   ) {
     return this.productsService.findAll(businessId, branchId, query);
   }
@@ -62,7 +70,7 @@ export class ProductsController {
   create(
     @CurrentBusinessId() businessId: string,
     @CurrentUser('userId') userId: string,
-    @Body() body: any,
+    @Body() body: CreateProductDto,
   ) {
     return this.productsService.create(businessId, userId, body);
   }
@@ -72,7 +80,7 @@ export class ProductsController {
   update(
     @CurrentBusinessId() businessId: string,
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateProductDto,
   ) {
     return this.productsService.update(businessId, id, body);
   }
@@ -99,7 +107,7 @@ export class CategoriesController {
 
   @Post()
   @RequirePermission('products.create')
-  create(@CurrentBusinessId() businessId: string, @Body() body: any) {
+  create(@CurrentBusinessId() businessId: string, @Body() body: CreateCategoryDto) {
     return this.productsService.createCategory(businessId, body);
   }
 
@@ -108,7 +116,7 @@ export class CategoriesController {
   update(
     @CurrentBusinessId() businessId: string,
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateCategoryDto,
   ) {
     return this.productsService.updateCategory(businessId, id, body);
   }
@@ -131,7 +139,7 @@ export class UnitsController {
 
   @Post()
   @RequirePermission('products.create')
-  create(@CurrentBusinessId() businessId: string, @Body() body: any) {
+  create(@CurrentBusinessId() businessId: string, @Body() body: CreateUnitDto) {
     return this.productsService.createUnit(businessId, body);
   }
 }

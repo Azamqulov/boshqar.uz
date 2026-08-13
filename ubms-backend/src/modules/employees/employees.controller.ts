@@ -1,5 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
-import { EmployeesService } from './employees.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Headers,
+  BadRequestException,
+} from '@nestjs/common';
+import { EmployeesService, CreateEmployeeDto, UpdateEmployeeDto } from './employees.service';
 import { CurrentBusinessId, CurrentBranchId } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
@@ -19,7 +29,7 @@ export class EmployeesController {
   @Post()
   create(
     @Headers('x-business-id') businessId: string,
-    @Body() body: any,
+    @Body() body: CreateEmployeeDto,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
     return this.employeesService.create(businessId, body);
@@ -29,7 +39,7 @@ export class EmployeesController {
   update(
     @Headers('x-business-id') businessId: string,
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: UpdateEmployeeDto,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
     return this.employeesService.update(businessId, id, body);

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmployeeStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 
@@ -15,6 +16,21 @@ function normalizePhone(raw: string): string {
   }
   digits = digits.substring(0, 9);
   return '+998' + digits;
+}
+
+export interface CreateEmployeeDto {
+  fullName: string;
+  phone: string;
+  password?: string;
+  role?: string;
+  position?: string;
+  branchId?: string;
+  salary?: number | string;
+  allowedModules?: string[];
+}
+
+export interface UpdateEmployeeDto extends Partial<CreateEmployeeDto> {
+  status?: EmployeeStatus;
 }
 
 @Injectable()
@@ -76,7 +92,7 @@ export class EmployeesService {
     });
   }
 
-  async create(businessId: string, data: any) {
+  async create(businessId: string, data: CreateEmployeeDto) {
     if (!data.fullName || !data.phone) {
       throw new BadRequestException('Ism va telefon raqam kiritilishi shart');
     }
@@ -203,7 +219,7 @@ export class EmployeesService {
     );
   }
 
-  async update(businessId: string, id: string, data: any) {
+  async update(businessId: string, id: string, data: UpdateEmployeeDto) {
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: { user: true },
@@ -214,7 +230,7 @@ export class EmployeesService {
     }
 
     const selectedModules = data.allowedModules;
-    let permissions: any[] = [];
+    let permissions: Array<{ id: string; code: string; module: string; description: string }> = [];
     if (selectedModules) {
       permissions = await this.prisma.permission.findMany({
         where: { module: { in: selectedModules } },

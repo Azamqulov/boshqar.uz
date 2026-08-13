@@ -1,5 +1,10 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
-import { InventoryService } from './inventory.service';
+import {
+  InventoryService,
+  FindInventoryQueryDto,
+  StockInDto,
+  StockOutDto,
+} from './inventory.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
@@ -12,7 +17,7 @@ export class InventoryController {
   getInventory(
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
-    @Query() query: any,
+    @Query() query: FindInventoryQueryDto,
   ) {
     return this.inventoryService.getInventory(businessId, branchId, query);
   }
@@ -23,9 +28,9 @@ export class InventoryController {
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
     @CurrentUser('userId') userId: string,
-    @Body() body: any,
+    @Body() body: StockInDto,
   ) {
-    return this.inventoryService.stockIn(businessId, branchId || body.branchId, userId, body);
+    return this.inventoryService.stockIn(businessId, branchId || body.branchId || '', userId, body);
   }
 
   @Post('out')
@@ -34,9 +39,9 @@ export class InventoryController {
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
     @CurrentUser('userId') userId: string,
-    @Body() body: any,
+    @Body() body: StockOutDto,
   ) {
-    return this.inventoryService.stockOut(businessId, branchId || body.branchId, userId, body);
+    return this.inventoryService.stockOut(businessId, branchId || body.branchId || '', userId, body);
   }
 
   @Get('transactions')

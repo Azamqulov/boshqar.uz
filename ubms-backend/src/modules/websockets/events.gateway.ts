@@ -33,17 +33,17 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { status: 'joined', branchId };
   }
 
-  emitOrderCreated(businessId: string, branchId: string, order: any) {
+  emitOrderCreated(businessId: string, branchId: string, order: Record<string, unknown>) {
     this.server.to(`business_${businessId}`).emit('order.created', order);
     this.server.to(`branch_${branchId}`).emit('order.created', order);
   }
 
-  emitOrderCompleted(businessId: string, branchId: string, order: any) {
+  emitOrderCompleted(businessId: string, branchId: string, order: Record<string, unknown>) {
     this.server.to(`business_${businessId}`).emit('order.completed', order);
     this.server.to(`branch_${branchId}`).emit('order.completed', order);
   }
 
-  emitKitchenStatusChanged(branchId: string, kitchenOrder: any) {
+  emitKitchenStatusChanged(branchId: string, kitchenOrder: Record<string, unknown>) {
     this.server.to(`branch_${branchId}`).emit('kitchen.status_changed', kitchenOrder);
   }
 }

@@ -1,14 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma, ExpenseCategory } from '@prisma/client';
+
+export interface CreateExpenseDto {
+  category: ExpenseCategory;
+  amount: number;
+  description?: string;
+  branchId?: string;
+}
 
 @Injectable()
 export class FinanceService {
   constructor(private prisma: PrismaService) {}
 
   async getSummary(businessId: string, branchId?: string, dateFrom?: string, dateTo?: string) {
-    const whereRevenue: any = { businessId };
-    const whereExpense: any = { businessId };
-    const whereOrders: any = { businessId, status: 'completed' };
+    const whereRevenue: Prisma.RevenueWhereInput = { businessId };
+    const whereExpense: Prisma.ExpenseWhereInput = { businessId };
+    const whereOrders: Prisma.OrderWhereInput = { businessId, status: 'completed' };
 
     if (branchId) {
       whereRevenue.branchId = branchId;
@@ -17,7 +25,7 @@ export class FinanceService {
     }
 
     if (dateFrom || dateTo) {
-      const dateFilter: any = {};
+      const dateFilter: Prisma.DateTimeFilter = {};
       if (dateFrom) dateFilter.gte = new Date(dateFrom);
       if (dateTo) dateFilter.lte = new Date(dateTo);
 
@@ -70,7 +78,7 @@ export class FinanceService {
   }
 
   async getExpenses(businessId: string, branchId?: string) {
-    const where: any = { businessId };
+    const where: Prisma.ExpenseWhereInput = { businessId };
     if (branchId) where.branchId = branchId;
 
     return this.prisma.expense.findMany({
@@ -84,7 +92,7 @@ export class FinanceService {
     businessId: string,
     branchId: string,
     userId: string,
-    data: { category: any; amount: number; description?: string },
+    data: CreateExpenseDto,
   ) {
     return this.prisma.expense.create({
       data: {

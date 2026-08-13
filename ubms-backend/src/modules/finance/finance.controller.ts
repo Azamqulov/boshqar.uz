@@ -3,6 +3,8 @@ import { FinanceService } from './finance.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission } from '../../common/decorators/custom.decorator';
 
+import { CreateExpenseDto } from './finance.service';
+
 @Controller('finance')
 export class FinanceController {
   constructor(private readonly financeService: FinanceService) {}
@@ -33,8 +35,8 @@ export class FinanceController {
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
     @CurrentUser('userId') userId: string,
-    @Body() body: any,
+    @Body() body: CreateExpenseDto,
   ) {
-    return this.financeService.createExpense(businessId, branchId || body.branchId, userId, body);
+    return this.financeService.createExpense(businessId, branchId || body.branchId || '', userId, body);
   }
 }
