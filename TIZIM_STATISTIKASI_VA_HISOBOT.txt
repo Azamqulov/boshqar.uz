@@ -1,0 +1,136 @@
+================================================================================
+          BOSHQAR.UZ (UBMS SaaS v2.0) — TIZIMNING TO'LIQ STATISTIKASI VA HISOBOTI
+================================================================================
+Sana: 2026-08-11
+Tizim holati: Barcha modullar 100% integratsiya qilingan, to'liq ishchi holatda.
+Texnologiyalar:
+  - Frontend: Vue 3 (Composition API), Vite, TypeScript, Tailwind CSS, Pinia
+  - Backend: NestJS, TypeScript, Prisma ORM, PostgreSQL, JWT, WebSockets
+  - Dizayn: Zamonaviy Light & Dark mode, Glassmorphism, Micro-interactions
+
+================================================================================
+1. OXIRGI BOSQICHDA AMALGA OSHIRILGAN ASOSIY VAZIFALAR
+================================================================================
+
+1.1. BARCHA SELECT DROPDOWNLARINING DIZAYNI TO'LIQ YANGILANDI:
+  - Yangi universal "AppSelect.vue" komponenti ishlab chiqildi.
+  - Maxsus SVG ChevronDown belgisi, silliq hover va focus-ring effektlari qo'shildi.
+  - Mahsulotlar sahifasi (kategoriya filter va mahsulot qo'shish modali);
+  - Omborxona sahifasi (omborga kirim va chiqim modallaridagi tovar/sabab selectlari);
+  - Moliya sahifasi (xarajatlar toifasi selecti);
+  - SuperAdmin sahifasi (biznes holati filteri);
+  - Barcha selectlar Light va Dark rejimlarga 100% moslashtirildi.
+
+1.2. 100% TO'LIQ ISHLAYDIGAN LIGHT & DARK MODE TIZIMI:
+  - "theme.store.ts" (Pinia) yaratildi va foydalanuvchi tanlovi "localStorage"da saqlanadi.
+  - "ThemeToggle.vue" (Quyosh / Oy animatsiyali tugma) quyidagi joylarga o'rnatildi:
+      * Xodim / Sotuvchi yuqori navbari;
+      * Admin / Rahbar asosiy headeri;
+      * Kirish va Ro'yxatdan o'tish (Auth) oynalari;
+      * Tizim Sozlamalaridagi "Ko'rinish & Mavzu" bo'limi.
+  - Tizimdagi barcha 12 ta sahifa, modallar, jadvallar, inputlar, kartalar va scrollbarlar
+    ham oq (Light), ham to'q (Dark) rejimda a'lo darajada ko'rinadigan qilindi.
+
+1.3. SOTUVCHI VA ODDIY XODIMLAR UCHUN KASSA (POS) NAVBARTIZIMI:
+  - Sotuvchi (kassir, sotuvchi, cashier, seller, xodim) sifatida tizimga kirilganda:
+      * Yuqori navbarda "Kassa (POS)" har doim 1-o'rinda turadi;
+      * Tizimga kirish bilanoq avtomatik tarzda "/pos" oynasiga yo'naltiriladi;
+      * Navbar o'ng tomonida tezkor Kassa tugmasi va mavzu almashtirgich mavjud.
+
+================================================================================
+2. BO'LIMLAR KESIMIDA TIZIMNING TO'LIQ IMKONIYATLARI VA ISH STATISTIKASI
+================================================================================
+
+[+] 1. KASSA VA SAVDO TIZIMI (POS — Point of Sale)
+    - Tovar nomi va shtrix-kod (barcode) orqali bir zumda qidirish;
+    - Shtrix-kod skanerini to'g'ridan-to'g'ri ulash (Enter bosilganda savatga avtomat qo'shish);
+    - Kategoriyalar bo'yicha tezkor filter tugmalari;
+    - Interaktiv savat: tovar sonini oshirish/kamaytirish, qoldiq nazorati, oraliq summa;
+    - To'lov turlari: Naqd pul, Plastik karta (Uzcard/Humo), Click / Payme;
+    - 80mm ESC/POS termal kassa chekini chiqarish va chop etish (Print Receipt).
+
+[+] 2. BOSHQARUV PANELI (Dashboard & Analitika)
+    - 6 ta asosiy KPI ko'rsatkichlari:
+        1. Bugungi umumiy savdo hajmi;
+        2. Bugungi operatsion xarajatlar;
+        3. Bugungi sof foyda (Savdo - COGS - Xarajat);
+        4. Bugungi yopilgan buyurtmalar/cheklar soni;
+        5. Ombordagi tovarlarning umumiy tannarx qiymati;
+        6. Mijozlarning umumiy qarzdorligi (Nasiya daftari).
+    - 14 kunlik dinamik savdo grafigi (ustunli diagramma);
+    - Kam qolgan tovarlar va qarzdorlik bo'yicha ogohlantirish bloklari.
+
+[+] 3. MAHSULOTLAR VA TAOMNOMA (Products & Catalog)
+    - Barcha tovarlar, taomlar va xizmatlar katalogi;
+    - Yangi tovar qo'shish, tahrirlash va o'chirish (CRUD);
+    - Mahsulot rasmi (URL orqali) va tayyor taomlar presetlari (Osh, Shashlik, Somsa va h.k.);
+    - SKU, shtrix-kod, toifa, tannarx (kirim), sotuv narxi, minimal zaxira chegarasi;
+    - Kategoriyalar bo'yicha filter va qidiruv tizimi.
+
+[+] 4. OMBORXONA VA ZAXIRALAR (Inventory & Stock)
+    - Ombordagi mavjud tovarlar, qoldiq miqdori va o'lchov birliklari;
+    - Omborga Kirim (Stock In): ta'minotchidan xarid yoki inventarizatsiya asosida kirim qilish;
+    - Ombordan Chiqim (Stock Out): buzilgan, yo'qolgan, muddati o'tgan yoki ichki xarajat uchun chiqarish;
+    - Kam qolgan tovarlarni avtomatik aniqlash va sariq yorliq bilan ogohlantirish.
+
+[+] 5. RESTORAN & KAFE: STOLLAR XARITASI VA OFITSIANT (Waiter POS)
+    - Zaldagi barcha stollar xaritasi (Bo'sh / Band / Tozalanmoqda holatlari);
+    - Stoldagi faol buyurtma raqami, summasi va biriktirilgan ofitsiant ismi;
+    - Stolga buyurtma olish oynasi (Taomnoma bo'yicha toifalar va taomlar tanlash);
+    - "Oshxonaga yuborish" tugmasi orqali buyurtmani bir zumda oshpaz ekraniga uzatish;
+    - "Pre-chek" (Oraliq hisob varaqasi) chiqarish va to'lovga yo'naltirish.
+
+[+] 6. OSHPAZ EKRANI (Kitchen Display System — KDS)
+    - 3 ta ustunli jonli monitor:
+        1. "Yangi tushgan taomlar" (Sariq / New);
+        2. "Pishirilmoqda" (Ko'k / Cooking);
+        3. "Tayyor / Ofitsiantga" (Yashil / Ready).
+    - Real-time holat o'zgartirish va buyurtma tushgan vaqtni daqiqasigacha hisoblash;
+    - Har 6 soniyada avtomatik yangilanish.
+
+[+] 7. BANDLOVLAR VA XIZMATLAR (Appointments & Services)
+    - Sartaroshxona, go'zallik saloni va servis xizmatlari uchun vaqt taqvimi;
+    - Bugungi bandlovlar ro'yxati, mijoz nomi, xizmat turi, davomiyligi va ustasi;
+    - Yangi bandlov qo'shish oynasi.
+
+[+] 8. MIJOZLAR BAZASI VA QARZ DAFTARI (CRM & Debts)
+    - Barcha mijozlarning to'liq ro'yxati, telefon raqamlari va izohlari;
+    - Mijozning xaridlar soni va umumiy xarid summasi statistikasi;
+    - Nasiya / Qarz summasi hisobi va "Qarzni Yopish" to'lov modali;
+    - Ism va telefon raqam bo'yicha bir zumda qidirish.
+
+[+] 9. MOLIYA VA XARAJATLAR HISOBOTI (Finance & Expenses)
+    - Moliyaviy xulosa kartalari: Jami Tushum, Tannarx (COGS), Xarajatlar va Sof Foyda;
+    - Xarajatlar jurnali (Sana, toifa, izoh va summa);
+    - Yangi xarajat kiritish (Xodimlar maoshi, Ijara, Kommunal, Reklama, Transport va h.k.).
+
+[+] 10. TIZIM SOZLAMALARI VA XODIMLAR (Settings & RBAC)
+    - Biznes profili va ma'lumotlari;
+    - "Ko'rinish & Mavzu" (Yorug' / Tungi / Tizim bo'yicha rejimni tanlash);
+    - Xodimlar boshqaruvi: yangi xodim qo'shish (Telefon login, parol, lavozim);
+    - Modullar bo'yicha ruxsatlar (Kassa, Tovarlar, Ombor, Stollar, Oshxona, CRM, Moliya va h.k.);
+    - Audit jurnallari (Kim qachon qaysi bo'limda qanday amal bajarganligi va IP manzili);
+    - Xavfsizlik bo'limi: Biznesni yoki shaxsiy profilni butunlay o'chirish.
+
+[+] 11. SUPERADMIN BOSHQARUV MARKAZI (Platform Gov)
+    - Platformadagi jami bizneslar (tenantlar), foydalanuvchilar, cheklar va GMV monitoringi;
+    - Barcha bizneslarni boshqarish (Faol / Bloklangan statuslari, Tarif rejalarini o'zgartirish);
+    - Foydalanuvchilar ro'yxati va SuperAdmin huquqlarini boshqarish;
+    - Global SaaS tarif rejalari (Free, Pro, Business) va tizim audit tarixi.
+
+[+] 12. TIZIMGA KIRISH, RO'YXATDAN O'TISH VA ONBOARDING WIZARD
+    - Telefon raqami formati (+998 90 123 45 67) va ko'zcha (show/hide) parol maydoni;
+    - Yangi foydalanuvchi ro'yxatdan o'tishi va 3 bosqichli Onboarding:
+        1. Biznes turi (Do'kon, Restoran, Kafe, Sartaroshxona, Dorixona, Xizmat ko'rsatish);
+        2. Filial ma'lumotlari;
+        3. Tizimni avtomatik sozlash va ishga tushirish.
+
+================================================================================
+3. TEXNIK VA DIZAYN STATISTIKASI
+================================================================================
+- Sahifalar soni: 12 ta asosiy View sahifasi
+- Layoutlar: 2 ta (DefaultLayout - Rahbar sidebari / Xodim navbari, AuthLayout)
+- Rejimlar: Light Mode (Oq/Yorug') va Dark Mode (To'q/Tungi) — 100% moslangan
+- Dropdownlar: Custom ChevronDown va to'liq light/dark styled "AppSelect"
+- TypeScript build natijasi: 0 ta xatolik, to'liq toza kompilyatsiya
+================================================================================

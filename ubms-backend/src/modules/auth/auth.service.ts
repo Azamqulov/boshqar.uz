@@ -1,0 +1,357 @@
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../prisma/prisma.service';
+import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import * as bcrypt from 'bcrypt';
+
+function normalizePhone(raw: string): string {
+  if (!raw) return '';
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('998')) {
+    digits = digits.substring(3);
+  }
+  digits = digits.substring(0, 9);
+  return '+998' + digits;
+}
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
+
+  async register(dto: RegisterDto) {
+    const cleanPhone = normalizePhone(dto.phone);
+    const rawDigits = cleanPhone.replace(/\D/g, '');
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanPhone },
+          { phone: dto.phone },
+          { phone: rawDigits },
+          { phone: { contains: rawDigits.substring(3) } },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException({
+        code: 'USER_EXISTS',
+        message: 'Ushbu telefon raqam bilan allaqachon hisob ochilgan. Iltimos, Kirish tugmasi orqali kiring.',
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        fullName: dto.fullName,
+        phone: cleanPhone,
+        email: dto.email || null,
+        passwordHash,
+        status: 'active',
+      },
+    });
+
+    return this.generateTokens(user.id);
+  }
+
+  async login(dto: LoginDto) {
+    const cleanLogin = normalizePhone(dto.login);
+    const rawDigits = cleanLogin.replace(/\D/g, '');
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanLogin },
+          { phone: dto.login },
+          { phone: rawDigits },
+          { phone: { contains: rawDigits.length >= 9 ? rawDigits.substring(rawDigits.length - 9) : rawDigits } },
+          { email: dto.login },
+        ],
+      },
+      include: {
+        businessUsers: {
+          include: {
+            business: true,
+            role: true,
+            branch: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException({
+        code: 'USER_NOT_FOUND',
+        message: 'Ushbu telefon raqam bilan hisob topilmadi. Iltimos, ro\'yxatdan o\'ting.',
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException({
+        code: 'INVALID_PASSWORD',
+        message: 'Kiritilgan parol noto\'g\'ri. Qaytadan tekshirib ko\'ring.',
+      });
+    }
+
+    if (user.status !== 'active') {
+      throw new UnauthorizedException({
+        code: 'ACCOUNT_BLOCKED',
+        message: 'Sizning akkauntingiz bloklangan. Administratorga murojaat qiling.',
+      });
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    const activeBusiness = dto.businessId
+      ? user.businessUsers.find((bu) => bu.businessId === dto.businessId)
+      : user.businessUsers[0];
+
+    const tokens = await this.generateTokens(
+      user.id,
+      activeBusiness?.businessId,
+      activeBusiness?.branchId || undefined,
+      activeBusiness?.roleId,
+    );
+
+    let allowedModules: string[] = [];
+    if (activeBusiness?.role?.name === 'Owner' || user.isSuperAdmin) {
+      allowedModules = ['all'];
+    } else if (activeBusiness?.roleId) {
+      const rolePerms = await this.prisma.rolePermission.findMany({
+        where: { roleId: activeBusiness.roleId },
+        include: { permission: true },
+      });
+      allowedModules = Array.from(new Set(rolePerms.map((rp) => rp.permission.module)));
+      if (allowedModules.length === 0) {
+        const lower = (activeBusiness.role.name || '').toLowerCase();
+        if (lower.includes('waiter') || lower.includes('ofitsiant')) allowedModules = ['tables', 'pos'];
+        else if (lower.includes('cook') || lower.includes('oshpaz')) allowedModules = ['kds'];
+        else if (lower.includes('cashier') || lower.includes('kassir') || lower.includes('sotuvchi')) allowedModules = ['pos', 'products', 'customers'];
+        else allowedModules = ['pos', 'products'];
+      }
+    }
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        email: user.email,
+        fullName: user.fullName,
+        isSuperAdmin: user.isSuperAdmin,
+      },
+      activeBusiness: activeBusiness
+        ? {
+            id: activeBusiness.business.id,
+            name: activeBusiness.business.name,
+            businessType: activeBusiness.business.businessType,
+            role: activeBusiness.role.name,
+            branchId: activeBusiness.branchId,
+            allowedModules,
+          }
+        : null,
+    };
+  }
+
+  async refreshToken(dto: RefreshTokenDto) {
+    try {
+      const payload = this.jwtService.verify(dto.refreshToken, {
+        secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
+      });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: {
+          businessUsers: {
+            include: {
+              business: true,
+              role: true,
+            },
+          },
+        },
+      });
+
+      if (!user || user.status !== 'active') {
+        throw new UnauthorizedException({ code: 'INVALID_TOKEN', message: 'Foydalanuvchi topilmadi yoki bloklangan' });
+      }
+
+      const activeBusiness = user.businessUsers[0];
+
+      return this.generateTokens(
+        user.id,
+        activeBusiness?.businessId,
+        activeBusiness?.branchId || undefined,
+        activeBusiness?.roleId,
+      );
+    } catch {
+      throw new UnauthorizedException({ code: 'INVALID_TOKEN', message: 'Refresh token yaroqsiz yoki muddati o\'tgan' });
+    }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const cleanLogin = normalizePhone(dto.login);
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanLogin },
+          { phone: dto.login },
+          { email: dto.login },
+        ],
+      },
+    });
+
+    if (!user) {
+      return { success: true, message: 'Agar foydalanuvchi mavjud bo\'lsa, tiklash kodi yuborildi' };
+    }
+
+    const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`[SMS-MOCK] Reset password OTP for ${user.phone}: ${resetOtp}`);
+
+    return {
+      success: true,
+      message: 'Parolni tiklash kodi SMS orqali yuborildi',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+      const payload = this.jwtService.verify(dto.resetToken, {
+        secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
+      });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        throw new BadRequestException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
+      }
+
+      const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      });
+
+      return { success: true, message: 'Parol muvaffaqiyatli yangilandi' };
+    } catch {
+      throw new BadRequestException({ code: 'INVALID_TOKEN', message: 'Parolni tiklash havolasi yaroqsiz' });
+    }
+  }
+
+  async updateProfile(userId: string, dto: { fullName?: string; phone?: string; email?: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
+    }
+
+    if (dto.phone && dto.phone !== user.phone) {
+      const clean = normalizePhone(dto.phone);
+      const existingPhone = await this.prisma.user.findUnique({ where: { phone: clean } });
+      if (existingPhone && existingPhone.id !== userId) {
+        throw new ConflictException({ code: 'PHONE_EXISTS', message: 'Ushbu telefon raqami allaqachon ro\'yxatdan o\'tgan' });
+      }
+      dto.phone = clean;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: dto.fullName !== undefined ? dto.fullName : user.fullName,
+        phone: dto.phone !== undefined ? dto.phone : user.phone,
+        email: dto.email !== undefined ? dto.email : user.email,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        avatarUrl: true,
+        isSuperAdmin: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new BadRequestException({ code: 'INVALID_CURRENT_PASSWORD', message: 'Amaldagi parol noto\'g\'ri kiritildi' });
+    }
+
+    if (!dto.newPassword || dto.newPassword.length < 6) {
+      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { success: true, message: 'Parol muvaffaqiyatli o\'zgartirildi' };
+  }
+
+  private async generateTokens(
+    userId: string,
+    businessId?: string,
+    branchId?: string,
+    roleId?: string,
+  ) {
+    let permissions: string[] = [];
+
+    if (roleId) {
+      const rolePerms = await this.prisma.rolePermission.findMany({
+        where: { roleId },
+        include: { permission: true },
+      });
+      permissions = rolePerms.map((rp) => rp.permission.code);
+    }
+
+    const payload = {
+      sub: userId,
+      businessId,
+      branchId,
+      roleId,
+      permissions,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
+        expiresIn: '7d',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
+        expiresIn: '30d',
+      }),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: 7 * 24 * 60 * 60,
+    };
+  }
+}

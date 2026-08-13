@@ -1,0 +1,1546 @@
+TEXNIK TOPSHIRIQ (TZ)
+Universal Business Management System — UBMS
+Versiya: 2.0 (Detallashtirilgan) — asl v1.0 hujjat asosida kengaytirilgan
+Platforma: Web + Desktop (Tauri 2)   |   Model: Multi-tenant SaaS
+Yo'nalish: Restoran, do'kon, kafe, sartaroshxona va boshqa kichik/o'rta bizneslarni boshqarish
+Ushbu hujjat maqsadi: dasturchi jamoasi yoki AI coding agent (masalan Antigravity) uchun UBMS loyihasining funksional, texnik, ma'lumotlar bazasi va API darajasidagi barcha talablarini aniq, bir xil talqin qilinadigan tarzda tavsiflash. Har bir modul: (a) maqsad, (b) ma'lumot maydonlari va validatsiya, (c) holatlar (status) mashinasi, (d) chegaraviy holatlar (edge cases), (e) ruxsatlar bo'yicha yozilgan.
+0. Umumiy yozuv qoidalari va atamalar
+Tenant — bitta biznes (businesses jadvalidagi bitta yozuv). Har bir so'rov tenant kontekstida ishlaydi.
+Branch (filial) — tenant ichidagi jismoniy nuqta. Ko'p ma'lumotlar branch darajasida izolyatsiya qilinadi.
+RBAC — Role-Based Access Control: role → permission[] → user.
+Soft delete — status='archived'/'inactive' orqali, jismoniy DELETE faqat audit_logs va inventory_transactions kabi tarixiy jadvallarda taqiqlanadi.
+Pul miqdorlari — barcha narxlar DECIMAL(14,2), floating-point ishlatilmaydi.
+Barcha timestamp'lar — UTC da saqlanadi, frontend business.timezone bo'yicha konvertatsiya qiladi.
+API xato formati — quyidagi bo'lim 27.4 da standartlashtirilgan.
+1. Loyihaning maqsadi
+UBMS — turli tur bizneslarni (do'kon, restoran, kafe, sartaroshxona, konditer, dorixona, xizmat ko'rsatish) bitta platformadan, bitta Core arxitektura ustida boshqarish imkonini beruvchi universal, multi-tenant SaaS tizim.
+1.1 Muvaffaqiyat mezonlari (Success metrics)
+Yangi biznes turi qo'shilganda Core kodga tegmasdan, faqat yangi modul qo'shish orqali amalga oshirilishi.
+Bitta tenant ma'lumotlari boshqa tenantga hech qanday sharoitda (shu jumladan API xatosi orqali ham) ko'rinmasligi — 0 ta cross-tenant leak.
+MVP: oddiy do'kon real vaqt rejimida to'liq ishlashi (login dan hisobotgacha).
+POS tranzaksiyasi o'rtacha 2 soniyadan kam vaqtda yakunlanishi (checkout → chek chiqishi).
+1.2 Loyiha doirasidan tashqarida (Out of scope, v1)
+To'liq buxgalteriya/soliq hisoboti (faqat asosiy Finance moduli bilan cheklanadi).
+Native mobil ilova (faqat responsive web, keyinchalik V3 da alohida).
+Marketplace/e-commerce vitrina (faqat ichki boshqaruv tizimi).
+2. Tizimning asosiy modullari
+Modul
+Qisqacha tavsif
+Bosqich
+Authentication
+Ro'yxatdan o'tish, login, sessiya, token
+MVP
+Business Management
+Biznes/tenant yaratish va sozlash
+MVP
+Dashboard
+KPI va grafiklar
+MVP
+POS / Kassa
+Sotuv, savat, to'lov
+MVP
+Products
+Mahsulot katalogi
+MVP
+Inventory
+Ombor qoldig'i va harakatlari
+MVP
+Purchases
+Ta'minotchidan xarid (kirim)
+V2
+Sales
+Sotuv tarixi (orders asosida)
+MVP
+Customers
+Mijozlar bazasi
+MVP
+Suppliers
+Ta'minotchilar
+V2
+Employees
+Xodimlar
+MVP
+Roles & Permissions
+RBAC
+MVP
+Finance
+Daromad/xarajat/foyda
+MVP (basic)
+Reports
+Hisobotlar
+MVP (basic)
+Notifications
+Bildirishnomalar
+V2
+Branches
+Filiallar
+MVP (asosiy), V3 (multi-branch to'liq)
+Restaurant Module
+Stol/menyu/oshxona
+V2
+Service Module
+Xizmat ko'rsatish umumiy
+V2
+Appointment Module
+Bandlov
+V2
+Settings
+Tizim sozlamalari
+MVP
+Audit Logs
+Harakatlar tarixi
+MVP (asosiy), V2 (to'liq)
+3. Authentication
+3.1 Ro'yxatdan o'tish (Register)
+Maydonlar: full_name (majburiy, 2–150 belgi), phone (majburiy, E.164, UNIQUE), email (ixtiyoriy, UNIQUE), password (majburiy, min 8 belgi, kamida 1 harf + 1 raqam).
+Telefon raqami SMS orqali tasdiqlanadi (OTP, 6 xonali kod, 5 daqiqa amal qiladi, 3 marta noto'g'ri urinishdan keyin 15 daqiqa bloklash).
+Parol bcrypt (cost=12) yoki argon2id bilan hash qilinadi, hech qachon plaintext saqlanmaydi/log qilinmaydi.
+Muvaffaqiyatli ro'yxatdan o'tishdan so'ng foydalanuvchi avtomatik login qilinadi va Business Onboarding (bo'lim 4) ga yo'naltiriladi.
+3.2 Login
+Kirish: (email YOKI phone) + password. Muvaffaqiyatsiz urinish soni user bo'yicha kuzatiladi: 5 ta ketma-ket noto'g'ri urinishdan keyin akkaunt 30 daqiqaga vaqtinchalik bloklanadi (status='pending' emas, alohida rate-limit lock).
+Muvaffaqiyatli login natijasi:
+access_token (JWT, 15 daqiqa amal qiladi, payload: user_id, business_id (agar tanlangan bo'lsa), role_id).
+refresh_token (30 kun, faqat httpOnly secure cookie yoki secure storage'da, DB'da hash holida saqlanadi — rotatsiya bilan).
+Agar user bir nechta bizneste ishlasa — biznes tanlash ekrani ko'rsatiladi (business_users bo'yicha).
+3.3 Forgot password
+Telefon/email orqali OTP yuboriladi → tasdiqlangach reset_token (10 daqiqa amal qiladi) beriladi → yangi parol o'rnatiladi.
+Parol tiklangach barcha mavjud refresh_token'lar bekor qilinadi (majburiy re-login barcha qurilmalarda).
+3.4 Logout va session management
+Logout — joriy refresh_token DB'da revoke qilinadi.
+"Barcha qurilmalardan chiqish" — user_id bo'yicha barcha refresh_token'lar revoke qilinadi.
+Aktiv sessiyalar ro'yxati (qurilma, IP, oxirgi faollik) Settings > Security bo'limida ko'rsatiladi.
+3.5 Xavfsiz token mexanizmi
+JWT imzosi: RS256 (asymmetric) — backend private key bilan imzolaydi, boshqa servislar public key bilan tekshiradi.
+Refresh token rotatsiyasi: har safar yangilanganda eskisi bekor qilinadi (reuse detection — eski token qayta ishlatilsa, shu userning barcha tokenlari darhol bekor qilinadi, xavfsizlik hodisasi sifatida audit_logs ga yoziladi).
+4. Business onboarding
+Qadamlar (wizard, 3 bosqich):
+1-qadam: Biznes nomi (majburiy), biznes turi (dropdown: do'kon, restoran, kafe, sartaroshxona, konditer, dorixona, xizmat ko'rsatish, boshqa).
+2-qadam: Birinchi filial — nomi (default: "Bosh filial"), manzil, telefon.
+3-qadam: Tasdiqlash → business, birinchi branch, business_users (owner roli bilan) yaratiladi, tanlangan business_type bo'yicha tegishli modul flag'lari (feature flags) aktivlashadi.
+4.1 Biznes turi → aktivlashadigan modullar jadvali
+Biznes turi
+Standart aktiv modullar
+Do'kon (shop)
+POS, Products, Inventory, Customers, Finance, Reports
+Restoran (restaurant)
+yuqoridagilar + Tables, Menu, Kitchen (KDS), Waiters, Reservations
+Kafe (cafe)
+Restaurant to'plami, lekin soddalashtirilgan menyu/quick order rejimida
+Sartaroshxona (barbershop)
+Services, Barbers, Appointments, Customers, POS (Inventory ixtiyoriy)
+Dorixona/Konditer
+Do'kon to'plami + partiya/muddat (expiry) kuzatuvi (V2)
+Xizmat ko'rsatish (service)
+Services, Appointments, Customers, POS
+Texnik eslatma: bu jadval kod ichida hardcode qilinmaydi — business_type_modules konfiguratsiya jadvali/JSON orqali boshqariladi, shunda yangi biznes turi qo'shish Core kodni o'zgartirmasdan amalga oshadi (39-bo'limdagi qoidaga mos).
+5. Multi-tenant arxitektura
+Strategiya: Shared database, shared schema, har bir jadvalda business_id (va kerak bo'lsa branch_id) ustuni + Row-Level Security (RLS, PostgreSQL) orqali majburiy filtr.
+Har bir DB ulanishi/so'rov boshida `SET app.current_business_id = '<uuid>'` o'rnatiladi; RLS policy `USING (business_id = current_setting('app.current_business_id')::uuid)` shaklida barcha tenant-scoped jadvallarga qo'llaniladi.
+API darajasida ham qo'shimcha himoya: JWT'dagi business_id bilan so'rov path/body'dagi business_id solishtiriladi — mos kelmasa 403.
+Bir foydalanuvchi bir nechta biznesga ega bo'lishi mumkin (business_users), lekin bir so'rov faqat bitta tenant kontekstida bajariladi.
+Migratsiya/seed skriptlari va background job'lar ham tenant_id kontekstisiz global so'rov yubormasligi kerak (xavfsizlik testida tekshiriladi — 32-bo'lim).
+6. Dashboard
+6.1 KPI kartalar (bugungi kun uchun, real-time)
+KPI
+Formula / manba
+Bugungi savdo
+SUM(orders.total) WHERE status='completed' AND date=today
+Bugungi xarajat
+SUM(expenses.amount) WHERE date=today
+Bugungi foyda
+Bugungi savdo − COGS − Bugungi xarajat
+Buyurtmalar soni
+COUNT(orders) WHERE status='completed' AND date=today
+Yangi mijozlar
+COUNT(customers) WHERE created_at=today
+Ombor qiymati
+SUM(inventory.quantity * products.purchase_price)
+6.2 Grafiklar
+Kunlik (oxirgi 30 kun), haftalik (oxirgi 12 hafta), oylik (oxirgi 12 oy) savdo/foyda/xarajat chiziqli grafiklari.
+Har bir nuqta bosilganda shu kun/hafta/oy bo'yicha detallashtirilgan breakdown modal ko'rsatiladi.
+6.3 Alertlar
+Kam qolgan mahsulotlar: inventory.quantity <= products.min_stock — ro'yxat + "Xarid qilish" tezkor tugmasi.
+Qarzdorlik: customers.debt > 0 yoki suppliers.balance > 0 bo'lgan yozuvlar ro'yxati.
+Muddati o'tayotgan appointment'lar (keyingi 1 soat ichida).
+7. POS / Kassa
+7.1 Qidiruv
+Mahsulot nomi bo'yicha fuzzy search (debounce 300ms, min 2 belgi).
+SKU/barcode bo'yicha exact match — barcode skaner qurilmasi HID (klaviatura emulyatsiyasi) orqali ishlaydi, Enter bosilganda avtomatik qidiruv ishga tushadi.
+Barcode topilmasa — "Mahsulot topilmadi, qo'shishni xohlaysizmi?" tezkor yaratish modali.
+7.2 Savat (cart)
+Har bir qatorda: mahsulot, birlik narx, miqdor (+/- va qo'lda kiritish), chegirma (% yoki summa), qator summasi.
+Miqdor mahsulot qoldig'idan oshsa — ogohlantirish ko'rsatiladi, lekin sozlamada "minus qoldiqqa ruxsat berish" yoqilgan bo'lsa davom etadi (aks holda bloklanadi).
+Umumiy chegirma (butun chekka) va qatorlar chegirmasi birga qo'llanilishi mumkin, lekin hisoblash tartibi: avval qator chegirmalari, keyin umumiy chegirma subtotal ustiga qo'llanadi.
+7.3 To'lovlar
+Bitta yoki aralash to'lov (masalan 50% naqd + 50% karta) — payments jadvalida bir nechta yozuv.
+Aralash to'lovda SUM(payments.amount) === orders.total bo'lishi majburiy, aks holda order 'open' holatida qoladi (qisman to'langan).
+Click/Payme integratsiyasi — QR/link generatsiya qilinadi, webhook orqali tasdiqlanadi (V2), muvaffaqiyatsiz bo'lsa order avtomatik bekor qilinmaydi, kassir qo'lda qayta urinadi.
+7.4 Tranzaksiya oqimi (state machine)
+order (draft) → payment(lar) qo'shiladi → agar to'liq to'langan bo'lsa: inventory kamayadi (inventory_transactions: reason='sale') → revenues yozuvi yaratiladi → order.status='completed' → chek generatsiya qilinadi → dashboard/hisobotlar real-time yangilanadi (WebSocket event: order.completed).
+Chegaraviy holatlar
+To'lov jarayonida internet uzilsa: order 'draft' holatida local (offline) saqlanadi, inventory kamaytirilmaydi — faqat sync bo'lgach yakunlanadi (31-bo'lim).
+Bir vaqtda ikki kassir bitta mahsulotni sotsa (race condition): inventory kamaytirish DB darajasida `SELECT ... FOR UPDATE` yoki atomik `UPDATE ... WHERE quantity >= :qty` orqali himoyalanadi; yetarli bo'lmasa 409 Conflict qaytariladi.
+Bekor qilingan (void) order — inventory harakati bo'lmagan bo'lsa shunchaki status='cancelled'; agar inventory allaqachon kamaygan bo'lsa, refund oqimi (16-bo'lim) orqali qaytariladi.
+8. Chek
+Chek maydonlari: biznes logotipi, biznes nomi, manzil, telefon, order_number, sana/vaqt, kassir ismi, mahsulotlar ro'yxati (nomi, miqdori, narxi, summasi), subtotal, chegirma, soliq, jami (total), qo'llanilgan to'lov usul(lar)i va summalari, qaytim (agar naqd bo'lsa).
+Formatlar: 80mm termal printer (ESC/POS orqali, desktop ilovadan to'g'ridan-to'g'ri chop etish), PDF (A4/A5), ekранda ko'rish.
+"Qayta chiqarish" (reprint) funksiyasi — audit_logs ga 'reprint' harakati sifatida yoziladi (kim, qachon, necha marta).
+Chekda QR-kod (order_id ga link, kelajakda elektron chek tizimi bilan integratsiya uchun zaxira maydon).
+9. Products va Categories
+9.1 Product — to'liq maydon ro'yxati va validatsiya
+Maydon
+Tur
+Qoida
+name
+string
+majburiy, 2–150 belgi
+sku
+string
+ixtiyoriy, avtomatik generatsiya qilinishi mumkin (PRD-000123), business ichida UNIQUE
+barcode
+string
+ixtiyoriy, EAN-13/UPC formatga mos, UNIQUE
+category_id
+uuid
+ixtiyoriy, mavjud category ga tegishli bo'lishi shart
+brand
+string
+ixtiyoriy
+purchase_price
+decimal
+>= 0, sale_price dan katta bo'lsa ogohlantirish (salbiy marja)
+sale_price
+decimal
+majburiy, > 0
+unit
+fk
+majburiy
+tax
+decimal(%)
+0–100 oralig'ida
+minimum_stock
+decimal
+>= 0, default 0
+image
+file
+ixtiyoriy, max 5MB, jpg/png/webp
+description
+text
+ixtiyoriy, max 2000 belgi
+status
+enum
+active/inactive/archived
+9.2 CRUD qoidalari
+Create/Update — permission: products.create / products.update.
+Delete — jismoniy o'chirish taqiqlanadi agar mahsulot biror order_items yoki inventory_transactions da ishlatilgan bo'lsa; bunday holda faqat status='archived' ga o'tkaziladi (soft delete). Aks holda hard delete ruxsat etiladi.
+Bulk import — CSV/Excel orqali (V2), majburiy ustunlar: name, sku, sale_price, unit.
+9.3 Categories
+parent_id orqali cheksiz chuqurlikdagi nested tree, lekin UI da amalda 3 darajagacha tavsiya etiladi.
+Category o'chirilganda — ichidagi mahsulotlar category_id=NULL ga o'tadi (product o'chirilmaydi), child categorylar bor bo'lsa o'chirish taqiqlanadi (avval ularni ko'chirish/o'chirish kerak).
+10. Inventory / Ombor
+Real-time qoldiq — inventory.quantity, har bir order/purchase/transfer tranzaksiyasi bilan atomik yangilanadi (DB transaction ichida).
+reserved_qty — checkout jarayonida (to'lov kutilayotganda) mahsulot vaqtincha "band" qilinadi, to'lov muvaffaqiyatsiz bo'lsa yoki 5 daqiqadan keyin avtomatik bo'shatiladi.
+available_qty = quantity − reserved_qty — POS ekranida shu ko'rsatiladi.
+10.1 Stock In / Stock Out / Transfer
+Stock In — sabab: purchase (ta'minotchidan) yoki manual (inventarizatsiya tuzatish). purchase_price yangilanishi ixtiyoriy (weighted average yoki oxirgi narx — sozlamada tanlanadi).
+Stock Out — sabab: sale (avtomatik, POS orqali), damage, expired, manual, transfer_out.
+Stock Transfer — from_branch dan chiqim (transfer_out) va to_branch ga kirim (transfer_in) ikkita alohida inventory_transactions yozuvi bilan, status='in_transit' bosqichida tovar "yo'lda" hisoblanadi (na jo'natuvchida, na qabul qiluvchida ko'rinmaydi qoldiq sifatida — alohida in_transit_qty da kuzatiladi).
+10.2 Tarix
+Har bir o'zgarish inventory_transactions jadvalida quantity_before/after bilan saqlanadi — bu yerdan istalgan mahsulotning istalgan vaqtdagi qoldig'ini qayta hisoblash mumkin (audit va nizolarni hal qilish uchun).
+11. Suppliers
+Supplier maydonlari: name (majburiy), phone, address, company_name, balance (avtomatik hisoblanadi), notes.
+Purchase (xarid) yaratilganda: agar to'lov to'liq qilinmasa, farq supplier.balance ga qo'shiladi (biznes qarzdor).
+Payment (to'lov) yozuvi supplier balance ni kamaytiradi; balance manfiy bo'lishi mumkin (ortiqcha to'langan holat).
+Tarix — barcha purchase va payment yozuvlari xronologik tartibda supplier profilida ko'rinadi.
+12. Customers
+Maydonlar: full_name (majburiy), phone (ixtiyoriy lekin tavsiya etiladi, UNIQUE per business), birth_date, notes, total_purchases, total_spent, debt, last_purchase_at (oxirgi 4 tasi trigger/job orqali avtomatik yangilanadi, qo'lda tahrirlanmaydi).
+Qarz bilan sotish (nasiya) — order to'liq to'lanmasa va mijoz tanlangan bo'lsa, farq customers.debt ga qo'shiladi.
+Kelajakda (V2/V3): loyalty ball tizimi, bonus, discount darajalari, customer groups (VIP, doimiy, yangi) — customer_groups va loyalty_points jadvallari qo'shiladi.
+13. Employees va RBAC
+13.1 Employee maydonlari
+full_name, phone, position, branch_id, role_id, salary, status (active/on_leave/fired).
+13.2 Standart rollar
+Owner — barcha ruxsatlar, o'chirib bo'lmaydi.
+Admin — Owner'dan tashqari deyarli barchasi (billing/subscription bundan mustasno).
+Cashier — POS, mijozlar, o'z sotuvlari.
+Warehouse Manager — Inventory, Products, Suppliers.
+Waiter — Restaurant orders, tables.
+Cook — KDS (kitchen_orders status yangilash).
+Barber — o'z appointment'lari, xizmatlar.
+Accountant — Finance, Reports (read-only ko'p joyda).
+13.3 Ruxsatlar (permission) katalogi — namuna
+Permission code
+Tavsif
+products.view / .create / .update / .delete
+Mahsulotlarni ko'rish/yaratish/tahrirlash/o'chirish
+orders.view / .create / .cancel
+Buyurtmalarni ko'rish/yaratish/bekor qilish
+inventory.view / .create / .transfer
+Ombor qoldig'ini ko'rish/kirim-chiqim/transfer
+finance.view / .create
+Moliyaviy ma'lumotlarni ko'rish/kiritish
+employees.view / .manage
+Xodimlarni ko'rish/boshqarish
+reports.view
+Hisobotlarni ko'rish
+refunds.create
+Qaytarish amalga oshirish
+settings.manage
+Tizim sozlamalarini o'zgartirish
+Custom rollar (V2): biznes o'z roli(lari)ni yaratib, yuqoridagi permission'lardan istalganini biriktirishi mumkin. Bitta employee bir vaqtda faqat bitta rolga ega bo'ladi (bo'lim 13.1 dagi role_id).
+14. Finance
+Revenue turlari: sales (POS/order orqali avtomatik), services (appointment orqali), other (qo'lda kiritiladigan boshqa daromad).
+Expense turlari: product purchase, salary, rent, utilities, advertising, transport, other — har biri category enum orqali belgilanadi va Reports'da kesim (breakdown) sifatida chiqadi.
+COGS (Cost of Goods Sold) — sotilgan mahsulotning purchase_price asosida avtomatik hisoblanadi: SUM(order_items.quantity * product.purchase_price snapshot).
+Net Profit = Revenue − COGS − Expenses. Bu formula backendda alohida view/materialized query sifatida saqlanadi, frontendda qayta hisoblanmaydi (bitta manba — single source of truth).
+Revenue va profit hech qachon bitta ustunda aralashtirilmaydi — Dashboard va Reports'da alohida qatorlar/kartalar sifatida ko'rsatiladi.
+14.1 Edge case'lar
+Refund bo'lganda — tegishli revenue yozuvi manfiy (reversal) yozuv bilan tuzatiladi, asl yozuv o'chirilmaydi (audit trail saqlanadi).
+Valyuta — v1 da faqat business.currency (default UZS), multi-currency V3 uchun zaxira.
+15. Reports
+Hisobot
+Asosiy ustunlar
+Filtrlar
+Sales Report
+order_number, sana, mijoz, kassir, subtotal, chegirma, soliq, total, holat
+sana oralig'i, filial, kassir, to'lov usuli
+Product Report
+mahsulot, sotilgan miqdor, tushum, foyda, marja %
+sana oralig'i, kategoriya — best/worst seller, most profitable, low stock ko'rinishlari
+Employee Report
+xodim, sotuvlar soni, tushum, o'rtacha chek
+sana oralig'i, filial, rol
+Finance Report
+daromad, xarajat (kategoriya kesimida), foyda, COGS
+sana oralig'i, filial
+Umumiy filtr to'plami: Bugun, Kecha, Shu hafta, Shu oy, Maxsus oraliq (custom range — date picker).
+Har bir hisobot Excel (.xlsx) va PDF formatida eksport qilinadi.
+Katta hisobotlar (10 000+ qator) uchun server-side pagination va async export (job queue, tayyor bo'lgach yuklab olish havolasi) qo'llaniladi.
+16. Refund / Qaytarish
+Holat mashinasi (state machine):
+1) Kassir yakunlangan order'ni tanlaydi (faqat status='completed' bo'lgan orderlar qaytarish uchun mavjud).
+2) Qaytariladigan order_item(lar) va miqdor belgilanadi (qisman yoki to'liq qaytarish, quantity <= order qatoridagi asl miqdor − avval qaytarilgan miqdor).
+3) Sabab tanlanadi (majburiy matn maydoni: buzuq, mos kelmadi, mijoz fikri o'zgardi va h.k.).
+4) Tasdiqlash — permission refunds.create talab qilinadi; katta summadagi refund (sozlamada belgilangan chegaradan yuqori) Owner/Admin tasdig'ini talab qilishi mumkin (V2, approval flow).
+5) refund yozuvi yaratiladi → stock tiklanadi (inventory_transactions: reason='refund', type='in') → revenue reversal yoziladi → order.status='refunded' (to'liq) yoki 'partially_refunded'.
+Refund tarixi — har bir order profilida to'liq ko'rinadi (kim, qachon, nima uchun, qancha).
+Naqd to'lovda pul qaytarish qo'lda amalga oshiriladi (tizim faqat summani ko'rsatadi); karta/Click/Payme'da avtomatik reversal API chaqiriladi (V2).
+17. Restaurant Module
+17.1 Tarkib
+Tables, Menu (Products'ning restaurant ko'rinishi — category bo'yicha guruhlangan), Orders, Kitchen (KDS), Waiters, Reservations.
+17.2 Stol statuslari
+Status
+Tavsif
+Keyingi mumkin statuslar
+Available
+Bo'sh, mehmon kutmoqda
+Occupied, Reserved
+Occupied
+Band, faol order mavjud
+Cleaning
+Reserved
+Oldindan bron qilingan
+Occupied, Available (bron bekor)
+Cleaning
+Tozalanmoqda
+Available
+17.3 Asosiy oqim (flow)
+waiter stolni tanlaydi → status='occupied' → menu'dan order yaratiladi (order_type='restaurant', table_id belgilanadi) → order_items kitchen_orders'ga tushadi (status='new') → oshxona 'cooking' → 'ready' → waiter 'served' deb belgilaydi → to'lov qabul qilinadi → stol yopiladi (status='cleaning' → 'available').
+Chegaraviy holatlar
+Bir stolda bir vaqtda faqat bitta 'open' order bo'lishi mumkin — yangi order yaratishga urinish mavjud ochiq orderga qo'shish (add item) sifatida ishlaydi.
+Stol bo'linishi/birlashtirilishi (split/merge table) — V2 da alohida endpoint orqali, order_items boshqa order_id'ga ko'chiriladi.
+Order yopilmasdan waiter tizimdan chiqib ketsa — order 'open' holatida boshqa waiter/admin tomonidan davom ettirilishi mumkin (order xodimga emas, stolga bog'liq).
+18. Kitchen Display System
+Yangi order_item kitchen_orders'ga tushishi bilan real-time (WebSocket) orqali oshxona ekraniga chiqadi, status='new'.
+Oshpaz item'ni bosib 'cooking' ga o'tkazadi (started_at belgilanadi), tayyor bo'lgach 'ready' (ready_at belgilanadi).
+Waiter ekranida real-time 'ready' bo'lgan item'lar ajratib ko'rsatiladi (ovozli/vizual signal bilan), 'served' deb belgilanganda kitchen ekranidan olib tashlanadi.
+SLA kuzatuvi (V2): agar item 15 daqiqadan ortiq 'cooking' holatida qolsa, rangi qizil bo'lib ogohlantiradi.
+19. Kafe
+Restaurant modulining soddalashtirilgan konfiguratsiyasi: quick_order rejimi yoqiladi (stolsiz, to'g'ridan-to'g'ri POS'ga o'xshash tezkor order).
+Takeaway order_type — table_id=NULL, chekda "Olib ketish" belgisi chiqadi.
+Stollar soni odatda kam (5–15), menyu qisqartirilgan bo'lishi mumkin, lekin ma'lumotlar strukturasi restaurant bilan bir xil (Core qayta yozilmaydi — 39-bo'lim qoidasi).
+20. Sartaroshxona Module
+Tarkib: Services (nom, narx, davomiylik), Barbers (employees'ning position='Barber' filtri), Appointments, Customers, POS.
+20.1 Appointment statuslari
+Status
+Tavsif
+Booked
+Mijoz bron qilgan, hali tasdiqlanmagan
+Confirmed
+Barber/admin tomonidan tasdiqlangan
+In Progress
+Xizmat boshlangan
+Completed
+Xizmat yakunlangan, to'lov bilan bog'lanadi (order_id)
+Cancelled
+Bekor qilingan (mijoz yoki biznes tomonidan, sabab bilan)
+No-show
+Mijoz kelmagan
+Bir barber uchun bir vaqt oralig'ida ikkita overlapping appointment yaratib bo'lmaydi (backend darajasida vaqt oralig'i tekshiruvi: scheduled_at + service.duration_minutes overlap check).
+Completed bo'lganda avtomatik POS order taklif qilinadi (service_id bilan order_items yaratiladi, to'lov POS oqimi bo'yicha).
+21. Notifications
+Turi
+Trigger
+Standart kanal(lar)
+low_stock
+inventory.quantity <= products.min_stock ga tushganda (job, har 15 daqiqada)
+in-app, Telegram
+payment
+Har bir muvaffaqiyatli to'lovda
+in-app
+new_order
+Restaurant/service uchun yangi order yaratilganda
+in-app
+order_ready
+kitchen_orders status='ready' bo'lganda
+in-app (waiter uchun)
+appointment
+Bandlovdan 1 soat oldin eslatma
+in-app, SMS
+expense
+Katta summadagi xarajat kiritilganda (chegara sozlanadi)
+in-app
+system
+Obuna tugashi, xavfsizlik hodisalari va h.k.
+in-app, email
+Har bir foydalanuvchi Settings > Notifications bo'limida qaysi turdagi bildirishnomani qaysi kanalda olishni sozlashi mumkin (opt-in/opt-out matritsasi).
+22. Telegram Bot
+Biznes egasi botni /start orqali ulaydi, biznes bilan bog'lash uchun bir martalik link-token ishlatiladi (business_id ga bog'lanadi, xavfsizlik uchun 10 daqiqa amal qiladi).
+Kunlik avtomatik xabar (sozlangan vaqtda, default 21:00): bugungi savdo, foyda, buyurtmalar soni, low-stock ro'yxati, top-3 mahsulot.
+Kelayotgan bosqichda (V2): /savdo, /foyda, /ombor kabi buyruqlar orqali on-demand hisobot so'rash.
+23. Branch / Filial
+Bitta business bir nechta branches ga ega bo'lishi mumkin, har birida alohida inventory, POS sessiyasi, employees va sales tarixi.
+Owner barcha filiallarni bitta umumiy Dashboard'da (filial bo'yicha filtr bilan) ko'radi; filial administratori faqat business_users.branch_id ga mos filialni ko'radi (backendda majburiy filtr, frontendda filial tanlash dropdown yashirinadi).
+Mahsulot katalogi odatda business darajasida umumiy (products.branch_id=NULL), lekin narx/qoldiq filial darajasida (inventory jadvali orqali) farqlanishi mumkin.
+24. Settings
+Bo'lim
+Sozlamalar
+Business
+name, logo, phone, address, currency, timezone
+POS
+chek shabloni, soliq stavkasi (default), chegirma limiti, to'lov usullari ro'yxati, minus qoldiqqa ruxsat
+Inventory
+low stock chegarasi (default), o'lchov birliklari
+Users
+rollar va ruxsatlar boshqaruvi
+Notifications
+Telegram, email, SMS kanal sozlamalari va shablonlari
+25. Audit Log
+Har bir muhim (create/update/delete/login/refund/permission-change) harakat: user, action, entity, entity_id, old_value, new_value (JSON diff), IP, timestamp bilan yoziladi.
+Misol: mahsulot narxi 10 000 dan 12 000 ga o'zgarishi — entity='products', action='update', old_value={sale_price:10000}, new_value={sale_price:12000}.
+Audit loglar hech qachon o'zgartirilmaydi yoki o'chirilmaydi (append-only), faqat Owner/Admin ko'ra oladi (audit_logs.view permission).
+Saqlash muddati: kamida 12 oy online, undan keyin cold storage/arxivga ko'chirilishi mumkin (V3).
+26. Database — asosiy jadvallar (to'liq sxema)
+Quyida barcha 32 asosiy jadval — ustunlar, turlari va cheklovlari (constraint) bilan. Barcha jadvallarda (agar boshqacha ko'rsatilmagan bo'lsa) standart ustunlar mavjud: id (UUID, PK), created_at, updated_at (TIMESTAMP, DEFAULT now()). Tenant-scoped jadvallarda business_id majburiy va RLS policy qo'llanadi (5-bo'lim).
+users
+Tizim foydalanuvchilari (barcha tenantlar bo'ylab global jadval).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+Auto-generate
+full_name
+VARCHAR(150)
+NOT NULL
+email
+VARCHAR(150)
+UNIQUE, NULLABLE (telefon bilan almashtirilishi mumkin)
+phone
+VARCHAR(20)
+UNIQUE, NOT NULL, E.164 format
+password_hash
+VARCHAR(255)
+bcrypt/argon2, NOT NULL
+avatar_url
+TEXT
+NULLABLE
+status
+ENUM('active','blocked','pending')
+DEFAULT 'active'
+last_login_at
+TIMESTAMP
+NULLABLE
+created_at / updated_at
+TIMESTAMP
+DEFAULT now()
+businesses
+Har bir tenant (biznes) yozuvi.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+owner_id
+UUID (FK -> users.id)
+NOT NULL
+name
+VARCHAR(150)
+NOT NULL
+business_type
+ENUM('shop','restaurant','cafe','barbershop','pharmacy','confectionery','service','other')
+NOT NULL
+logo_url
+TEXT
+NULLABLE
+currency
+VARCHAR(10)
+DEFAULT 'UZS'
+timezone
+VARCHAR(50)
+DEFAULT 'Asia/Tashkent'
+plan_id
+UUID (FK -> plans.id)
+NOT NULL
+status
+ENUM('active','trial','suspended','cancelled')
+DEFAULT 'trial'
+created_at / updated_at
+TIMESTAMP
+business_users
+Foydalanuvchi ↔ biznes ko'p-ko'pga bog'lanishi (bir user bir nechta bizneste ishlashi mumkin).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK -> businesses.id)
+NOT NULL, ON DELETE CASCADE
+user_id
+UUID (FK -> users.id)
+NOT NULL
+role_id
+UUID (FK -> roles.id)
+NOT NULL
+branch_id
+UUID (FK -> branches.id)
+NULLABLE (NULL = barcha filiallar, masalan Owner)
+status
+ENUM('active','invited','disabled')
+DEFAULT 'active'
+invited_at / joined_at
+TIMESTAMP
+NULLABLE
+UNIQUE
+(business_id, user_id)
+Bitta user bitta biznesda faqat 1 marta
+branches
+Biznes filiallari.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+name
+VARCHAR(150)
+NOT NULL
+address
+TEXT
+NULLABLE
+phone
+VARCHAR(20)
+NULLABLE
+is_main
+BOOLEAN
+DEFAULT false
+status
+ENUM('active','closed')
+DEFAULT 'active'
+created_at / updated_at
+TIMESTAMP
+roles
+Biznes ichidagi rollar (built-in + custom).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NULLABLE (NULL = tizim built-in roli)
+name
+VARCHAR(50)
+Owner, Admin, Cashier, Warehouse Manager, Waiter, Cook, Barber, Accountant, Custom...
+is_system
+BOOLEAN
+DEFAULT false — o'chirib bo'lmaydi
+created_at
+TIMESTAMP
+permissions
+Ruxsatlar katalogi (statik seed).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+code
+VARCHAR(100)
+masalan: products.create, orders.cancel — UNIQUE
+module
+VARCHAR(50)
+products, orders, inventory, finance, employees, reports...
+description
+VARCHAR(255)
+role_permissions
+Rol ↔ ruxsat bog'lanishi (many-to-many).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+role_id
+UUID (FK)
+NOT NULL
+permission_id
+UUID (FK)
+NOT NULL
+UNIQUE
+(role_id, permission_id)
+employees
+Xodim profili (business_users bilan bog'liq, lekin HR ma'lumotlari uchun alohida).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+branch_id
+UUID (FK)
+NOT NULL
+user_id
+UUID (FK -> users.id)
+NULLABLE (agar hali tizimga kirmagan bo'lsa)
+full_name
+VARCHAR(150)
+NOT NULL
+phone
+VARCHAR(20)
+NOT NULL
+position
+VARCHAR(100)
+masalan: Sotuvchi, Ofitsiant, Barber
+salary
+DECIMAL(14,2)
+NULLABLE
+hire_date
+DATE
+NULLABLE
+status
+ENUM('active','on_leave','fired')
+DEFAULT 'active'
+products
+Mahsulotlar katalogi.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / branch_id
+UUID (FK)
+branch_id NULLABLE — global yoki filialga xos
+name
+VARCHAR(150)
+NOT NULL
+sku
+VARCHAR(50)
+UNIQUE per business
+barcode
+VARCHAR(50)
+NULLABLE, UNIQUE per business
+category_id
+UUID (FK -> categories.id)
+NULLABLE
+brand
+VARCHAR(100)
+NULLABLE
+unit_id
+UUID (FK -> units.id)
+NOT NULL
+purchase_price
+DECIMAL(14,2)
+DEFAULT 0
+sale_price
+DECIMAL(14,2)
+NOT NULL, >= 0
+tax_rate
+DECIMAL(5,2)
+DEFAULT 0 (%)
+min_stock
+DECIMAL(14,3)
+DEFAULT 0 — low-stock trigger uchun
+image_url
+TEXT
+NULLABLE
+description
+TEXT
+NULLABLE
+status
+ENUM('active','inactive','archived')
+DEFAULT 'active'
+categories
+Mahsulot kategoriyalari (nested/parent-child).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+parent_id
+UUID (FK -> categories.id)
+NULLABLE — nested tree
+name
+VARCHAR(100)
+NOT NULL
+sort_order
+INT
+DEFAULT 0
+units
+O'lchov birliklari (dona, kg, litr, ...).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NULLABLE (NULL = tizim standart birligi)
+name
+VARCHAR(50)
+dona, kg, litr, metr...
+short_name
+VARCHAR(10)
+dona, kg, l, m
+allow_decimal
+BOOLEAN
+DEFAULT false (kg/litr uchun true)
+suppliers
+Ta'minotchilar.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+name
+VARCHAR(150)
+NOT NULL
+company_name
+VARCHAR(150)
+NULLABLE
+phone
+VARCHAR(20)
+NULLABLE
+address
+TEXT
+NULLABLE
+balance
+DECIMAL(14,2)
+DEFAULT 0 — qarzdorlik (musbat = biznes qarzdor)
+notes
+TEXT
+NULLABLE
+inventory
+Har bir filial + mahsulot bo'yicha joriy qoldiq (snapshot).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+branch_id / product_id
+UUID (FK)
+UNIQUE(branch_id, product_id)
+quantity
+DECIMAL(14,3)
+Joriy jami qoldiq
+reserved_qty
+DECIMAL(14,3)
+DEFAULT 0 — bron qilingan (masalan checkout jarayonida)
+available_qty
+GENERATED
+quantity − reserved_qty
+updated_at
+TIMESTAMP
+inventory_transactions
+Har bir ombor harakati tarixi (immutable log).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+branch_id / product_id
+UUID (FK)
+NOT NULL
+type
+ENUM('in','out')
+NOT NULL
+reason
+ENUM('purchase','sale','damage','expired','manual','transfer_in','transfer_out','refund')
+NOT NULL
+quantity
+DECIMAL(14,3)
+NOT NULL, > 0
+quantity_before / after
+DECIMAL(14,3)
+Audit uchun snapshot
+reference_type / reference_id
+VARCHAR/UUID
+polymorphic — order, purchase, transfer, refund
+created_by
+UUID (FK -> users.id)
+NOT NULL
+created_at
+TIMESTAMP
+stock_transfers
+Filiallararo tovar ko'chirish.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+from_branch_id / to_branch_id
+UUID (FK)
+NOT NULL, farqli bo'lishi shart
+status
+ENUM('pending','in_transit','completed','cancelled')
+DEFAULT 'pending'
+created_by
+UUID (FK)
+created_at / completed_at
+TIMESTAMP
+stock_transfer_items
+Transfer tarkibidagi mahsulotlar (stock_transfers ga child).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+transfer_id / product_id
+UUID (FK)
+NOT NULL
+quantity
+DECIMAL(14,3)
+NOT NULL, > 0
+customers
+Mijozlar.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+full_name
+VARCHAR(150)
+NOT NULL
+phone
+VARCHAR(20)
+NULLABLE, UNIQUE per business
+birth_date
+DATE
+NULLABLE
+notes
+TEXT
+NULLABLE
+total_purchases
+INT
+DEFAULT 0 — trigger orqali yangilanadi
+total_spent
+DECIMAL(14,2)
+DEFAULT 0
+debt
+DECIMAL(14,2)
+DEFAULT 0
+last_purchase_at
+TIMESTAMP
+NULLABLE
+orders
+Barcha sotuv/buyurtma yozuvlari (POS, restoran, xizmat — umumiy jadval).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / branch_id
+UUID (FK)
+NOT NULL
+order_number
+VARCHAR(30)
+UNIQUE per branch, human-readable (masalan #00231)
+order_type
+ENUM('pos','restaurant','service')
+NOT NULL
+customer_id
+UUID (FK)
+NULLABLE
+cashier_id / waiter_id
+UUID (FK -> employees.id)
+NULLABLE
+table_id
+UUID (FK -> tables.id)
+NULLABLE — faqat restaurant
+subtotal
+DECIMAL(14,2)
+NOT NULL
+discount_amount
+DECIMAL(14,2)
+DEFAULT 0
+tax_amount
+DECIMAL(14,2)
+DEFAULT 0
+total
+DECIMAL(14,2)
+NOT NULL = subtotal - discount + tax
+status
+ENUM('draft','open','completed','cancelled','refunded','partially_refunded')
+DEFAULT 'draft'
+created_at / completed_at
+TIMESTAMP
+order_items
+Order tarkibidagi mahsulot/xizmat qatorlari.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+order_id / product_id
+UUID (FK)
+product_id NULLABLE (xizmat bo'lsa service_id)
+service_id
+UUID (FK -> services.id)
+NULLABLE
+quantity
+DECIMAL(14,3)
+NOT NULL, > 0
+unit_price
+DECIMAL(14,2)
+Order paytidagi narx snapshot
+discount_amount
+DECIMAL(14,2)
+DEFAULT 0
+total
+DECIMAL(14,2)
+GENERATED = qty*unit_price - discount
+status
+ENUM('pending','preparing','ready','served','cancelled')
+Restaurant/KDS uchun
+payments
+Order bo'yicha to'lovlar (bir orderda bir nechta aralash to'lov bo'lishi mumkin).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+order_id
+UUID (FK)
+NOT NULL
+payment_method_id
+UUID (FK)
+NOT NULL
+amount
+DECIMAL(14,2)
+NOT NULL, > 0
+status
+ENUM('pending','success','failed','refunded')
+DEFAULT 'success'
+transaction_ref
+VARCHAR(100)
+Click/Payme tranzaksiya ID, NULLABLE
+created_at
+TIMESTAMP
+payment_methods
+To'lov usullari katalogi (biznes bo'yicha sozlanadigan).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NULLABLE = tizim default (naqd, karta)
+name
+VARCHAR(50)
+Naqd, Karta, Click, Payme, Boshqa
+type
+ENUM('cash','card','click','payme','other')
+is_active
+BOOLEAN
+DEFAULT true
+refunds
+Qaytarishlar.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+order_id
+UUID (FK)
+NOT NULL
+processed_by
+UUID (FK -> users.id)
+NOT NULL
+reason
+VARCHAR(255)
+NOT NULL
+total_refund_amount
+DECIMAL(14,2)
+NOT NULL
+status
+ENUM('pending','completed','rejected')
+DEFAULT 'completed'
+created_at
+TIMESTAMP
+refund_items
+Qaysi order_item qancha miqdorda qaytarilgani.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+refund_id / order_item_id
+UUID (FK)
+NOT NULL
+quantity
+DECIMAL(14,3)
+NOT NULL, <= order_item.quantity
+amount
+DECIMAL(14,2)
+NOT NULL
+revenues
+Daromad yozuvlari (finance moduli).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / branch_id
+UUID (FK)
+NOT NULL
+source
+ENUM('sales','services','other')
+NOT NULL
+reference_id
+UUID
+order_id yoki appointment_id, NULLABLE
+amount
+DECIMAL(14,2)
+NOT NULL
+recorded_at
+TIMESTAMP
+expenses
+Xarajatlar.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / branch_id
+UUID (FK)
+NOT NULL
+category
+ENUM('purchase','salary','rent','utilities','advertising','transport','other')
+NOT NULL
+amount
+DECIMAL(14,2)
+NOT NULL, > 0
+description
+VARCHAR(255)
+NULLABLE
+created_by
+UUID (FK)
+recorded_at
+TIMESTAMP
+tables
+Restoran stollari.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+branch_id
+UUID (FK)
+NOT NULL
+name
+VARCHAR(50)
+masalan: Stol #4
+capacity
+INT
+DEFAULT 4
+status
+ENUM('available','occupied','reserved','cleaning')
+DEFAULT 'available'
+restaurant_orders
+Orders jadvaliga restoranga xos qo'shimcha ma'lumot (1:1 extension).
+Ustun
+Tur
+Cheklov / izoh
+order_id
+UUID (PK, FK -> orders.id)
+guest_count
+INT
+NULLABLE
+opened_at / closed_at
+TIMESTAMP
+kitchen_orders
+KDS uchun order_item darajasidagi oshxona holati.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+order_item_id
+UUID (FK)
+NOT NULL
+status
+ENUM('new','cooking','ready','served')
+DEFAULT 'new'
+started_at / ready_at
+TIMESTAMP
+NULLABLE
+services
+Sartaroshxona/xizmat ko'rsatish xizmatlari.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id
+UUID (FK)
+NOT NULL
+name
+VARCHAR(100)
+NOT NULL
+price
+DECIMAL(14,2)
+NOT NULL
+duration_minutes
+INT
+DEFAULT 30
+status
+ENUM('active','inactive')
+DEFAULT 'active'
+appointments
+Bandlovlar (sartaroshxona va boshqa xizmat bizneslari).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / branch_id
+UUID (FK)
+NOT NULL
+customer_id / service_id / employee_id
+UUID (FK)
+NOT NULL
+scheduled_at
+TIMESTAMP
+NOT NULL
+status
+ENUM('booked','confirmed','in_progress','completed','cancelled','no_show')
+DEFAULT 'booked'
+order_id
+UUID (FK)
+NULLABLE — to'lov bilan bog'langanda
+notifications
+Bildirishnomalar.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / user_id
+UUID (FK)
+NOT NULL
+type
+ENUM('low_stock','payment','new_order','order_ready','appointment','expense','system')
+NOT NULL
+channel
+ENUM('in_app','telegram','email','sms')
+NOT NULL
+title / body
+VARCHAR / TEXT
+NOT NULL
+is_read
+BOOLEAN
+DEFAULT false
+created_at
+TIMESTAMP
+audit_logs
+Har bir muhim harakat tarixi.
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / user_id
+UUID (FK)
+NOT NULL
+action
+VARCHAR(50)
+create/update/delete/login/refund...
+entity
+VARCHAR(50)
+products, orders, employees...
+entity_id
+UUID
+old_value / new_value
+JSONB
+NULLABLE
+ip_address
+VARCHAR(45)
+created_at
+TIMESTAMP
+subscriptions
+Biznesning obuna holati (billing).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+business_id / plan_id
+UUID (FK)
+NOT NULL
+status
+ENUM('active','past_due','cancelled','trialing')
+DEFAULT 'trialing'
+current_period_start / end
+TIMESTAMP
+cancel_at_period_end
+BOOLEAN
+DEFAULT false
+plans
+Tarif rejalari (Free/Pro/Business).
+Ustun
+Tur
+Cheklov / izoh
+id
+UUID (PK)
+name
+VARCHAR(50)
+Free, Pro, Business
+max_branches / max_users
+INT
+NULLABLE = cheklanmagan
+price_monthly
+DECIMAL(10,2)
+features
+JSONB
+feature-flag ro'yxati
+26.1 Indekslash siyosati
+Har bir FK ustuniga avtomatik B-tree indeks.
+products.barcode, products.sku, customers.phone, users.phone/email — UNIQUE indeks.
+orders (business_id, branch_id, created_at) — composite indeks (hisobotlar tez ishlashi uchun).
+inventory_transactions (product_id, created_at) — composite indeks (tarixni tez chiqarish uchun).
+To'liq matnli qidiruv (full-text search) products.name ustida — PostgreSQL `tsvector` GIN indeks.
+27. API
+27.1 Umumiy qoidalar
+Base URL: /api/v1. Barcha so'rovlar (login/register'dan tashqari) Authorization: Bearer <access_token> talab qiladi.
+Barcha ro'yxat (list) endpointlari pagination qo'llab-quvvatlaydi: ?page=1&limit=20 (default limit=20, max=100), javobda meta: { page, limit, total, total_pages }.
+Filtrlash: ?filter[status]=active, saralash: ?sort=-created_at (minus = kamayish tartibida).
+Barcha yozish (POST/PUT/PATCH/DELETE) so'rovlari tegishli permission bilan himoyalangan (403 agar yo'q bo'lsa) va audit_logs ga yoziladi.
+27.2 Asosiy endpointlar
+Method / Endpoint
+Tavsif
+Auth / Permission
+POST /auth/register
+Ro'yxatdan o'tish
+Public
+POST /auth/login
+Kirish
+Public
+POST /auth/refresh
+Access token yangilash
+Refresh token
+POST /auth/logout
+Chiqish
+Auth
+POST /auth/forgot-password / /auth/reset-password
+Parolni tiklash
+Public / reset_token
+GET/POST /businesses
+Biznes ro'yxati / yaratish
+Auth
+GET/PUT /businesses/:id
+Biznesni ko'rish/tahrirlash
+Auth, business.manage
+GET/POST /branches
+Filiallar
+branches.view/.create
+GET/POST/PUT/DELETE /products
+Mahsulotlar CRUD
+products.*
+GET/POST /categories
+Kategoriyalar
+products.*
+GET /inventory
+Qoldiqlar ro'yxati
+inventory.view
+POST /inventory/in
+Kirim qilish
+inventory.create
+POST /inventory/out
+Chiqim qilish
+inventory.create
+POST /inventory/transfer
+Filiallararo ko'chirish
+inventory.transfer
+GET/POST /orders
+Buyurtmalar ro'yxati / yaratish (draft)
+orders.view/.create
+GET /orders/:id
+Order tafsiloti
+orders.view
+POST /orders/:id/items
+Order'ga qator qo'shish
+orders.create
+POST /payments
+To'lov qo'shish
+orders.create
+POST /orders/:id/complete
+Orderni yakunlash
+orders.create
+POST /orders/:id/cancel
+Orderni bekor qilish
+orders.cancel
+POST /refunds
+Qaytarish yaratish
+refunds.create
+GET/POST /customers
+Mijozlar
+customers.*
+GET/POST /suppliers
+Ta'minotchilar
+suppliers.*
+GET/POST /employees
+Xodimlar
+employees.view/.manage
+GET/POST /roles
+Rollar va ruxsatlar
+settings.manage
+GET /reports/sales
+Sotuv hisoboti
+reports.view
+GET /reports/profit
+Foyda hisoboti
+reports.view
+GET /reports/products
+Mahsulot hisoboti
+reports.view
+GET /dashboard/summary
+Dashboard KPI
+dashboard.view
+GET/POST /tables
+Restoran stollari
+restaurant.*
+GET/POST /appointments
+Bandlovlar
+appointments.*
+WS /realtime
+WebSocket kanali (order, kitchen, notification event'lari)
+Auth
+27.3 So'rov/javob namunasi — POST /orders/:id/complete
+So'rov body:
+{ "payments": [ { "payment_method_id": "uuid", "amount": 45000 } ] }
+Muvaffaqiyatli javob (200):
+{ "id": "uuid", "order_number": "#00231", "status": "completed", "total": 45000, "receipt_url": "https://.../receipts/uuid.pdf" }
+27.4 Standart xato formati
+{ "error": { "code": "INSUFFICIENT_STOCK", "message": "Omborda yetarli mahsulot yo'q", "field": "items[0].quantity" } }
+HTTP status
+Foydalanish holati
+400 Bad Request
+Validatsiya xatosi
+401 Unauthorized
+Token yo'q/muddati o'tgan
+403 Forbidden
+Permission yetarli emas yoki tenant mos kelmadi
+404 Not Found
+Resurs topilmadi
+409 Conflict
+Race condition (masalan omborda yetarli mahsulot yo'q)
+422 Unprocessable Entity
+Biznes-qoida buzilgan (masalan overlapping appointment)
+429 Too Many Requests
+Rate limit
+500 Internal Server Error
+Kutilmagan xato
+28. Frontend
+Tavsiya etilgan stack: Vue 3 (Composition API) + TypeScript + Vite + Pinia + Vue Router + Tailwind CSS.
+28.1 Papka arxitekturasi
+src/components — qayta ishlatiluvchi UI komponentlar (atomic: base/, forms/, tables/).
+src/views — sahifalar (route darajasida).
+src/layouts — DefaultLayout (sidebar+header), AuthLayout, POSLayout (soddalashtirilgan, fullscreen).
+src/stores — Pinia store'lar (auth, business, cart, inventory, ...).
+src/services — API client qatlami (axios/fetch wrapper, har bir modul uchun alohida service fayli).
+src/composables — useAuth, usePermission, useDebounce, useRealtime va h.k.
+src/utils — formatCurrency, formatDate, validators.
+src/types — TypeScript interfeyslar (backend DTO'lariga mos).
+28.2 Muhim frontend qoidalari
+Sidebar business_type va foydalanuvchi permission'lari asosida dinamik generatsiya qilinadi (statik hardcode qilinmaydi).
+usePermission composable — v-if="can('products.create')" kabi direktivalar orqali UI elementlarini yashirish/ko'rsatish uchun ishlatiladi (lekin bu faqat UX — haqiqiy himoya backendda).
+Barcha pul qiymatlari formatCurrency orqali business.currency bo'yicha formatlanadi (masalan 45 000 so'm).
+Real-time yangilanishlar (yangi order, kitchen status) WebSocket store orqali global holatga tarqatiladi.
+29. Backend
+Tavsiya etilgan stack: Node.js + NestJS + PostgreSQL + Prisma (yoki TypeORM) + Redis (cache/queue) + JWT + WebSocket (Socket.IO/nestjs/websockets).
+29.1 Modul arxitekturasi (NestJS module per domain)
+auth, users, businesses, branches, products, inventory, orders, payments, customers, employees, finance, reports, restaurant, appointments, notifications — har biri alohida NestJS module (controller + service + DTO + repository).
+Umumiy (shared) qatlam: TenantMiddleware (business_id ni request context'ga joylashtiradi), PermissionGuard (RBAC tekshiruvi), AuditInterceptor (yozish amallarini avtomatik audit_logs ga yozadi).
+Redis: sessiya/refresh-token qora ro'yxati, rate-limiting, low-stock job navbati, real-time pub/sub (ko'p instance bo'lganda WebSocket sinxronizatsiyasi uchun).
+29.2 Transaction va konsistentlik
+Order complete, refund, stock transfer kabi ko'p jadvalga yozadigan amallar — bittalik DB transaction (BEGIN...COMMIT) ichida, xato bo'lsa to'liq rollback.
+Optimistic yoki pessimistic locking — inventory yangilanishida `SELECT...FOR UPDATE` (pessimistic) tavsiya etiladi, yuqori parallellikda deadlock oldini olish uchun har doim bir xil tartibda qulflash (masalan product_id bo'yicha ASC).
+30. Desktop
+Tauri 2 + Vue 3 orqali Windows uchun POS ilovasi — web frontend bilan katta qismi umumiy kod (monorepo, shared UI komponentlar).
+Rust backend (src-tauri) — printer (ESC/POS), barcode skaner (HID) va offline local DB (SQLite) bilan to'g'ridan-to'g'ri ishlash uchun.
+Ilova: Web App (to'liq boshqaruv) + Desktop POS (tezkor kassa, printer/skaner integratsiyasi) + responsive mobil interfeys (brauzer orqali) — uchtasi bitta backend API bilan ishlaydi.
+31. Offline mode
+Desktop POS'da SQLite local DB — mahsulotlar, narxlar, mijozlar katalogi periodik (masalan har 10 daqiqada, internet bor bo'lsa) sinxronlanib turadi.
+Internet uzilganda: order local DB'ga 'pending_sync' statusi bilan yoziladi, chek local ma'lumot asosida chop etiladi (order_number vaqtinchalik local prefiks bilan, masalan LOCAL-00007).
+Internet qaytganda Sync Engine: pending_sync orderlarni server'ga navbat bilan yuboradi, server tomonda order_number qayta generatsiya qilinadi, inventory serverda qayta hisoblanadi (agar shu orada boshqa kanal orqali qoldiq kamaygan bo'lsa — conflict holatida server "yutadi", farq admin uchun reconciliation ro'yxatida ko'rsatiladi).
+Offline rejim MVP'dan keyingi bosqichda (V3) to'liq ishlab chiqiladi; MVP'da faqat internet uzilishini aniqlash va foydalanuvchini ogohlantirish yetarli.
+32. Security
+Yo'nalish
+Talab
+Parollar
+bcrypt/argon2id hash, plaintext hech qachon saqlanmaydi/log qilinmaydi
+Token
+JWT (RS256) + refresh token rotatsiyasi va reuse detection
+Transport
+Faqat HTTPS (TLS 1.2+), HSTS yoqilgan
+RBAC
+Har bir yozish endpointida permission tekshiruvi (guard darajasida, controller ichida emas)
+Tenant isolation
+RLS + API darajasidagi qo'shimcha tekshiruv (5-bo'lim)
+Input validation
+DTO darajasida (class-validator), SQL injection ORM parametrlash orqali oldi olinadi
+Rate limiting
+Login: 5/15daq per IP+user, umumiy API: 100 so'rov/daqiqa per user
+XSS/CSRF
+Frontendda auto-escape (Vue default), API faqat JSON qabul qiladi (CSRF xavfi past), CSP header
+Audit logs
+25-bo'limga muvofiq, o'zgartirib bo'lmaydigan (append-only)
+Backup
+Kunlik avtomatik DB backup, 30 kunlik retention, oyiga 1 marta restore test
+33. MVP
+MVP quyidagi modullarni to'liq ishchi holatda o'z ichiga oladi:
+Auth (register, login, forgot password)
+Business + Branch yaratish (onboarding)
+Users, Roles (built-in rollar)
+Dashboard (asosiy KPI)
+Products, Categories
+Inventory (in/out, real-time qoldiq)
+POS (savat, to'lov — naqd/karta), Orders
+Payments
+Customers
+Basic Finance (revenue/expense qo'lda + avtomatik)
+Basic Reports (Sales, Product)
+Qabul mezoni: oddiy do'kon real ishlab, login'dan tortib kunlik hisobotgacha to'liq siklni uzilishsiz bajara olishi kerak.
+34. V2
+Restaurant, Tables, Kitchen (KDS), Waiters
+Appointments (Sartaroshxona/xizmat)
+Suppliers
+Advanced Inventory (stock transfer, partiya/muddat)
+Refund (to'liq oqim)
+Advanced Reports (Employee, Finance breakdown, eksport)
+Telegram bot
+35. V3
+Multi-branch (to'liq, filiallararo konsolidatsiya)
+Offline POS (to'liq sync engine)
+Advanced Analytics (trend bashorati)
+Subscription/Billing (SaaS to'lov)
+Mobile App (native)
+Ochiq API (uchinchi tomon integratsiyalar uchun)
+AI Assistant
+36. AI moduli — kelajak
+Savdo, foyda, xarajat, mahsulot aylanishi va qayta buyurtma ehtiyojini tahlil qiluvchi model (V3+).
+Misol stsenariy: foyda kamayganda AI sotuv va tannarx o'zgarishlarini tahlil qilib, mumkin bo'lgan sabablarni (masalan yetkazib beruvchi narxi oshgan, chegirma ko'payib ketgan) tabiiy tilda tushuntiradi.
+Texnik yondashuv: mavjud reports/finance API'laridan olingan ma'lumotlar + LLM (Claude/Gemini) orqali natural-language insight generatsiyasi, real-time emas — kunlik/haftalik job sifatida.
+37. UI/UX talablari
+Uslub: modern, minimal, professional — soft rounded cards, generous whitespace, niche'ga mos (masalan restoran uchun issiq, sartaroshxona uchun neytral) pastel/gradient palitra.
+Dark/Light mode — tizim sozlamasini avtomatik aniqlash + qo'lda almashtirish, tanlov localStorage/user preference'da saqlanadi.
+Responsive: desktop-first, lekin tablet (POS uchun muhim) va mobile to'liq qo'llab-quvvatlanadi (breakpoint: 640/768/1024/1280px).
+Sidebar — business_type'ga qarab faqat tegishli modullarni ko'rsatadi (masalan sartaroshxonada 'Kitchen' bo'limi umuman ko'rinmaydi).
+Statistik ma'lumotlar uchun progress ring/gauge komponentlar linear bar'dan afzal ko'riladi (Dashboard KPI kartalarida).
+38. Asosiy user flow
+Do'kon
+Login → Business → Dashboard → POS → Scan Product → Cart → Payment → Receipt → Inventory Update → Finance Update.
+Restoran
+Login → Restaurant → Table → Order → Kitchen → Prepare → Serve → Payment → Close Table.
+Sartaroshxona
+Customer → Appointment → Barber → Service → Completed → Payment → Receipt.
+Har bir flow'dagi har bir qadamda muvaffaqiyatsizlik holati (masalan to'lov rad etilishi, mahsulot yetishmasligi) uchun aniq xato xabari va qaytish yo'li (retry/cancel) UI darajasida ta'minlanishi shart.
+39. Asosiy arxitektura qoidasi
+Restaurant POS va Shop POS alohida dastur sifatida qurilmaydi — bitta POS komponenti order_type parametriga qarab moslashadi.
+UBMS Core (Auth, Business, Branch, Users, RBAC, Notifications, Audit) umumiy; POS, Inventory, Finance — umumiy qatlamlar (barcha biznes turlarida ishlatiladi); Shop, Restaurant, Salon — biznes-modullari (feature flag orqali yoqiladigan, Core'ga bog'liq lekin Core ularga bog'liq emas — bir tomonlama bog'liqlik).
+Yangi biznes turi qo'shilganda: yangi feature-module yoziladi + business_type_modules konfiguratsiyasiga qator qo'shiladi; Core kod (auth, RBAC, POS asosiy engine, inventory engine) o'zgartirilmaydi.
+40. Monetizatsiya
+Reja
+Cheklovlar / imkoniyatlar
+Free
+1 business, 1 branch, 2 users, Basic POS, reklama/limitlar mavjud
+Pro
+Cheklanmagan users, Inventory, Finance, Reports, Telegram bot
+Business
+Ko'p filiallar, Advanced Analytics, ochiq API, advanced permissions, priority support
+Limitlar plans.max_branches / max_users orqali backendda majburiy tekshiriladi (frontend faqat ko'rsatadi), limitdan oshishga urinilganda 402/403 + "Tarifni yangilang" xabari.
+Narxlar bozor tahlilidan keyin belgilanadi — bu qism keyingi bosqichda alohida hujjat (pricing strategy) sifatida rasmiylashtiriladi.
+41. Definition of Done — MVP
+User ro'yxatdan o'tishi, login qilishi mumkin.
+Business va Branch yaratish ishlaydi.
+Employee qo'shish va rol biriktirish ishlaydi.
+Product yaratish, tahrirlash ishlaydi.
+Inventoryga kirim qilish qoldiqni to'g'ri oshiradi.
+POS orqali sotuv qilish, to'lov qabul qilish, chek chiqarish to'liq ishlaydi.
+Sotuvdan keyin ombor avtomatik kamayadi va bu inventory_transactions'da ko'rinadi.
+Revenue avtomatik yoziladi va Finance/Dashboard'da ko'rinadi.
+Dashboard va Reports real ma'lumot bilan yangilanadi.
+Customer saqlash va uning xarid tarixini ko'rish ishlaydi.
+Permission tekshiruvi barcha himoyalangan endpointlarda ishlaydi (testlar bilan tasdiqlangan).
+Audit log muhim harakatlarni yozadi.
+Tenant isolation ta'minlangan (boshqa business ma'lumotlari hech qanday endpointda ko'rinmaydi — avtomatlashtirilgan testlar bilan tekshirilgan).
+42. Yakuniy maqsad
+UBMS har bir biznesga alohida dastur emas, balki turli bizneslarga moslashadigan yagona operatsion boshqaruv platformasi bo'lishi kerak. Restoran — bir rejim; do'kon — boshqa rejim; sartaroshxona — boshqa rejim. Core bir xil qoladi, biznesga xos workflow va modullar alohida qo'shiladi.
+43. Tavsiya etiladigan ishlab chiqish ketma-ketligi
+Bosqich
+Tarkib
+Asosiy natija (deliverable)
+1
+Database schema va ERD
+To'liq migratsiya fayllari, ERD diagrammasi
+2
+Backend Core: auth, tenant, RBAC
+Ishlaydigan auth API, permission guard'lar
+3
+Frontend layout, navigation, design system
+Sidebar/header, komponent kutubxonasi, dark/light
+4
+Products + Inventory
+To'liq CRUD + real-time qoldiq
+5
+POS + Orders + Payments + Receipt
+To'liq sotuv sikli, chek chiqarish
+6
+Dashboard + Finance + Reports
+KPI, asosiy hisobotlar
+7
+Restaurant/Service modullari
+Tables, KDS, Appointments
+8
+Telegram, offline sync va integratsiyalar
+Bot, sync engine MVP
+9
+SaaS billing, subscriptions va advanced analytics
+To'lov integratsiyasi, limit tekshiruvi
+10
+Production deployment, monitoring, backup va security audit
+CI/CD, monitoring dashboard, pentest hisoboti
+Har bir bosqich yakunida: (a) unit/integration testlar o'tgan, (b) shu bosqichga oid bo'limlar bo'yicha demo qilingan, (c) keyingi bosqichga o'tishdan oldin Owner (Xo'jayin) tomonidan tasdiqlangan bo'lishi tavsiya etiladi — bu dev-workflow-taste uslubiga mos (avval to'liq plan, keyin bosqichma-bosqich amalga oshirish).

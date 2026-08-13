@@ -1,0 +1,17 @@
+{
+  "name": "@ubms/shared-types",
+  "version": "1.0.0",
+  "description": "Universal Business Management System (UBMS) shared types, enums and DTOs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["ubms", "saas", "types", "pos", "erp"],
+  "author": "boshqar.uz team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
