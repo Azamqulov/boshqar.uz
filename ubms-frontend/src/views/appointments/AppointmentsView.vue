@@ -242,12 +242,16 @@ const saveAppointment = async () => {
       scheduledAt: new Date(form.value.scheduledAt).toISOString(),
       notes: form.value.notes || undefined,
     };
-    await api.post('/appointments', payload);
+    const { data: created } = await api.post('/appointments', payload);
+    // Optimistic: prepend to list immediately
+    if (created) {
+      dataStore.appointments.unshift(created);
+    }
     toast.success('Yangi bandlov muvaffaqiyatli saqlandi!', 'Bandlov');
     isBookingModalOpen.value = false;
     dataStore.invalidate('appointments');
     dataStore.invalidate('dashboard');
-    await loadAppointments(true);
+    loadAppointments(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Bandlovni saqlashda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -258,10 +262,13 @@ const saveAppointment = async () => {
 const updateAppointmentStatus = async (id: string, status: string) => {
   try {
     await api.put(`/appointments/${id}/status`, { status });
-    toast.success(`Bandlov holati "${status}" ga o'zgartirildi!`, 'Bandlov');
+    // Optimistic: update status in store immediately
+    const app = dataStore.appointments.find((a: any) => a.id === id);
+    if (app) app.status = status;
+    toast.success(`Bandlov holati o'zgartirildi!`, 'Bandlov');
     dataStore.invalidate('appointments');
     dataStore.invalidate('dashboard');
-    await loadAppointments(true);
+    loadAppointments(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Holatni yangilashda xatolik', 'Xatolik');
   }

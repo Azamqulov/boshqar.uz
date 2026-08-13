@@ -179,16 +179,20 @@ const createExpense = async () => {
 
   submitting.value = true;
   try {
-    await api.post('/finance/expenses', {
+    const { data: created } = await api.post('/finance/expenses', {
       ...expenseForm.value,
       amount: Number(expenseForm.value.amount),
     });
+    // Optimistic: prepend expense to list immediately
+    if (created) {
+      dataStore.financeExpenses.unshift(created);
+    }
     toast.success('Yangi xarajat muvaffaqiyatli saqlandi!', 'Moliya');
     isExpenseModalOpen.value = false;
     expenseForm.value = { category: 'rent', amount: 0, description: '' };
     dataStore.invalidate('finance');
     dataStore.invalidate('dashboard');
-    await loadFinance(true);
+    loadFinance(true); // background refresh
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Xarajatni saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {

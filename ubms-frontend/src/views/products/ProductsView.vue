@@ -734,14 +734,28 @@ const saveProduct = async () => {
     };
 
     if (editingId.value) {
-      await api.put(`/products/${editingId.value}`, payload);
+      const { data: updated } = await api.put(`/products/${editingId.value}`, payload);
+      // Optimistic: update store immediately so table refreshes right away
+      const idx = dataStore.products.findIndex((p: any) => p.id === editingId.value);
+      if (idx !== -1 && updated) {
+        dataStore.products[idx] = { ...dataStore.products[idx], ...updated };
+      }
       toast.success(`"${form.value.name}" muvaffaqiyatli yangilandi`, 'Mahsulot');
     } else {
-      await api.post('/products', payload);
+      const { data: created } = await api.post('/products', payload);
+      // Optimistic: push new product to top of list immediately
+      if (created) {
+        dataStore.products.unshift(created);
+      }
       toast.success(`"${form.value.name}" muvaffaqiyatli qo'shildi`, 'Mahsulot');
     }
+
     isModalOpen.value = false;
-    await loadProducts(true);
+    // Invalidate then background-refresh for server-side accuracy
+    dataStore.invalidate('products');
+    dataStore.invalidate('dashboard');
+    dataStore.invalidate('inventory');
+    loadProducts(true); // fire-and-forget background refresh
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Mahsulotni saqlashda xatolik yuz berdi'), 'Xatolik');
   }
@@ -759,10 +773,14 @@ const deleteProduct = (prodIdOrProd: any) => {
     onConfirm: async () => {
       try {
         await api.delete(`/products/${id}`);
+        // Optimistic: remove from store immediately
+        const idx = dataStore.products.findIndex((p: any) => p.id === id);
+        if (idx !== -1) dataStore.products.splice(idx, 1);
         toast.success("Mahsulot o'chirildi", 'Mahsulot');
         dataStore.invalidate('products');
         dataStore.invalidate('dashboard');
-        await loadProducts(true);
+        dataStore.invalidate('inventory');
+        loadProducts(true); // background refresh
       } catch (err: any) {
         toast.error(getErrorMessage(err, "O'chirishda xatolik yuz berdi"), 'Xatolik');
       } finally {

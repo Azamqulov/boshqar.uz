@@ -289,11 +289,14 @@ const submitStockIn = async () => {
       purchasePrice: Number(stockForm.value.purchasePrice) || 0,
     });
     toast.success('Omborga muvaffaqiyatli kirim qilindi!', 'Omborxona');
+    // Optimistic: update quantity in the store immediately
+    const inv = inventory.value.find((i: any) => (i.productId || i.product?.id) === stockForm.value.productId);
+    if (inv) inv.quantity = Number(inv.quantity || 0) + Number(stockForm.value.quantity);
     isStockInOpen.value = false;
     dataStore.invalidate('products');
     dataStore.invalidate('inventory');
     dataStore.invalidate('dashboard');
-    await loadInventory(true);
+    loadInventory(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Kirim qilishda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -318,11 +321,14 @@ const submitStockOut = async () => {
       quantity: Number(stockOutForm.value.quantity),
     });
     toast.success('Ombordan muvaffaqiyatli chiqim qilindi!', 'Omborxona');
+    // Optimistic: reduce quantity in store immediately
+    const inv = inventory.value.find((i: any) => (i.productId || i.product?.id) === stockOutForm.value.productId);
+    if (inv) inv.quantity = Math.max(0, Number(inv.quantity || 0) - Number(stockOutForm.value.quantity));
     isStockOutOpen.value = false;
     dataStore.invalidate('products');
     dataStore.invalidate('inventory');
     dataStore.invalidate('dashboard');
-    await loadInventory(true);
+    loadInventory(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Chiqim qilishda xatolik yuz berdi', 'Xatolik');
   } finally {

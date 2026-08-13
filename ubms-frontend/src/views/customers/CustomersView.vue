@@ -268,17 +268,21 @@ const createCustomer = async () => {
   submitting.value = true;
   try {
     const cleanPhone = form.value.phone ? cleanUzbekPhone(form.value.phone) : undefined;
-    await api.post('/customers', {
+    const { data: created } = await api.post('/customers', {
       ...form.value,
       fullName: form.value.fullName.trim(),
       phone: cleanPhone,
     });
+    // Optimistic: add to top of list immediately
+    if (created) {
+      dataStore.customers.unshift({ ...created, totalPurchases: 0, totalSpent: 0, debt: 0 });
+    }
     toast.success(`"${form.value.fullName}" mijozlar bazasiga qo'shildi!`, 'CRM');
     isCreateModalOpen.value = false;
     form.value = { fullName: '', phone: '+998 ', notes: '' };
     dataStore.invalidate('customers');
     dataStore.invalidate('dashboard');
-    await loadCustomers(true);
+    loadCustomers(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Mijozni saqlashda xatolik yuz berdi', 'Xatolik');
   } finally {
@@ -304,6 +308,12 @@ const submitPayDebt = async () => {
     await api.post(`/customers/${activeCustomer.value.id}/pay-debt`, {
       amount: Number(debtPayAmount.value),
     });
+    // Optimistic: reduce debt immediately in the list
+    const idx = dataStore.customers.findIndex((c: any) => c.id === activeCustomer.value?.id);
+    if (idx !== -1) {
+      const newDebt = Math.max(0, Number(dataStore.customers[idx].debt) - debtPayAmount.value);
+      dataStore.customers[idx] = { ...dataStore.customers[idx], debt: newDebt };
+    }
     toast.success(
       `"${activeCustomer.value.fullName}" uchun ${formatCurrency(debtPayAmount.value)} qarz to'lovi qabul qilindi!`,
       'Qarz Daftari'
@@ -311,7 +321,7 @@ const submitPayDebt = async () => {
     isPayDebtModalOpen.value = false;
     dataStore.invalidate('customers');
     dataStore.invalidate('dashboard');
-    await loadCustomers(true);
+    loadCustomers(true); // background refresh
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
   } finally {
