@@ -419,7 +419,7 @@ const visibleNavGroups = computed(() => {
     if (item.name === 'pos') {
       return (
         allowed.includes('pos') ||
-        allowed.length === 0 ||
+        allowed.includes('orders') ||
         userRole.includes('sotuvchi') ||
         userRole.includes('kassir') ||
         userRole.includes('cashier') ||
@@ -432,13 +432,17 @@ const visibleNavGroups = computed(() => {
     }
     return (
       allowed.includes(item.name) ||
-      (item.name === 'products' && allowed.includes('products')) ||
-      (item.name === 'inventory' && allowed.includes('inventory')) ||
+      (item.name === 'products' && (allowed.includes('products') || allowed.includes('inventory'))) ||
+      (item.name === 'categories' && (allowed.includes('products') || allowed.includes('categories'))) ||
+      (item.name === 'inventory' && (allowed.includes('inventory') || allowed.includes('products'))) ||
+      (item.name === 'suppliers' && (allowed.includes('suppliers') || allowed.includes('inventory'))) ||
       (item.name === 'customers' && allowed.includes('customers')) ||
-      (item.name === 'tables' && allowed.includes('tables')) ||
-      (item.name === 'kds' && allowed.includes('kds')) ||
-      (item.name === 'appointments' && allowed.includes('appointments')) ||
-      (item.name === 'finance' && allowed.includes('finance'))
+      (item.name === 'tables' && (allowed.includes('tables') || allowed.includes('restaurant'))) ||
+      (item.name === 'kds' && (allowed.includes('kds') || allowed.includes('restaurant'))) ||
+      (item.name === 'appointments' && (allowed.includes('appointments') || allowed.includes('services'))) ||
+      (item.name === 'services' && (allowed.includes('services') || allowed.includes('appointments'))) ||
+      (item.name === 'finance' && allowed.includes('finance')) ||
+      (item.name === 'settings' && allowed.includes('settings'))
     );
   };
 

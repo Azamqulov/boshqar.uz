@@ -24,9 +24,15 @@ export const defaultPosSettings: PosSettings = {
 
 const STORAGE_KEY = 'ubms_pos_feature_settings';
 
+const getStorageKey = (): string => {
+  const bizId = localStorage.getItem('ubms_active_business_id');
+  return bizId ? `ubms_pos_settings_${bizId}` : STORAGE_KEY;
+};
+
 const loadSavedSettings = (): PosSettings => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey();
+    const raw = localStorage.getItem(key) || localStorage.getItem(STORAGE_KEY);
     if (raw) {
       return { ...defaultPosSettings, ...JSON.parse(raw) };
     }
@@ -40,21 +46,32 @@ const loadSavedSettings = (): PosSettings => {
 const posSettings = ref<PosSettings>(loadSavedSettings());
 
 export const usePosSettings = () => {
+  const reloadSettings = () => {
+    posSettings.value = loadSavedSettings();
+  };
+
   const saveSettings = (newSettings?: Partial<PosSettings>) => {
     if (newSettings) {
       posSettings.value = { ...posSettings.value, ...newSettings };
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posSettings.value));
+    const key = getStorageKey();
+    const json = JSON.stringify(posSettings.value);
+    localStorage.setItem(key, json);
+    localStorage.setItem(STORAGE_KEY, json);
   };
 
   const resetToDefaults = () => {
     posSettings.value = { ...defaultPosSettings };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPosSettings));
+    const key = getStorageKey();
+    const json = JSON.stringify(defaultPosSettings);
+    localStorage.setItem(key, json);
+    localStorage.setItem(STORAGE_KEY, json);
   };
 
   return {
     posSettings,
     saveSettings,
     resetToDefaults,
+    reloadSettings,
   };
 };

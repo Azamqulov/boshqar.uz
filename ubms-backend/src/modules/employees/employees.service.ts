@@ -33,46 +33,48 @@ export interface UpdateEmployeeDto extends Partial<CreateEmployeeDto> {
   status?: EmployeeStatus;
 }
 
-const UI_MODULE_TO_PERM_MODULES: Record<string, string[]> = {
-  pos: ['orders', 'refunds', 'products', 'inventory', 'customers'],
-  products: ['products', 'inventory'],
-  inventory: ['inventory', 'products'],
+export const UI_MODULE_TO_PERM_MODULES: Record<string, string[]> = {
+  pos: ['orders', 'refunds', 'pos'],
+  products: ['products'],
+  inventory: ['inventory'],
   customers: ['customers'],
   suppliers: ['suppliers'],
-  finance: ['finance', 'reports'],
+  finance: ['finance', 'reports', 'expenses', 'revenues'],
   employees: ['employees'],
   reports: ['reports'],
-  restaurant: ['restaurant', 'orders'],
-  appointments: ['appointments', 'orders'],
+  restaurant: ['restaurant', 'tables', 'kds'],
+  appointments: ['appointments', 'services'],
   settings: ['settings', 'audit'],
 };
 
-function resolvePermissionModules(uiModules: string[]): string[] {
+export function resolvePermissionModules(uiModules: string[]): string[] {
   const dbModules = new Set<string>();
   for (const mod of uiModules) {
     if (UI_MODULE_TO_PERM_MODULES[mod]) {
       UI_MODULE_TO_PERM_MODULES[mod].forEach((m) => dbModules.add(m));
-    } else {
-      dbModules.add(mod);
     }
+    dbModules.add(mod);
   }
   return Array.from(dbModules);
 }
 
-function mapPermModulesToUiModules(permModules: string[]): string[] {
+export function mapPermModulesToUiModules(permModules: string[]): string[] {
   const uiModules = new Set<string>();
   const dbSet = new Set(permModules);
-  if (dbSet.has('orders') || dbSet.has('refunds')) uiModules.add('pos');
+  if (dbSet.has('orders') || dbSet.has('refunds') || dbSet.has('pos')) uiModules.add('pos');
   if (dbSet.has('products')) uiModules.add('products');
   if (dbSet.has('inventory')) uiModules.add('inventory');
   if (dbSet.has('customers')) uiModules.add('customers');
   if (dbSet.has('suppliers')) uiModules.add('suppliers');
-  if (dbSet.has('finance')) uiModules.add('finance');
+  if (dbSet.has('finance') || dbSet.has('expenses') || dbSet.has('revenues')) uiModules.add('finance');
   if (dbSet.has('employees')) uiModules.add('employees');
   if (dbSet.has('reports')) uiModules.add('reports');
-  if (dbSet.has('restaurant')) uiModules.add('restaurant');
-  if (dbSet.has('appointments')) uiModules.add('appointments');
-  if (dbSet.has('settings')) uiModules.add('settings');
+  if (dbSet.has('restaurant') || dbSet.has('tables') || dbSet.has('kds')) uiModules.add('restaurant');
+  if (dbSet.has('appointments') || dbSet.has('services')) uiModules.add('appointments');
+  if (dbSet.has('settings') || dbSet.has('audit')) uiModules.add('settings');
+  for (const m of permModules) {
+    if (UI_MODULE_TO_PERM_MODULES[m]) uiModules.add(m);
+  }
   return Array.from(uiModules);
 }
 

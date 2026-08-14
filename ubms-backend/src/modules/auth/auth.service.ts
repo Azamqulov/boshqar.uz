@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { mapPermModulesToUiModules } from '../employees/employees.service';
 import * as bcrypt from 'bcrypt';
 
 function normalizePhone(raw: string): string {
@@ -201,7 +202,8 @@ export class AuthService {
         where: { roleId: activeBusiness.roleId },
         include: { permission: true },
       });
-      allowedModules = Array.from(new Set(rolePerms.map((rp) => rp.permission.module)));
+      const perms = rolePerms.map((rp) => rp.permission.module);
+      allowedModules = mapPermModulesToUiModules(perms);
       if (allowedModules.length === 0) {
         const lower = (activeBusiness.role.name || '').toLowerCase();
         if (lower.includes('waiter') || lower.includes('ofitsiant')) allowedModules = ['tables', 'pos'];

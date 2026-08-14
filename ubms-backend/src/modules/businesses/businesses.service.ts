@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessType } from '@prisma/client';
 import { getBusinessTypesConfig } from '../../common/config/business-types.config';
+import { mapPermModulesToUiModules } from '../employees/employees.service';
 
 export interface CreateBusinessDto {
   name: string;
@@ -125,21 +126,32 @@ export class BusinessesService {
             branches: true,
           },
         },
-        role: true,
+        role: {
+          include: {
+            rolePermissions: {
+              include: { permission: true },
+            },
+          },
+        },
         branch: true,
       },
     });
 
-    return businessUsers.map((bu) => ({
-      id: bu.business.id,
-      name: bu.business.name,
-      businessType: bu.business.businessType,
-      currency: bu.business.currency,
-      timezone: bu.business.timezone,
-      status: bu.business.status,
-      role: bu.role.name,
-      branches: bu.business.branches,
-    }));
+    return businessUsers.map((bu) => {
+      const perms = bu.role?.rolePermissions?.map((rp) => rp.permission.module) || [];
+      const allowedModules = bu.role?.name === 'Owner' ? ['all'] : mapPermModulesToUiModules(perms);
+      return {
+        id: bu.business.id,
+        name: bu.business.name,
+        businessType: bu.business.businessType,
+        currency: bu.business.currency,
+        timezone: bu.business.timezone,
+        status: bu.business.status,
+        role: bu.role.name,
+        branches: bu.business.branches,
+        allowedModules: allowedModules.length > 0 ? allowedModules : ['pos'],
+      };
+    });
   }
 
   async findOne(id: string, userId: string) {
