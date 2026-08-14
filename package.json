@@ -1,8 +1,0 @@
-{
-  "name": "boshqar-uz",
-  "version": "2.0.0",
-  "private": true,
-  "scripts": {
-    "build": "cd ubms-frontend && npm install && npm run build"
-  }
-}
