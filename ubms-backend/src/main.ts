@@ -48,8 +48,12 @@ async function bootstrap() {
       // allow requests with no origin like mobile apps, server-to-server or curl
       if (!origin) return callback(null, true);
 
+      if (configuredOrigins.includes('*')) {
+        return callback(null, true);
+      }
+
       const isAllowed = allowedOrigins.some((allowed) => {
-        if (allowed === origin) return true;
+        if (allowed === '*' || allowed === origin) return true;
         if (allowed.startsWith('*.')) {
           const domain = allowed.slice(2);
           return origin.endsWith(domain);
@@ -59,8 +63,9 @@ async function bootstrap() {
 
       if (
         isAllowed ||
-        (process.env.NODE_ENV !== 'production' &&
-          /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
+        origin.includes('vercel.app') ||
+        origin.includes('boshqar.uz') ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
       ) {
         callback(null, true);
       } else {
