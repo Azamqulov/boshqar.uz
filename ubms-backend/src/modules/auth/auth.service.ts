@@ -195,7 +195,7 @@ export class AuthService {
     );
 
     let allowedModules: string[] = [];
-    let actionPermissions = {
+    let actionPermissions: Record<string, { create: boolean; edit: boolean; delete: boolean }> = {
       pos: { create: true, edit: true, delete: true },
       products: { create: true, edit: true, delete: true },
       inventory: { create: true, edit: true, delete: true },
