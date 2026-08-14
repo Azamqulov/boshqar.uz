@@ -4,7 +4,7 @@ import { ref } from 'vue';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export const useThemeStore = defineStore('theme', () => {
-  const savedTheme = (localStorage.getItem('ubms_theme') as ThemeMode) || 'dark';
+  const savedTheme = (localStorage.getItem('ubms_theme') as ThemeMode) || 'light';
   const theme = ref<ThemeMode>(savedTheme);
   const isDark = ref<boolean>(savedTheme === 'dark');
 
