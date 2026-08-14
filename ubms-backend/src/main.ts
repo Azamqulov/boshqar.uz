@@ -1,10 +1,13 @@
 import 'dotenv/config';
+import { initSentry } from './instrument';
+initSentry(); // Must be called BEFORE NestFactory and all other modules
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { validateEnv } from './config/env.validation';
+
 
 async function bootstrap() {
   validateEnv();

@@ -28,6 +28,7 @@ import { PermissionGuard } from './common/guards/permission.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     SuperAdminModule,
     ShiftsModule,
   ],
+  controllers: [HealthController],
   providers: [
     {
       provide: APP_GUARD,

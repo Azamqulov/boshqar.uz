@@ -45,6 +45,8 @@
     "@nestjs/cli": "^10.3.2",
     "@nestjs/schematics": "^10.1.1",
     "@nestjs/testing": "^10.3.8",
+    "@sentry/nestjs": "^10.70.0",
+    "@sentry/profiling-node": "^10.70.0",
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/jest": "^30.0.0",
