@@ -111,4 +111,20 @@ export class SuperAdminController {
   getGlobalAuditLogs(@Query('limit') limit?: number) {
     return this.superAdminService.getGlobalAuditLogs(limit ? Number(limit) : 50);
   }
+
+  @Get('business-types')
+  @ApiOperation({ summary: 'Biznes turlari ro\'yxati va sozlamalari' })
+  getBusinessTypes() {
+    return this.superAdminService.getBusinessTypes();
+  }
+
+  @Patch('business-types/:type/toggle')
+  @ApiOperation({ summary: 'Biznes turini yoqish / o\'chirish (Ruxsat berish / Taqiqlash)' })
+  toggleBusinessType(
+    @Param('type') type: string,
+    @Body('isEnabled') isEnabled?: boolean,
+  ) {
+    return this.superAdminService.toggleBusinessType(type, isEnabled);
+  }
 }
+

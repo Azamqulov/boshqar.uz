@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, UserStatus, BusinessStatus } from '@prisma/client';
+import { getBusinessTypesConfig, toggleBusinessTypeConfig } from '../../common/config/business-types.config';
 
 @Injectable()
 export class SuperAdminService {
@@ -443,4 +444,28 @@ export class SuperAdminService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  // 10. Business Types Configuration for SuperAdmin
+  async getBusinessTypes() {
+    const configs = getBusinessTypesConfig();
+    const typeCounts = await this.prisma.business.groupBy({
+      by: ['businessType'],
+      _count: { id: true },
+    });
+
+    const countMap = new Map<string, number>();
+    typeCounts.forEach((tc) => {
+      countMap.set(tc.businessType, tc._count.id);
+    });
+
+    return configs.map((c) => ({
+      ...c,
+      count: countMap.get(c.type) || 0,
+    }));
+  }
+
+  async toggleBusinessType(type: string, isEnabled?: boolean) {
+    return toggleBusinessTypeConfig(type, isEnabled);
+  }
 }
+

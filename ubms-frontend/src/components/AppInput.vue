@@ -25,7 +25,7 @@ defineEmits<{
 <template>
   <div class="flex flex-col gap-1.5 w-full">
     <label v-if="label" class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-      {{ label }} <span v-if="required" class="text-rose-500">*</span>
+      {{ label.replace(/\s*\*+$/, '') }} <span v-if="required || label.includes('*')" class="text-rose-500">*</span>
     </label>
 
     <div class="relative flex items-center">

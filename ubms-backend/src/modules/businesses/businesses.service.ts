@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessType } from '@prisma/client';
+import { getBusinessTypesConfig } from '../../common/config/business-types.config';
 
 export interface CreateBusinessDto {
   name: string;
@@ -16,7 +17,19 @@ export interface CreateBusinessDto {
 export class BusinessesService {
   constructor(private prisma: PrismaService) {}
 
+  getAvailableTypes() {
+    const configs = getBusinessTypesConfig();
+    return configs.filter((c) => c.isEnabled);
+  }
+
   async create(userId: string, dto: CreateBusinessDto) {
+    // 0. Verify Business Type is enabled by SuperAdmin
+    const configs = getBusinessTypesConfig();
+    const typeConfig = configs.find((c) => c.type === dto.businessType);
+    if (typeConfig && !typeConfig.isEnabled) {
+      throw new ForbiddenException(`"${typeConfig.label}" biznes turi hozirda tizimda ro'yxatdan o'tish uchun vaqtincha to'xtatilgan.`);
+    }
+
     // 1. Get Free Plan
     const defaultPlan = await this.prisma.plan.findFirst({
       where: { name: 'Free' },

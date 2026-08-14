@@ -1,11 +1,17 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
 import { BusinessesService, CreateBusinessDto } from './businesses.service';
 import { CurrentUser } from '../../common/decorators/context.decorator';
-import { RequirePermission } from '../../common/decorators/custom.decorator';
+import { RequirePermission, Public } from '../../common/decorators/custom.decorator';
 
 @Controller('businesses')
 export class BusinessesController {
   constructor(private readonly businessesService: BusinessesService) {}
+
+  @Public()
+  @Get('types')
+  getAvailableTypes() {
+    return this.businessesService.getAvailableTypes();
+  }
 
   @Post()
   create(@CurrentUser('userId') userId: string, @Body() dto: CreateBusinessDto) {

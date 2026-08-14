@@ -127,59 +127,60 @@ export const useShiftStore = defineStore('shift', () => {
       'Kassir';
     const userId = authStore.user?.id || 'cashier-1';
 
-    const localNewShift: PosShiftData = {
-      id: 'shift-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
-      businessId: authStore.activeBusiness?.id,
-      shiftNumber: (shiftsHistory.value.length || 0) + 1,
-      openedAt: new Date().toISOString(),
-      closedAt: null,
-      startingCash: floatAmount,
-      cashSales: 0,
-      cardSales: 0,
-      otherSales: 0,
-      totalSales: 0,
-      cashExpenses: 0,
-      expectedCash: floatAmount,
-      actualCash: null,
-      difference: null,
-      status: 'open',
-      notes: notes || null,
-      ordersCount: 0,
-      user: {
-        id: userId,
-        fullName: userName,
-      },
-      branch: {
-        name: authStore.activeBusiness?.name || 'Asosiy filial',
-      },
-    };
-
-    currentShift.value = localNewShift;
-    saveLocalShift();
-
-    // Try backend sync in background without blocking
+    let backendShift: any = null;
     try {
-      let backendShift = null;
-      try {
-        const res = await api.post('/shifts/open', { startingCash: floatAmount, notes });
-        backendShift = res.data;
-      } catch {
-        try {
-          const res = await api.post('/orders/shifts/open', { startingCash: floatAmount, notes });
-          backendShift = res.data;
-        } catch {
-          // Ignored, local shift already active
-        }
-      }
-
-      if (backendShift && backendShift.id) {
-        currentShift.value = { ...localNewShift, ...backendShift };
-        saveLocalShift();
-      }
+      const res = await api.post('/shifts/open', { startingCash: floatAmount, notes });
+      backendShift = res.data;
     } catch (e) {
-      console.warn('Backend shift open not available, using local shift:', e);
+      console.warn('Backend shift open warning:', e);
     }
 
+    if (backendShift && backendShift.id) {
+      currentShift.value = {
+        ...backendShift,
+        shiftNumber: backendShift.shiftNumber || (shiftsHistory.value.length || 0) + 1,
+        startingCash: floatAmount,
+        cashSales: Number(backendShift.cashSales || 0),
+        cardSales: Number(backendShift.cardSales || 0),
+        otherSales: Number(backendShift.otherSales || 0),
+        totalSales: Number(backendShift.totalSales || 0),
+        cashExpenses: Number(backendShift.cashExpenses || 0),
+        expectedCash: floatAmount,
+        ordersCount: Number(backendShift.ordersCount || 0),
+        user: backendShift.user || { id: userId, fullName: userName },
+        branch: backendShift.branch || { name: authStore.activeBusiness?.name || 'Asosiy filial' },
+      };
+    } else {
+      const localNewShift: PosShiftData = {
+        id: 'shift-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+        businessId: authStore.activeBusiness?.id,
+        shiftNumber: (shiftsHistory.value.length || 0) + 1,
+        openedAt: new Date().toISOString(),
+        closedAt: null,
+        startingCash: floatAmount,
+        cashSales: 0,
+        cardSales: 0,
+        otherSales: 0,
+        totalSales: 0,
+        cashExpenses: 0,
+        expectedCash: floatAmount,
+        actualCash: null,
+        difference: null,
+        status: 'open',
+        notes: notes || null,
+        ordersCount: 0,
+        user: {
+          id: userId,
+          fullName: userName,
+        },
+        branch: {
+          name: authStore.activeBusiness?.name || 'Asosiy filial',
+        },
+      };
+      currentShift.value = localNewShift;
+    }
+
+    saveLocalShift();
     return currentShift.value;
   };
 
@@ -188,22 +189,22 @@ export const useShiftStore = defineStore('shift', () => {
     if (!currentShift.value || currentShift.value.status !== 'open') return;
 
     const total = Number(orderTotal) || 0;
-    currentShift.value.totalSales += total;
-    currentShift.value.ordersCount += 1;
+    currentShift.value.totalSales = Number(currentShift.value.totalSales || 0) + total;
+    currentShift.value.ordersCount = Number(currentShift.value.ordersCount || 0) + 1;
 
     if (paymentType === 'cash') {
-      currentShift.value.cashSales += total;
+      currentShift.value.cashSales = Number(currentShift.value.cashSales || 0) + total;
     } else if (paymentType === 'card') {
-      currentShift.value.cardSales += total;
+      currentShift.value.cardSales = Number(currentShift.value.cardSales || 0) + total;
     } else {
-      currentShift.value.otherSales += total;
+      currentShift.value.otherSales = Number(currentShift.value.otherSales || 0) + total;
     }
 
     // Expected cash = starting cash + cash sales - cash expenses
     currentShift.value.expectedCash =
-      currentShift.value.startingCash +
-      currentShift.value.cashSales -
-      currentShift.value.cashExpenses;
+      Number(currentShift.value.startingCash || 0) +
+      Number(currentShift.value.cashSales || 0) -
+      Number(currentShift.value.cashExpenses || 0);
 
     saveLocalShift();
   };
@@ -230,17 +231,9 @@ export const useShiftStore = defineStore('shift', () => {
     currentShift.value = null;
     saveLocalShift();
 
-    // Try backend sync in background
+    // Backend sync in background
     try {
-      try {
-        await api.post(`/shifts/${closed.id}/close`, { actualCash: actual, notes });
-      } catch {
-        try {
-          await api.post(`/orders/shifts/${closed.id}/close`, { actualCash: actual, notes });
-        } catch {
-          // Ignored
-        }
-      }
+      await api.post(`/shifts/${closed.id}/close`, { actualCash: actual, notes });
     } catch (e) {
       console.warn('Backend shift close sync warning:', e);
     }
@@ -252,23 +245,16 @@ export const useShiftStore = defineStore('shift', () => {
   const fetchShifts = async () => {
     loadLocalShift();
     try {
-      let data: any[] = [];
-      try {
-        const res = await api.get('/shifts');
-        data = res.data;
-      } catch {
-        try {
-          const res = await api.get('/orders/shifts');
-          data = res.data;
-        } catch {
-          // Ignored
-        }
-      }
+      const res = await api.get('/shifts');
+      const data = res.data;
 
-      if (Array.isArray(data) && data.length > 0) {
-        // Merge with local history avoiding duplicates
-        const ids = new Set(data.map((s) => s.id));
-        const localsNotInBackend = shiftsHistory.value.filter((s) => !ids.has(s.id));
+      if (Array.isArray(data)) {
+        const activeOpen = data.find((s: any) => s.status === 'open');
+        if (activeOpen) {
+          currentShift.value = activeOpen;
+        }
+        const ids = new Set(data.map((s: any) => s.id));
+        const localsNotInBackend = shiftsHistory.value.filter((s: any) => !ids.has(s.id));
         shiftsHistory.value = [...data, ...localsNotInBackend];
         saveLocalShift();
       }

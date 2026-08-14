@@ -6,9 +6,85 @@ import { OpenShiftDto, CloseShiftDto } from './dto/shift.dto';
 export class ShiftsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Helper to ensure today's unlinked orders get assigned to an open shift
+  private async autoLinkOrphanOrders(businessId: string, branchId?: string) {
+    try {
+      let resolvedBranchId = branchId;
+      if (!resolvedBranchId) {
+        const defaultBranch = await this.prisma.branch.findFirst({ where: { businessId } });
+        resolvedBranchId = defaultBranch?.id;
+      }
+      if (!resolvedBranchId) return null;
+
+      // Find active open shift
+      let activeShift = await this.prisma.posShift.findFirst({
+        where: {
+          businessId,
+          branchId: resolvedBranchId,
+          status: 'open',
+        },
+      });
+
+      // Find completed orders without a shift
+      const unlinkedOrders = await this.prisma.order.findMany({
+        where: {
+          businessId,
+          shiftId: null,
+          status: 'completed',
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (unlinkedOrders.length > 0) {
+        if (!activeShift) {
+          const defaultUser = await this.prisma.user.findFirst({
+            where: {
+              OR: [
+                { businessUsers: { some: { businessId } } },
+                { ownedBusinesses: { some: { id: businessId } } },
+              ],
+            },
+          });
+          if (!defaultUser) return null;
+
+          const earliestDate = unlinkedOrders[0].createdAt || new Date();
+          activeShift = await this.prisma.posShift.create({
+            data: {
+              businessId,
+              branchId: resolvedBranchId,
+              userId: defaultUser.id,
+              openedAt: earliestDate,
+              startingCash: 0,
+              expectedCash: 0,
+              status: 'open',
+              notes: 'Bugungi savdo smenasi (Avtomatik)',
+            },
+          });
+        }
+
+        // Link orders to active shift
+        await this.prisma.order.updateMany({
+          where: {
+            id: { in: unlinkedOrders.map((o) => o.id) },
+          },
+          data: {
+            shiftId: activeShift.id,
+          },
+        });
+      }
+
+      return activeShift;
+    } catch (e) {
+      console.error('autoLinkOrphanOrders error:', e);
+      return null;
+    }
+  }
+
   // 1. Get current active open shift
   async getCurrentShift(businessId: string, branchId?: string, userId?: string) {
     if (!businessId) return null;
+
+    await this.autoLinkOrphanOrders(businessId, branchId);
 
     const where: any = {
       businessId,
@@ -45,6 +121,13 @@ export class ShiftsService {
     const summary = await this.getShiftSummary(businessId, shift.id);
     return {
       ...shift,
+      cashSales: summary.cashSales,
+      cardSales: summary.cardSales,
+      otherSales: summary.otherSales,
+      totalSales: summary.totalSales,
+      cashExpenses: summary.cashExpenses,
+      expectedCash: summary.expectedCash,
+      ordersCount: summary.ordersCount || 0,
       liveSummary: summary,
     };
   }
@@ -191,7 +274,12 @@ export class ShiftsService {
       },
       include: {
         product: { select: { name: true } },
-        order: { select: { orderNumber: true, tableNumber: true } },
+        order: {
+          select: {
+            orderNumber: true,
+            table: { select: { name: true } },
+          },
+        },
       },
     });
 
@@ -293,6 +381,8 @@ export class ShiftsService {
 
   // 5. Shift History List
   async findAll(businessId: string, branchId?: string, status?: string) {
+    await this.autoLinkOrphanOrders(businessId, branchId);
+
     const where: any = { businessId };
     if (branchId) where.branchId = branchId;
     if (status) where.status = status;
@@ -311,7 +401,28 @@ export class ShiftsService {
       },
     });
 
-    return shifts;
+    const populated = await Promise.all(
+      shifts.map(async (s) => {
+        try {
+          const summary = await this.getShiftSummary(businessId, s.id);
+          return {
+            ...s,
+            cashSales: summary.cashSales,
+            cardSales: summary.cardSales,
+            otherSales: summary.otherSales,
+            totalSales: summary.totalSales,
+            cashExpenses: summary.cashExpenses,
+            expectedCash: summary.expectedCash,
+            ordersCount: summary.ordersCount || 0,
+            liveSummary: summary,
+          };
+        } catch {
+          return s;
+        }
+      })
+    );
+
+    return populated;
   }
 
   // 6. Detailed Printable Z-Report

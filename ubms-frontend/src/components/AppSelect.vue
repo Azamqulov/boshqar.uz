@@ -69,7 +69,8 @@
     >
       <div
         v-if="isOpen"
-        class="absolute z-50 mt-1.5 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-64 flex flex-col"
+        class="absolute z-50 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-56 flex flex-col"
+        :class="isDropUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top'"
       >
         <!-- Search Input -->
         <div class="p-1 border-b border-slate-100 dark:border-slate-800 mb-1">
@@ -223,7 +224,8 @@
     >
       <div
         v-if="isOpen2"
-        class="absolute z-50 mt-1.5 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+        class="absolute z-50 w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 p-1.5 text-xs shadow-2xl overflow-hidden max-h-56 overflow-y-auto"
+        :class="isDropUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top'"
       >
         <button
           v-for="opt in options"
@@ -296,6 +298,7 @@ const emit = defineEmits<{
 
 // === SEARCHABLE mode state ===
 const isOpen = ref(false);
+const isDropUp = ref(false);
 const searchTerm = ref('');
 const containerRef = ref<HTMLElement | null>(null);
 const searchInputRef = ref<HTMLInputElement | null>(null);
@@ -303,6 +306,14 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 // === NON-SEARCHABLE mode state ===
 const isOpen2 = ref(false);
 const containerRef2 = ref<HTMLElement | null>(null);
+
+const calculatePosition = (container: HTMLElement | null) => {
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  isDropUp.value = spaceBelow < 220 && spaceAbove > spaceBelow;
+};
 
 const selectedOption = computed(() => {
   return props.options.find((opt) => opt.value === props.modelValue);
@@ -333,6 +344,7 @@ const filteredGroupedOptions = computed(() => {
 // Searchable toggle
 const toggleDropdown = () => {
   if (props.disabled) return;
+  calculatePosition(containerRef.value);
   isOpen.value = !isOpen.value;
   if (isOpen2.value) isOpen2.value = false;
   if (isOpen.value) {
@@ -353,6 +365,7 @@ const selectOption = (opt: SelectOption) => {
 // Non-searchable toggle
 const toggleDropdown2 = () => {
   if (props.disabled) return;
+  calculatePosition(containerRef2.value);
   isOpen2.value = !isOpen2.value;
   if (isOpen.value) isOpen.value = false;
 };

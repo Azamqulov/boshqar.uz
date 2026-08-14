@@ -152,17 +152,16 @@ async function main() {
     });
   }
 
-  // 5. Default Demo Admin User
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || '1111';
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  // 5. Default SuperAdmin User (Credentials fully in PostgreSQL database)
+  const defaultPasswordHash = await bcrypt.hash('1111', 10);
   const demoUser = await prisma.user.upsert({
     where: { phone: '+998770404624' },
-    update: { passwordHash, status: 'active', isSuperAdmin: true },
+    update: { isSuperAdmin: true, status: 'active' }, // Never overwrite user's password in DB!
     create: {
       fullName: 'Boshqaruvchi Admin',
       email: 'admin@boshqar.uz',
       phone: '+998770404624',
-      passwordHash,
+      passwordHash: defaultPasswordHash,
       status: 'active',
       isSuperAdmin: true,
     },
@@ -589,8 +588,7 @@ async function main() {
   });
 
   console.log('✅ Demo Business, Branches, Categories, Products, Customers, Suppliers, Orders, and Expenses created!');
-  console.log(`🔑 Demo User Login: ${demoUser.phone} / Parol: ${adminPassword}`);
-  console.log(`⚠️  Seed admin parol: ${adminPassword} — buni xavfsiz joyga saqlang, birinchi kirishda o'zgartiring`);
+  console.log(`🔑 SuperAdmin User: ${demoUser.phone} (Hisob to'liq DB da saqlanadi)`);
   console.log('--- 🚀 Seed Completed Successfully ---');
 }
 

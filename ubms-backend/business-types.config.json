@@ -1,0 +1,44 @@
+[
+  {
+    "type": "shop",
+    "label": "Do'kon",
+    "desc": "Chakana savdo, ombor va kassa",
+    "iconName": "ShoppingBag",
+    "isEnabled": true
+  },
+  {
+    "type": "restaurant",
+    "label": "Restoran",
+    "desc": "Stollar, ofitsiant va oshxona",
+    "iconName": "UtensilsCrossed",
+    "isEnabled": true
+  },
+  {
+    "type": "cafe",
+    "label": "Kafe / Fastfood",
+    "desc": "Tezkor buyurtma va kassa",
+    "iconName": "Coffee",
+    "isEnabled": true
+  },
+  {
+    "type": "barbershop",
+    "label": "Sartaroshxona",
+    "desc": "Ustalarning bandlik jadvali",
+    "iconName": "Scissors",
+    "isEnabled": false
+  },
+  {
+    "type": "pharmacy",
+    "label": "Dorixona",
+    "desc": "Partiya va muddat nazorati",
+    "iconName": "Pill",
+    "isEnabled": true
+  },
+  {
+    "type": "service",
+    "label": "Xizmat ko'rsatish",
+    "desc": "Universal buyurtma va xizmat",
+    "iconName": "Wrench",
+    "isEnabled": true
+  }
+]

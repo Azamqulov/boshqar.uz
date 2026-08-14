@@ -315,9 +315,17 @@ export class RestaurantService {
     }
 
     // Check active open shift
-    const activeShift = await this.prisma.posShift.findFirst({
-      where: { businessId, branchId, status: 'open' },
-    });
+    let activeShiftId: string | null = null;
+    try {
+      const activeShift = await this.prisma.posShift.findFirst({
+        where: { businessId, branchId, status: 'open' },
+      });
+      if (activeShift) {
+        activeShiftId = activeShift.id;
+      }
+    } catch (e) {
+      activeShiftId = null;
+    }
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Create Payment
@@ -326,7 +334,7 @@ export class RestaurantService {
           orderId: order.id,
           paymentMethodId: pm.id,
           amount: actualPaid,
-          status: 'completed',
+          status: 'success',
         },
       });
 
@@ -336,7 +344,7 @@ export class RestaurantService {
         data: {
           status: 'completed',
           completedAt: new Date(),
-          shiftId: activeShift?.id || order.shiftId || null,
+          shiftId: activeShiftId || order.shiftId || null,
         },
         include: {
           items: { include: { product: true, service: true } },

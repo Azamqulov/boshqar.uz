@@ -449,6 +449,8 @@ import {
   ArrowLeft,
 } from 'lucide-vue-next';
 
+import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+
 interface Category {
   id: string;
   name: string;
@@ -466,7 +468,7 @@ const loading = ref(false);
 const saving = ref(false);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'with_products' | 'empty'>('all');
-const viewMode = ref<'table' | 'grid'>('table');
+const viewMode = usePersistentViewMode('categories', 'table');
 const isFormOpen = ref(false);
 const editingCatId = ref<string | null>(null);
 

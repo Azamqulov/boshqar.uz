@@ -13,11 +13,11 @@ export function usePermissions() {
   const can = (moduleName: string, action: ActionType = 'view'): boolean => {
     if (isOwner.value) return true;
 
-    const allowed = authStore.user?.allowedModules || authStore.activeBusiness?.allowedModules || ['all'];
+    const allowed = (authStore.user as any)?.allowedModules || (authStore.activeBusiness as any)?.allowedModules || ['all'];
     if (allowed.includes('all')) return true;
     if (!allowed.includes(moduleName)) return false;
 
-    const actionPermissions = authStore.user?.actionPermissions || {};
+    const actionPermissions = (authStore.user as any)?.actionPermissions || {};
     const modPerms = actionPermissions[moduleName];
 
     if (!modPerms) {

@@ -244,8 +244,7 @@
                 v-model="actualCash"
                 placeholder="0"
                 suffix="so'm"
-                inputClass="font-black text-lg"
-                :inputClass="difference === 0 ? 'text-emerald-600 dark:text-emerald-400' : (difference < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400')"
+                :inputClass="'font-black text-lg ' + (difference === 0 ? 'text-emerald-600 dark:text-emerald-400' : (difference < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'))"
               />
             </div>
 

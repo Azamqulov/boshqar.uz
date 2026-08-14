@@ -36,7 +36,7 @@ export interface FindOrdersQueryDto {
   limit?: number;
 }
 
-function mapInputToPaymentType(input: string): { type: 'cash' | 'card' | 'other'; name: string } {
+function mapInputToPaymentType(input: string): { type: 'cash' | 'card' | 'click' | 'payme' | 'other'; name: string } {
   const clean = (input || '').toLowerCase().trim();
   if (clean === '1' || clean === 'cash' || clean.includes('naqd')) {
     return { type: 'cash', name: 'Naqd pul' };
@@ -44,8 +44,11 @@ function mapInputToPaymentType(input: string): { type: 'cash' | 'card' | 'other'
   if (clean === '2' || clean === 'card' || clean.includes('karta') || clean.includes('plastik') || clean.includes('humo') || clean.includes('uzcard')) {
     return { type: 'card', name: 'Plastik karta' };
   }
-  if (clean === '3' || clean === 'click' || clean === 'payme' || clean === 'transfer' || clean.includes('click') || clean.includes('payme')) {
-    return { type: 'other', name: 'Click / Payme' };
+  if (clean === '3' || clean === 'click' || clean.includes('click') || clean.includes('payme')) {
+    return { type: 'click', name: 'Click / Payme' };
+  }
+  if (clean === '4' || clean === 'debt' || clean.includes('nasiya') || clean.includes('qarz')) {
+    return { type: 'other', name: 'Nasiya / Qarz' };
   }
   return { type: 'other', name: input || 'Boshqa' };
 }
@@ -254,6 +257,12 @@ export class OrdersService {
 
         if (!pm) {
           pm = await this.prisma.paymentMethod.findFirst({
+            where: { businessId, name: resolved.name },
+          });
+        }
+
+        if (!pm) {
+          pm = await this.prisma.paymentMethod.findFirst({
             where: { businessId, type: resolved.type },
           });
         }
@@ -302,10 +311,18 @@ export class OrdersService {
       }
     }
 
-    // Check active open shift for this branch
-    const activeShift = await this.prisma.posShift.findFirst({
-      where: { businessId, branchId, status: 'open' },
-    });
+    // Check active open shift for this branch (safe lookup)
+    let activeShiftId: string | null = null;
+    try {
+      const activeShift = await this.prisma.posShift.findFirst({
+        where: { businessId, branchId, status: 'open' },
+      });
+      if (activeShift) {
+        activeShiftId = activeShift.id;
+      }
+    } catch (e) {
+      activeShiftId = null;
+    }
 
     return this.prisma.$transaction(
       async (tx) => {
@@ -319,7 +336,7 @@ export class OrdersService {
             customerId: dto.customerId || null,
             cashierId: employee?.id || null,
             tableId: resolvedTableId,
-            shiftId: activeShift?.id || null,
+            shiftId: activeShiftId,
             subtotal,
             discountAmount: totalDiscount,
             taxAmount,
@@ -410,7 +427,22 @@ export class OrdersService {
           });
         }
 
-        return order;
+        const fullOrder = await tx.order.findUnique({
+          where: { id: order.id },
+          include: {
+            items: { include: { product: true, service: true } },
+            customer: true,
+            cashier: true,
+            table: true,
+            payments: {
+              include: {
+                paymentMethod: true,
+              },
+            },
+          },
+        });
+
+        return fullOrder || order;
       },
       {
         maxWait: 20000,

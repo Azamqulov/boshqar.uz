@@ -1,175 +1,197 @@
 <template>
   <Teleport to="body">
     <div v-if="order" @click.self="$emit('close')" class="modal-overlay">
-      <!-- Screen View (Matching Image 3 Modern Banking/POS Receipt UI) -->
-      <div class="modal-container max-w-lg bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden" @click.stop>
+      <!-- Screen View (Compact, Fits perfectly without scrolling) -->
+      <div class="modal-container max-w-md bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden" @click.stop>
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-          <h3 class="font-extrabold text-base text-slate-900 dark:text-white">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">
             Xarid Cheki Tafsilotlari
           </h3>
           <button
             @click="$emit('close')"
-            class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            class="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           >
-            <X class="w-5 h-5" />
+            <X class="w-4 h-4" />
           </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="p-6 overflow-y-auto max-h-[78vh] space-y-6">
-          <!-- Top Green Status Badge & Large Sum (Image 3 Header) -->
-          <div class="text-center space-y-2">
+        <div class="p-4 sm:p-5 space-y-3">
+          <!-- Top Status Badge & Sum -->
+          <div class="text-center space-y-1">
             <!-- Icon Bubble -->
-            <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
-              <ArrowUpRight class="w-7 h-7 stroke-[2.5]" />
+            <div class="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
+              <ArrowUpRight class="w-5 h-5 stroke-[2.5]" />
             </div>
 
-            <!-- Large Amount (show total paid, not order total) -->
-            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-              {{ formatCurrency(totalPaid) }}
+            <!-- Large Amount -->
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+              {{ formatCurrency(totalPaid > 0 ? totalPaid : order.total) }}
             </h2>
 
             <!-- Date & Time -->
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
               {{ formatDateTime(order.completedAt || order.createdAt) }}
             </p>
 
-            <!-- Success / Partial Badge -->
-            <div v-if="nasiyaAmount <= 0" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-              <CheckCircle2 class="w-3.5 h-3.5" />
+            <!-- Success / Partial / Full Nasiya Badge -->
+            <div v-if="nasiyaAmount <= 0" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold">
+              <CheckCircle2 class="w-3 h-3" />
               <span>Operatsiya bajarildi (To'lov qabul qilindi)</span>
             </div>
-            <div v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold">
-              <AlertTriangle class="w-3.5 h-3.5" />
+            <div v-else-if="totalPaid === 0" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+              <FileText class="w-3 h-3" />
+              <span>Nasiya savdo (100% Qarzga yozildi)</span>
+            </div>
+            <div v-else class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-bold">
+              <AlertTriangle class="w-3 h-3" />
               <span>Qisman to'lov — Nasiya: {{ formatCurrency(nasiyaAmount) }}</span>
             </div>
           </div>
 
-        <!-- Action Button (Download / Print) -->
-        <div class="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            @click="handlePrint"
-            class="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs shadow-lg shadow-emerald-500/25 transition btn-interactive"
-          >
-            <Printer class="w-4 h-4" />
-            <span>Chekni chop etish (Print)</span>
-          </button>
-        </div>
-
-        <!-- Details Info Card (Image 3 Row List) -->
-        <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-4 space-y-3.5 text-xs">
-          <!-- Do'kon / Biznes -->
-          <div class="flex justify-between items-center text-slate-600 dark:text-slate-300">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">Savdo nuqtasi:</span>
-            <span class="font-bold text-slate-900 dark:text-white text-right">
-              {{ settings.headerTitle || currentBusinessName }}
-            </span>
+          <!-- Action Button (Print) -->
+          <div class="flex items-center justify-center">
+            <button
+              type="button"
+              @click="handlePrint"
+              class="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition btn-interactive"
+            >
+              <Printer class="w-3.5 h-3.5" />
+              <span>Chekni chop etish (Print)</span>
+            </button>
           </div>
 
-          <!-- Chek raqami -->
-          <div class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">Chek raqami:</span>
-            <span class="font-mono font-black text-emerald-600 dark:text-emerald-400">
-              {{ order.orderNumber }}
-            </span>
-          </div>
-
-          <!-- Kassir / Mas'ul -->
-          <div v-if="order.cashier" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">Kassir / Mas'ul:</span>
-            <span class="font-bold text-slate-900 dark:text-white font-mono">
-              {{ order.cashier.fullName }}
-            </span>
-          </div>
-
-          <!-- Mijoz (agar mavjud bo'lsa) -->
-          <div v-if="order.customer" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">Mijoz (Qabul qiluvchi):</span>
-            <span class="font-bold text-slate-900 dark:text-white">
-              {{ order.customer.fullName }} {{ order.customer.phone ? `(${order.customer.phone})` : '' }}
-            </span>
-          </div>
-
-          <!-- Xizmat turi / Stol (agar mavjud bo'lsa) -->
-          <div v-if="order.tableNumber || order.orderType" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">Xizmat turi / Stol:</span>
-            <span class="font-bold text-slate-900 dark:text-white">
-              {{ order.tableNumber ? `🍽️ ${order.tableNumber}` : (order.orderType === 'takeaway' ? '🥡 Saboy (Olib ketish)' : '🛵 Yetkazib berish') }}
-            </span>
-          </div>
-
-          <!-- To'lov turi -->
-          <div class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5">
-            <span class="text-slate-400 dark:text-slate-400 font-medium">To'lov usuli:</span>
-            <div class="text-right">
-              <span
-                v-for="p in order.payments"
-                :key="p.id"
-                class="inline-flex items-center gap-1 font-bold text-slate-900 dark:text-white"
-              >
-                <Banknote v-if="p.paymentMethod?.type === 'cash'" class="w-3.5 h-3.5 text-emerald-500" />
-                <CreditCard v-else-if="p.paymentMethod?.type === 'card'" class="w-3.5 h-3.5 text-blue-500" />
-                <Smartphone v-else class="w-3.5 h-3.5 text-purple-500" />
-                <span>{{ p.paymentMethod?.name || 'To\'lov' }} ({{ formatCurrency(p.amount) }})</span>
+          <!-- Details Info Card -->
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 space-y-2 text-xs">
+            <!-- Do'kon / Biznes -->
+            <div class="flex justify-between items-center text-slate-600 dark:text-slate-300">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Savdo nuqtasi:</span>
+              <span class="font-bold text-slate-900 dark:text-white text-right">
+                {{ settings.headerTitle || currentBusinessName }}
               </span>
             </div>
-          </div>
 
-          <!-- Mahsulotlar ro'yxati -->
-          <div class="border-t border-slate-200/60 dark:border-slate-700/40 pt-2.5 space-y-2">
-            <span class="text-slate-400 dark:text-slate-400 font-medium block mb-1">Xarid qilingan tovarlar:</span>
-            <div
-              v-for="item in order.items"
-              :key="item.id"
-              class="flex justify-between items-start text-[11px] bg-white dark:bg-slate-900/80 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800"
-            >
-              <div class="pr-2">
-                <div class="font-bold text-slate-900 dark:text-white">{{ item.product?.name || item.service?.name }}</div>
-                <div class="text-slate-400 font-mono text-[10px]">
-                  {{ item.quantity }} dona × {{ formatCurrency(item.unitPrice) }}
+            <!-- Chek raqami -->
+            <div class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Chek raqami:</span>
+              <span class="font-mono font-black text-emerald-600 dark:text-emerald-400">
+                {{ order.orderNumber }}
+              </span>
+            </div>
+
+            <!-- Kassir / Mas'ul -->
+            <div v-if="order.cashier" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Kassir / Mas'ul:</span>
+              <span class="font-bold text-slate-900 dark:text-white font-mono text-[11px]">
+                {{ order.cashier.fullName }}
+              </span>
+            </div>
+
+            <!-- Mijoz (agar mavjud bo'lsa) -->
+            <div v-if="order.customer" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Mijoz:</span>
+              <span class="font-bold text-slate-900 dark:text-white text-[11px]">
+                {{ order.customer.fullName }} {{ order.customer.phone ? `(${order.customer.phone})` : '' }}
+              </span>
+            </div>
+
+            <!-- Xizmat turi / Stol (faqat stol, saboy yoki yetkazib berish bo'lsa chiqadi) -->
+            <div v-if="order.tableNumber || (order.orderType && ['takeaway', 'delivery', 'dine_in', 'saboy', 'dostavka'].includes(String(order.orderType).toLowerCase()))" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Xizmat turi / Stol:</span>
+              <span class="font-bold text-slate-900 dark:text-white text-[11px]">
+                <template v-if="order.tableNumber">🍽️ {{ order.tableNumber }}</template>
+                <template v-else-if="order.orderType === 'takeaway' || order.orderType === 'saboy'">🥡 Saboy (Olib ketish)</template>
+                <template v-else-if="order.orderType === 'delivery' || order.orderType === 'dostavka'">🛵 Yetkazib berish</template>
+                <template v-else-if="order.orderType === 'dine_in'">🍽️ Zalda</template>
+              </span>
+            </div>
+
+            <!-- To'lov turi -->
+            <div class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
+              <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">To'lov usuli:</span>
+              <div class="text-right">
+                <template v-if="order.payments && order.payments.length > 0 && totalPaid > 0">
+                  <span
+                    v-for="p in order.payments"
+                    :key="p.id"
+                    class="inline-flex items-center gap-1 font-bold text-xs"
+                    :class="[
+                      p.paymentMethod?.type === 'cash' ? 'text-emerald-600 dark:text-emerald-400' :
+                      p.paymentMethod?.type === 'card' ? 'text-blue-600 dark:text-blue-400' :
+                      (p.paymentMethod?.type === 'click' || p.paymentMethod?.type === 'payme' || p.paymentMethod?.name?.toLowerCase().includes('click') || p.paymentMethod?.name?.toLowerCase().includes('payme')) ? 'text-purple-600 dark:text-purple-400' :
+                      'text-slate-900 dark:text-white'
+                    ]"
+                  >
+                    <Banknote v-if="p.paymentMethod?.type === 'cash'" class="w-3.5 h-3.5 text-emerald-500" />
+                    <CreditCard v-else-if="p.paymentMethod?.type === 'card'" class="w-3.5 h-3.5 text-blue-500" />
+                    <Smartphone v-else-if="p.paymentMethod?.type === 'click' || p.paymentMethod?.type === 'payme' || p.paymentMethod?.name?.toLowerCase().includes('click') || p.paymentMethod?.name?.toLowerCase().includes('payme')" class="w-3.5 h-3.5 text-purple-500" />
+                    <FileText v-else class="w-3.5 h-3.5 text-amber-500" />
+                    <span>{{ p.paymentMethod?.name || 'To\'lov' }}</span>
+                  </span>
+                </template>
+                <span v-else class="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 text-xs">
+                  <FileText class="w-3.5 h-3.5 text-amber-500" />
+                  <span>Nasiya (100% Qarzga)</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Mahsulotlar ro'yxati -->
+            <div class="border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5 space-y-1">
+              <span class="text-slate-400 dark:text-slate-400 text-[10px] font-semibold block uppercase tracking-wider">Xarid qilingan tovarlar:</span>
+              <div class="max-h-28 overflow-y-auto space-y-1 pr-0.5">
+                <div
+                  v-for="item in order.items"
+                  :key="item.id"
+                  class="flex justify-between items-center text-[11px] bg-white dark:bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800"
+                >
+                  <div class="pr-2 min-w-0 flex-1">
+                    <div class="font-bold text-slate-900 dark:text-white truncate">{{ item.product?.name || item.service?.name }}</div>
+                    <div class="text-slate-400 font-mono text-[10px]">
+                      {{ item.quantity }} dona × {{ formatCurrency(item.unitPrice) }}
+                    </div>
+                  </div>
+                  <div class="font-black text-slate-900 dark:text-white font-mono text-right flex-shrink-0">
+                    {{ formatCurrency(item.total || (item.quantity * item.unitPrice)) }}
+                  </div>
                 </div>
               </div>
-              <div class="font-black text-slate-900 dark:text-white font-mono text-right flex-shrink-0">
-                {{ formatCurrency(item.total || (item.quantity * item.unitPrice)) }}
+            </div>
+
+            <!-- Jami hisob-kitob -->
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-2 space-y-1 font-mono text-xs">
+              <div class="flex justify-between text-slate-500 dark:text-slate-400 text-[11px]">
+                <span>Oraliq summa:</span>
+                <span>{{ formatCurrency(order.subtotal || order.total) }}</span>
+              </div>
+              <div v-if="order.discountAmount > 0" class="flex justify-between text-rose-500 text-[11px]">
+                <span>Chegirma:</span>
+                <span>-{{ formatCurrency(order.discountAmount) }}</span>
+              </div>
+              <div class="flex justify-between text-xs font-black text-slate-900 dark:text-white pt-1 border-t border-slate-200/80 dark:border-slate-700/60">
+                <span class="font-sans">Jami summa:</span>
+                <span class="text-slate-900 dark:text-white">{{ formatCurrency(order.total) }}</span>
+              </div>
+              <div class="flex justify-between text-xs font-black pt-0.5">
+                <span class="font-sans text-slate-600 dark:text-slate-300">To'langan:</span>
+                <span class="text-emerald-600 dark:text-emerald-400">{{ formatCurrency(totalPaid) }}</span>
+              </div>
+              <div v-if="nasiyaAmount > 0" class="flex justify-between text-xs font-black pt-0.5">
+                <span class="font-sans text-amber-600 dark:text-amber-400">Nasiya qoldig'i:</span>
+                <span class="text-amber-600 dark:text-amber-400">{{ formatCurrency(nasiyaAmount) }}</span>
+              </div>
+              <div v-if="changeAmount > 0" class="flex justify-between text-xs font-bold pt-0.5">
+                <span class="font-sans text-blue-600 dark:text-blue-400">Qaytim:</span>
+                <span class="text-blue-600 dark:text-blue-400">{{ formatCurrency(changeAmount) }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Jami hisob-kitob -->
-          <div class="border-t border-slate-200 dark:border-slate-700 pt-2.5 space-y-1.5 font-mono">
-            <div class="flex justify-between text-slate-500 dark:text-slate-400 text-[11px]">
-              <span>Oraliq summa:</span>
-              <span>{{ formatCurrency(order.subtotal || order.total) }}</span>
-            </div>
-            <div v-if="order.discountAmount > 0" class="flex justify-between text-rose-500 text-[11px]">
-              <span>Chegirma:</span>
-              <span>-{{ formatCurrency(order.discountAmount) }}</span>
-            </div>
-            <div class="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1.5 border-t border-slate-200/80 dark:border-slate-700/60">
-              <span class="font-sans">Jami summa:</span>
-              <span class="text-slate-900 dark:text-white">{{ formatCurrency(order.total) }}</span>
-            </div>
-            <div class="flex justify-between text-sm font-black pt-1">
-              <span class="font-sans text-slate-600 dark:text-slate-300">To'langan:</span>
-              <span class="text-emerald-600 dark:text-emerald-400">{{ formatCurrency(totalPaid) }}</span>
-            </div>
-            <div v-if="nasiyaAmount > 0" class="flex justify-between text-sm font-black pt-1">
-              <span class="font-sans text-amber-600 dark:text-amber-400">Nasiya qoldig'i:</span>
-              <span class="text-amber-600 dark:text-amber-400">{{ formatCurrency(nasiyaAmount) }}</span>
-            </div>
-            <div v-if="changeAmount > 0" class="flex justify-between text-sm font-bold pt-1">
-              <span class="font-sans text-blue-600 dark:text-blue-400">Qaytim:</span>
-              <span class="text-blue-600 dark:text-blue-400">{{ formatCurrency(changeAmount) }}</span>
-            </div>
+          <!-- Footer gratitude note -->
+          <div class="text-center text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+            {{ settings.footerText || 'Xaridingiz uchun rahmat! Qaytarish 24 soat ichida chek bilan.' }}
           </div>
-        </div>
-
-        <!-- Footer gratitude note -->
-        <div class="text-center text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-          {{ settings.footerText || 'Xaridingiz uchun rahmat! Yana kutib qolamiz.' }}
-        </div>
         </div> <!-- /modal-body -->
       </div> <!-- /modal-container -->
     </div> <!-- /modal-overlay -->
@@ -191,8 +213,8 @@
           <div class="receipt-meta">
             <div>CHEK №: <strong>{{ order.orderNumber }}</strong></div>
             <div>SANA: {{ formatDateTime(order.completedAt || order.createdAt) }}</div>
-            <div v-if="order.tableNumber || order.orderType">
-              XIZMAT: <strong>{{ order.tableNumber ? `STOL #${order.tableNumber}` : (order.orderType === 'takeaway' ? 'SABOY (OLIB KETISH)' : 'DOSTAVKA') }}</strong>
+            <div v-if="order.tableNumber || (order.orderType && ['takeaway', 'delivery', 'dine_in', 'saboy', 'dostavka'].includes(String(order.orderType).toLowerCase()))">
+              XIZMAT: <strong>{{ order.tableNumber ? `STOL #${order.tableNumber}` : (order.orderType === 'takeaway' || order.orderType === 'saboy' ? 'SABOY (OLIB KETISH)' : (order.orderType === 'delivery' || order.orderType === 'dostavka' ? 'DOSTAVKA' : 'ZALDA')) }}</strong>
             </div>
             <div v-if="settings.showCashier && order.cashier">KASSIR: {{ order.cashier.fullName }}</div>
             <div v-if="settings.showCustomer && order.customer">MIJOZ: {{ order.customer.fullName }}</div>
@@ -284,6 +306,7 @@ import {
   Banknote,
   CreditCard,
   Smartphone,
+  FileText,
 } from 'lucide-vue-next';
 
 const props = defineProps<{

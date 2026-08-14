@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, ExpenseCategory } from '@prisma/client';
 
@@ -139,16 +139,21 @@ export class FinanceService {
       cash: 0,
       card: 0,
       other: 0,
+      debt: 0,
     };
 
     for (const order of orders) {
+      let orderPaid = 0;
       for (const pay of order.payments) {
-        const type = pay.paymentMethod?.type || 'other';
+        const type = (pay.paymentMethod?.type || 'other').toLowerCase();
         const amt = Number(pay.amount) || 0;
         if (type === 'cash') paymentBreakdown.cash += amt;
         else if (type === 'card') paymentBreakdown.card += amt;
         else paymentBreakdown.other += amt;
+        orderPaid += amt;
       }
+      const unpaid = Math.max(0, Number(order.total) - orderPaid);
+      paymentBreakdown.debt += unpaid;
     }
 
     // Top sold products sorted by quantity

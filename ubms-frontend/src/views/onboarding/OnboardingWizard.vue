@@ -85,13 +85,25 @@
             </div>
           </div>
 
-          <button
-            @click="nextStep"
-            :disabled="!form.name"
-            class="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 mt-4 btn-interactive"
-          >
-            Keyingisi (Filial sozlash)
-          </button>
+          <div class="flex space-x-3 mt-4">
+            <button
+              type="button"
+              @click="handleBackFromStep1"
+              class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition btn-interactive flex items-center justify-center gap-1.5"
+            >
+              <ArrowLeft class="w-4 h-4" />
+              <span>Orqaga</span>
+            </button>
+            <button
+              type="button"
+              @click="nextStep"
+              :disabled="!form.name || !form.businessType"
+              class="w-2/3 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition disabled:opacity-50 btn-interactive flex items-center justify-center gap-1.5"
+            >
+              <span>Keyingisi (Filial sozlash)</span>
+              <ArrowRight class="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <!-- Step 2: Branch Setup -->
@@ -124,21 +136,25 @@
 
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Telefon</label>
-            <PhoneInput v-model="form.branchPhone" placeholder="+998 71 200 00 00" />
+            <PhoneInput v-model="form.branchPhone" placeholder=" 90 123 45 67" />
           </div>
 
           <div class="flex space-x-3 mt-4">
             <button
+              type="button"
               @click="step = 1"
-              class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition btn-interactive"
+              class="w-1/3 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition btn-interactive flex items-center justify-center gap-1.5"
             >
-              Orqaga
+              <ArrowLeft class="w-4 h-4" />
+              <span>Orqaga</span>
             </button>
             <button
+              type="button"
               @click="nextStep"
-              class="w-2/3 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition btn-interactive"
+              class="w-2/3 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition btn-interactive flex items-center justify-center gap-1.5"
             >
-              Tasdiqlash
+              <span>Tasdiqlash</span>
+              <ArrowRight class="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -161,14 +177,26 @@
             <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Tarif rejasi:</span> <span class="font-semibold text-emerald-600 dark:text-emerald-400">Free Sinov davri</span></div>
           </div>
 
-          <button
-            @click="handleSubmit"
-            :disabled="isLoading"
-            class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base shadow-xl shadow-emerald-500/30 transition disabled:opacity-50 btn-interactive flex items-center justify-center space-x-2"
-          >
-            <span v-if="!isLoading">Tizimni Boshlash</span>
-            <span v-else>Tayyorlanmoqda...</span>
-          </button>
+          <div class="flex space-x-3 mt-4">
+            <button
+              type="button"
+              @click="step = 2"
+              :disabled="isLoading"
+              class="w-1/3 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition btn-interactive flex items-center justify-center gap-1.5"
+            >
+              <ArrowLeft class="w-4 h-4" />
+              <span>Orqaga</span>
+            </button>
+            <button
+              type="button"
+              @click="handleSubmit"
+              :disabled="isLoading"
+              class="w-2/3 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base shadow-xl shadow-emerald-500/30 transition disabled:opacity-50 btn-interactive flex items-center justify-center space-x-2"
+            >
+              <span v-if="!isLoading">Tizimni Boshlash</span>
+              <span v-else>Tayyorlanmoqda...</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -176,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
@@ -192,7 +220,10 @@ import {
   Pill,
   Wrench,
   Check,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-vue-next';
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -201,15 +232,46 @@ const toast = useToast();
 const step = ref(1);
 const isLoading = ref(false);
 
+const getInitialPhone = () => {
+  if (authStore.user?.phone) return authStore.user.phone;
+  try {
+    const stored = localStorage.getItem('ubms_user');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.phone) return parsed.phone;
+    }
+  } catch (e) {}
+  return '+998 ';
+};
+
 const form = ref({
   name: '',
   businessType: 'shop',
   branchName: 'Bosh filial',
   branchAddress: '',
-  branchPhone: '+998 ',
+  branchPhone: getInitialPhone(),
 });
 
-const businessTypes = [
+onMounted(async () => {
+  const initial = getInitialPhone();
+  if (initial && initial !== '+998 ') {
+    form.value.branchPhone = initial;
+  } else {
+    try {
+      const { data } = await api.get('/auth/profile/me');
+      if (data?.phone) {
+        form.value.branchPhone = data.phone;
+        if (authStore.user) {
+          authStore.user.phone = data.phone;
+        }
+      }
+    } catch (e) {}
+  }
+
+  await loadAvailableTypes();
+});
+
+const defaultBusinessTypes = [
   { type: 'shop', label: "Do'kon", icon: ShoppingBag, desc: 'Chakana savdo, ombor va kassa' },
   { type: 'restaurant', label: 'Restoran', icon: UtensilsCrossed, desc: 'Stollar, ofitsiant va oshxona' },
   { type: 'cafe', label: 'Kafe / Fastfood', icon: Coffee, desc: 'Tezkor buyurtma va kassa' },
@@ -218,13 +280,47 @@ const businessTypes = [
   { type: 'service', label: 'Xizmat ko\'rsatish', icon: Wrench, desc: 'Universal buyurtma va xizmat' },
 ];
 
+const businessTypes = ref(defaultBusinessTypes);
+
+const loadAvailableTypes = async () => {
+  try {
+    const { data } = await api.get('/businesses/types');
+    if (Array.isArray(data) && data.length > 0) {
+      businessTypes.value = data.map((d: any) => {
+        const found = defaultBusinessTypes.find((def) => def.type === d.type);
+        return {
+          type: d.type,
+          label: d.label || found?.label || d.type,
+          desc: d.desc || found?.desc || '',
+          icon: found?.icon || ShoppingBag,
+        };
+      });
+
+      if (!businessTypes.value.some((b) => b.type === form.value.businessType)) {
+        form.value.businessType = businessTypes.value[0]?.type || 'shop';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch available business types', err);
+  }
+};
+
 const selectedBusinessTypeLabel = computed(() => {
-  return businessTypes.find((bt) => bt.type === form.value.businessType)?.label || form.value.businessType;
+  return businessTypes.value.find((bt) => bt.type === form.value.businessType)?.label || form.value.businessType;
 });
 
 const nextStep = () => {
-  if (step.value === 1 && form.value.name) step.value = 2;
+  if (step.value === 1 && form.value.name && form.value.businessType) step.value = 2;
   else if (step.value === 2) step.value = 3;
+};
+
+const handleBackFromStep1 = () => {
+  if (authStore.businesses && authStore.businesses.length > 0) {
+    router.push('/dashboard');
+  } else {
+    authStore.logout();
+    router.push('/auth/login');
+  }
 };
 
 const handleSubmit = async () => {

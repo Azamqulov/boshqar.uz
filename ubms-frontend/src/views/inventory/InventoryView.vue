@@ -17,39 +17,12 @@
     </div>
 
     <!-- Top Stat Cards Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <AppStatCard
-        title="Ombor Qiymati (Tannarx)"
-        :value="formatCurrency(totalInventoryValue)"
-        subtitle="Jami ombor qoldig'i tannarxi"
-        :icon="Boxes"
-        variant="amber"
-      />
-
-      <AppStatCard
-        title="Jami Pozitsiyalar"
-        :value="`${inventory.length} ta`"
-        subtitle="Ombordagi tovar turlari"
-        :icon="Package"
-        variant="blue"
-      />
-
-      <AppStatCard
-        title="Kam Qolgan Pozitsiyalar"
-        :value="`${lowStockCount} ta`"
-        subtitle="Min-chegara ostidagi tovarlar"
-        :icon="AlertTriangle"
-        variant="rose"
-      />
-
-      <AppStatCard
-        title="Tugagan Mahsulotlar"
-        :value="`${outOfStockCount} ta`"
-        subtitle="Nol qoldiq pozitsiyalar"
-        :icon="XCircle"
-        variant="slate"
-      />
-    </div>
+    <InventoryStatsCards
+      :total-inventory-value="totalInventoryValue"
+      :inventory-count="inventory.length"
+      :low-stock-count="lowStockCount"
+      :out-of-stock-count="outOfStockCount"
+    />
 
     <!-- Search, Filter Tabs and View Toggle -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -92,335 +65,53 @@
     <SkeletonLoader v-if="loading" variant="table" :rows="8" />
 
     <!-- 1. Table View -->
-    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold">
-            <tr>
-              <th class="py-3 px-4">Mahsulot</th>
-              <th class="py-3 px-4">SKU</th>
-              <th class="py-3 px-4">Tannarx</th>
-              <th class="py-3 px-4">Joriy Qoldiq</th>
-              <th class="py-3 px-4">Holat</th>
-              <th class="py-3 px-4">Jami Qiymat</th>
-              <th class="py-3 px-4 text-right">Amallar</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
-            <tr v-if="filteredInventory.length === 0">
-              <td colspan="7" class="py-8 text-center text-slate-400 dark:text-slate-500">Ombor ma'lumotlari topilmadi</td>
-            </tr>
-            <tr v-for="inv in filteredInventory" :key="inv.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">{{ inv.productName || inv.product?.name }}</td>
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono">{{ inv.sku || inv.product?.sku }}</td>
-              <td class="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono">{{ formatCurrency(inv.purchasePrice || inv.product?.purchasePrice) }}</td>
-              <td
-                class="py-3 px-4 font-bold font-mono"
-                :class="Number(inv.quantity) <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'"
-              >
-                {{ inv.quantity }} {{ inv.unit || inv.product?.unit?.shortName }}
-              </td>
-              <td class="py-3 px-4">
-                <span
-                  class="font-bold px-2 py-0.5 rounded text-[10px]"
-                  :class="[
-                    Number(inv.quantity) <= 0
-                      ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                      : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5))
-                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                      : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                  ]"
-                >
-                  {{ Number(inv.quantity) <= 0 ? 'Tugadi 🚫' : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5)) ? 'Kam Qoldi ⚠️' : 'Yetarli ✓' }}
-                </span>
-              </td>
-              <td
-                class="py-3 px-4 font-bold font-mono"
-                :class="Number(inv.quantity) <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'"
-              >
-                {{ formatCurrency((inv.quantity || 0) * Number(inv.purchasePrice || inv.product?.purchasePrice || 0)) }}
-              </td>
-              <td class="py-3 px-4 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    v-if="canEdit('inventory')"
-                    type="button"
-                    @click="openEditModal(inv)"
-                    class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                    title="Tahrirlash"
-                  >
-                    <Edit2 class="w-4 h-4 text-blue-500" />
-                  </button>
-                  <button
-                    v-if="canDelete('inventory')"
-                    type="button"
-                    @click="confirmDeleteProduct(inv)"
-                    class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
-                    title="O'chirish"
-                  >
-                    <Trash2 class="w-4 h-4 text-rose-500" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <InventoryTableView
+      v-else-if="viewMode === 'table'"
+      :inventory="filteredInventory"
+      :can-edit="canEdit('inventory')"
+      :can-delete="canDelete('inventory')"
+      @edit="openEditModal"
+      @delete="confirmDeleteProduct"
+    />
 
     <!-- 2. Grid/Cards View -->
-    <div v-else-if="viewMode === 'grid'">
-      <div v-if="filteredInventory.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
-        <Boxes class="w-10 h-10 mx-auto mb-2 opacity-30" />
-        <span>Ombor ma'lumotlari topilmadi</span>
-      </div>
-
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <div
-          v-for="inv in filteredInventory"
-          :key="inv.id"
-          class="glass-card rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90"
-        >
-          <div>
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1">
-                  {{ inv.productName || inv.product?.name }}
-                </h4>
-                <p class="text-[11px] font-mono text-slate-500">
-                  SKU: {{ inv.sku || inv.product?.sku || '—' }}
-                </p>
-              </div>
-
-              <span
-                class="font-bold px-2 py-0.5 rounded text-[10px] shrink-0"
-                :class="[
-                  Number(inv.quantity) <= 0
-                    ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                    : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5))
-                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                ]"
-              >
-                {{ Number(inv.quantity) <= 0 ? 'Tugadi 🚫' : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5)) ? 'Kam Qoldi ⚠️' : 'Yetarli ✓' }}
-              </span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 my-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs">
-              <div>
-                <span class="text-[10px] text-slate-400 block font-semibold">Tannarx</span>
-                <span class="font-bold font-mono text-slate-700 dark:text-slate-300">
-                  {{ formatCurrency(inv.purchasePrice || inv.product?.purchasePrice) }}
-                </span>
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-400 block font-semibold">Qoldiq</span>
-                <span
-                  class="font-black font-mono"
-                  :class="Number(inv.quantity) <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'"
-                >
-                  {{ inv.quantity }} {{ inv.unit || inv.product?.unit?.shortName }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <span class="text-[10px] text-slate-400 block font-semibold">Jami Qiymat</span>
-              <span
-                class="text-sm font-black font-mono"
-                :class="Number(inv.quantity) <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'"
-              >
-                {{ formatCurrency((inv.quantity || 0) * Number(inv.purchasePrice || inv.product?.purchasePrice || 0)) }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-1">
-              <button
-                v-if="canEdit('inventory')"
-                type="button"
-                @click="openEditModal(inv)"
-                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
-                title="Tahrirlash"
-              >
-                <Edit2 class="w-3.5 h-3.5 text-blue-500" />
-              </button>
-              <button
-                v-if="canDelete('inventory')"
-                type="button"
-                @click="confirmDeleteProduct(inv)"
-                class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition"
-                title="O'chirish"
-              >
-                <Trash2 class="w-3.5 h-3.5 text-rose-500" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <InventoryGridView
+      v-else-if="viewMode === 'grid'"
+      :inventory="filteredInventory"
+      :can-edit="canEdit('inventory')"
+      :can-delete="canDelete('inventory')"
+      @edit="openEditModal"
+      @delete="confirmDeleteProduct"
+    />
 
     <!-- Stock In Modal -->
-    <div v-if="isStockInOpen" @click.self="isStockInOpen = false" class="modal-overlay">
-      <div class="modal-container max-w-md" @click.stop>
-        <div class="modal-header">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Omborga Kirim Qilish</h3>
-          <button @click="isStockInOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X class="w-5 h-5" /></button>
-        </div>
-
-        <div class="modal-body">
-          <form @submit.prevent="submitStockIn" class="space-y-3.5 text-xs">
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mahsulotni tanlang *</label>
-              <AppSelect
-                v-model="stockForm.productId"
-                :options="inventoryInOptions"
-                :searchable="true"
-                placeholder="Mahsulotni tanlang..."
-                required
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <AppInput
-                v-model="stockForm.quantity"
-                label="Kirim Miqdori *"
-                type="number"
-                placeholder="0"
-                :required="true"
-              />
-              <div>
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kirim Narxi (Tannarx)</label>
-                <CurrencyInput
-                  v-model="stockForm.purchasePrice"
-                  placeholder="0"
-                  suffix="so'm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kirim Sababi</label>
-              <AppSelect
-                v-model="stockForm.reason"
-                :options="[
-                  { value: 'manual', label: 'Inventarizatsiya / Qo\'lda kirim' },
-                  { value: 'purchase', label: 'Ta\'minotchidan xarid' }
-                ]"
-              />
-            </div>
-
-            <div class="pt-2">
-              <AppButton type="submit" variant="primary" size="lg" class="w-full" :loading="submitting">
-                {{ submitting ? 'Kirim qilinmoqda...' : 'Kirimni Tasdiqlash' }}
-              </AppButton>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <StockInModal
+      :is-open="isStockInOpen"
+      :stock-form="stockForm"
+      :inventory-in-options="inventoryInOptions"
+      :submitting="submitting"
+      @close="isStockInOpen = false"
+      @submit="submitStockIn"
+    />
 
     <!-- Stock Out Modal -->
-    <div v-if="isStockOutOpen" @click.self="isStockOutOpen = false" class="modal-overlay">
-      <div class="modal-container max-w-md" @click.stop>
-        <div class="modal-header">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Ombordan Chiqim / Hisobdan Chiqarish</h3>
-          <button @click="isStockOutOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X class="w-5 h-5" /></button>
-        </div>
-
-        <div class="modal-body">
-          <form @submit.prevent="submitStockOut" class="space-y-3.5 text-xs">
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mahsulotni tanlang *</label>
-              <AppSelect
-                v-model="stockOutForm.productId"
-                :options="inventoryOutOptions"
-                :searchable="true"
-                placeholder="Mahsulotni tanlang..."
-                required
-              />
-            </div>
-
-            <AppInput
-              v-model="stockOutForm.quantity"
-              label="Chiqim Miqdori *"
-              type="number"
-              placeholder="0"
-              :required="true"
-            />
-
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Chiqim Sababi</label>
-              <AppSelect
-                v-model="stockOutForm.reason"
-                :options="[
-                  { value: 'damage', label: 'Yaroqsiz / Buzilgan' },
-                  { value: 'loss', label: 'Yo\'qolgan / Kamomad' },
-                  { value: 'expired', label: 'Muddati o\'tgan' },
-                  { value: 'internal_use', label: 'Xodimlar / Ichki foydalanish' }
-                ]"
-              />
-            </div>
-
-            <div class="pt-2">
-              <AppButton type="submit" variant="danger" size="lg" class="w-full" :loading="submitting">
-                {{ submitting ? 'Chiqim qilinmoqda...' : 'Chiqimni Tasdiqlash' }}
-              </AppButton>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <StockOutModal
+      :is-open="isStockOutOpen"
+      :stock-out-form="stockOutForm"
+      :inventory-out-options="inventoryOutOptions"
+      :submitting="submitting"
+      @close="isStockOutOpen = false"
+      @submit="submitStockOut"
+    />
 
     <!-- Edit Item Modal -->
-    <div v-if="isEditModalOpen" @click.self="isEditModalOpen = false" class="modal-overlay">
-      <div class="modal-container max-w-md" @click.stop>
-        <div class="modal-header">
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Mahsulot va Ombor Qoldig'ini Tahrirlash</h3>
-          <button @click="isEditModalOpen = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <form @submit.prevent="saveEditProduct" class="modal-body space-y-3.5 text-xs">
-          <div>
-            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Mahsulot Nomi *</label>
-            <AppInput v-model="editForm.name" placeholder="Masalan: Coca-Cola 1.5L" required />
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">SKU / Shtrix-kod</label>
-            <AppInput v-model="editForm.sku" placeholder="SKU kodi" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tannarx (so'm)</label>
-              <CurrencyInput v-model="editForm.purchasePrice" placeholder="0" suffix="so'm" />
-            </div>
-            <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Joriy Ombor Qoldig'i</label>
-              <AppInput v-model.number="editForm.quantity" type="number" placeholder="0" required />
-            </div>
-          </div>
-
-          <div>
-            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Minimal Qoldiq Chegarasi (Kam qolish ogohlantirishi)</label>
-            <AppInput v-model.number="editForm.minStock" type="number" placeholder="5" />
-          </div>
-
-          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <AppButton variant="ghost" size="md" @click="isEditModalOpen = false" type="button">
-              Bekor qilish
-            </AppButton>
-            <AppButton variant="primary" size="md" :loading="submitting" type="submit">
-              Saqlash
-            </AppButton>
-          </div>
-        </form>
-      </div>
-    </div>
+    <InventoryEditModal
+      :is-open="isEditModalOpen"
+      :edit-form="editForm"
+      :submitting="submitting"
+      @close="isEditModalOpen = false"
+      @submit="saveEditProduct"
+    />
 
     <!-- Confirm Delete Dialog -->
     <AppConfirmDialog
@@ -438,26 +129,35 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useFormat } from '../../composables/useFormat';
-import { ArrowDownLeft, ArrowUpRight, X, Search, Boxes, Package, AlertTriangle, XCircle, Edit2, Trash2 } from 'lucide-vue-next';
+import { ArrowDownLeft, ArrowUpRight, Search, AlertTriangle } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
-import AppSelect from '../../components/AppSelect.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppButton from '../../components/AppButton.vue';
-import AppStatCard from '../../components/AppStatCard.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
-import CurrencyInput from '../../components/CurrencyInput.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePermissions } from '../../composables/usePermissions';
-import api, { getErrorMessage } from '../../services/api';
+import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+import api from '../../services/api';
+
+import InventoryStatsCards from './components/InventoryStatsCards.vue';
+import InventoryTableView from './components/InventoryTableView.vue';
+import InventoryGridView from './components/InventoryGridView.vue';
+import StockInModal from './components/StockInModal.vue';
+import StockOutModal from './components/StockOutModal.vue';
+import InventoryEditModal from './components/InventoryEditModal.vue';
 
 const toast = useToast();
 const dataStore = useDataStore();
 const { formatCurrency } = useFormat();
 const { canCreate, canEdit, canDelete } = usePermissions();
 
-const viewMode = ref<'table' | 'grid'>('table');
+const getErrorMessage = (err: any, defaultMsg: string) => {
+  return err.response?.data?.message || err.message || defaultMsg;
+};
+
+const viewMode = usePersistentViewMode('inventory', 'table');
 const activeStatusFilter = ref<'all' | 'low'>('all');
 const loading = ref(false);
 const submitting = ref(false);
