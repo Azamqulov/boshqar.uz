@@ -20,6 +20,7 @@ const SuppliersView = () => import('../views/suppliers/SuppliersView.vue');
 const FinanceView = () => import('../views/finance/FinanceView.vue');
 const SettingsView = () => import('../views/settings/SettingsView.vue');
 const SuperAdminView = () => import('../views/superadmin/SuperAdminView.vue');
+const NotFoundView = () => import('../views/errors/NotFoundView.vue');
 
 const routes: RouteRecordRaw[] = [
   {
@@ -34,6 +35,10 @@ const routes: RouteRecordRaw[] = [
     path: '/onboarding',
     component: OnboardingWizard,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/404',
+    component: NotFoundView,
   },
   {
     path: '/',
@@ -59,7 +64,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'superadmin', component: SuperAdminView },
     ],
   },
-  { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
+  { path: '/:pathMatch(.*)*', component: NotFoundView },
 ];
 
 const router = createRouter({
