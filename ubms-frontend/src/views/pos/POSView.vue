@@ -73,6 +73,7 @@
         :categories="categories"
         :filtered-products="filteredProducts"
         :loading="loading"
+        :pos-settings="posSettings"
         @barcode-scan="handleBarcodeScan"
         @product-click="handleProductClick"
       />
@@ -412,12 +413,14 @@ const completedOrder = ref<any | null>(null);
 const cashReceived = ref<number>(0);
 
 const isNasiyaNeeded = computed(() => {
+  if (!posSettings.value?.allowDebt) return false;
   if (selectedPaymentMethod.value === '4') return true;
   if (selectedPaymentMethod.value === '1' && cashReceived.value < cartStore.grandTotal) return true;
   return false;
 });
 
 const currentNasiyaAmount = computed(() => {
+  if (!posSettings.value?.allowDebt) return 0;
   if (selectedPaymentMethod.value === '4') return cartStore.grandTotal;
   if (selectedPaymentMethod.value === '1' && cashReceived.value < cartStore.grandTotal) {
     return Math.max(0, cartStore.grandTotal - (cashReceived.value || 0));
@@ -443,16 +446,25 @@ const openCheckoutModal = () => {
     return;
   }
   cashReceived.value = cartStore.grandTotal;
-  selectedPaymentMethod.value = '1';
+  if (selectedPaymentMethod.value === '4' && !posSettings.value?.allowDebt) {
+    selectedPaymentMethod.value = '1';
+  } else if (!paymentMethods.value.some(pm => pm.id === selectedPaymentMethod.value)) {
+    selectedPaymentMethod.value = '1';
+  }
   isCheckoutOpen.value = true;
 };
 
-const paymentMethods = ref([
-  { id: '1', name: 'Naqd pul', type: 'cash' },
-  { id: '2', name: 'Plastik karta', type: 'card' },
-  { id: '3', name: 'Click / Payme', type: 'click' },
-  { id: '4', name: 'Nasiya (Qarz)', type: 'debt' },
-]);
+const paymentMethods = computed(() => {
+  const methods = [
+    { id: '1', name: 'Naqd pul', type: 'cash' },
+    { id: '2', name: 'Plastik karta', type: 'card' },
+    { id: '3', name: 'Click / Payme', type: 'click' },
+  ];
+  if (posSettings.value?.allowDebt) {
+    methods.push({ id: '4', name: 'Nasiya (Qarz)', type: 'debt' });
+  }
+  return methods;
+});
 const selectedPaymentMethod = ref('1');
 
 const loadProducts = async () => {
@@ -532,6 +544,7 @@ const isDishItem = (prod: any) => {
 const isItemAvailable = (prod: any) => {
   if (prod.status === 'inactive') return false;
   if (isDishItem(prod) || prod.brand === 'service') return true;
+  if (posSettings.value?.allowZeroStockSale) return true;
   return (prod.stockQty ?? 0) > 0;
 };
 
@@ -552,8 +565,8 @@ const addToCart = (product: any) => {
   const existingInCart = cartStore.items.find((i) => (i.productId || i.id) === product.id);
   const currentInCartQty = existingInCart ? existingInCart.quantity : 0;
 
-  // Only check physical stock bounds for tracked goods
-  if (!isDish && currentInCartQty + 1 > product.stockQty) {
+  // Only check physical stock bounds for tracked goods if 0-stock sale is not allowed
+  if (!isDish && !posSettings.value?.allowZeroStockSale && currentInCartQty + 1 > product.stockQty) {
     toast.warning(
       `Omborda faqat ${product.stockQty} dona mavjud. Savatga bundan ortiq qo'shib bo'lmaydi!`,
       'Qoldiq chegarasi'

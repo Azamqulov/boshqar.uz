@@ -92,7 +92,10 @@
           <!-- Payment Method Selection (2 qator, 2 ustun, responsivda 1 ustun) -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">To'lov Turi:</label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div
+              class="grid gap-2.5"
+              :class="paymentMethods.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'"
+            >
               <button
                 v-for="pm in paymentMethods"
                 :key="pm.id"

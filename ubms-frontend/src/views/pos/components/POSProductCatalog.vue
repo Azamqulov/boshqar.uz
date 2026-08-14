@@ -67,22 +67,22 @@
         <span>Mahsulot topilmadi</span>
       </div>
 
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3">
+      <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-3.5">
         <div
           v-for="prod in filteredProducts"
           :key="prod.id"
           @click="$emit('productClick', prod)"
-          class="p-2.5 rounded-xl border transition-all flex flex-col justify-between group relative select-none"
+          class="p-3 rounded-2xl border transition-all flex flex-col justify-between group relative select-none"
           :class="[
             !isItemAvailable(prod)
               ? 'bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 opacity-60 cursor-not-allowed'
-              : 'bg-slate-50 hover:bg-slate-100/90 dark:bg-slate-800/60 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 cursor-pointer shadow-sm hover:shadow-emerald-500/10 btn-interactive'
+              : 'bg-slate-50 hover:bg-slate-100/90 dark:bg-slate-800/60 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 cursor-pointer shadow-xs hover:shadow-md hover:shadow-emerald-500/10 btn-interactive'
           ]"
         >
           <!-- Out of stock / Stop-list overlay badge -->
           <div
             v-if="!isItemAvailable(prod)"
-            class="absolute inset-0 z-10 rounded-xl bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none"
+            class="absolute inset-0 z-10 rounded-2xl bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none"
           >
             <span class="px-2.5 py-1 rounded-lg bg-rose-500/90 text-white font-bold text-[10px] tracking-wider uppercase shadow-md">
               {{ prod.status === 'inactive' ? 'Stop-List' : 'Tugagan' }}
@@ -90,14 +90,14 @@
           </div>
 
           <!-- Product Image -->
-          <div class="w-full h-24 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden mb-2 flex items-center justify-center relative">
+          <div class="w-full h-28 sm:h-32 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden mb-2.5 flex items-center justify-center relative">
             <img
               v-if="prod.imageUrl"
               :src="prod.imageUrl"
               class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
               @error="prod.imageUrl = null"
             />
-            <Package v-else class="w-8 h-8 text-slate-400 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition" />
+            <Package v-else class="w-10 h-10 text-slate-400 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition" />
             
             <!-- Stock Indicator / Made-to-order badge -->
             <span
@@ -160,6 +160,10 @@ const props = defineProps<{
   categories: any[];
   filteredProducts: any[];
   loading: boolean;
+  posSettings?: {
+    allowZeroStockSale?: boolean;
+    [key: string]: any;
+  };
 }>();
 
 defineEmits<{
@@ -179,6 +183,7 @@ const isDishItem = (prod: any) => {
 const isItemAvailable = (prod: any) => {
   if (prod.status === 'inactive') return false;
   if (isDishItem(prod) || prod.brand === 'service') return true;
+  if (props.posSettings?.allowZeroStockSale) return true;
   return prod.stockQty > 0;
 };
 
