@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@sentry/vue": "^10.70.0",
-    "@ubms/shared-types": "file:../ubms-shared-types",
     "axios": "^1.7.2",
     "chart.js": "^4.4.3",
     "clsx": "^2.1.1",

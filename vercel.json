@@ -1,6 +1,5 @@
 {
-  "framework": "vite",
-  "buildCommand": "cd ubms-frontend && npm run build",
+  "buildCommand": "cd ubms-frontend && npm install && npm run build",
   "outputDirectory": "ubms-frontend/dist",
   "rewrites": [
     {
