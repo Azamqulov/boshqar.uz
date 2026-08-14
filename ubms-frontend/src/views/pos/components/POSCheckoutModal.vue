@@ -89,20 +89,18 @@
             </div>
           </div>
 
-          <!-- Payment Method Selection (2 qator, 2 ustun, responsivda 1 ustun) -->
+          <!-- Payment Method Selection (2 ustun, matnlar to'liq va chiroyli joylashadi) -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">To'lov Turi:</label>
-            <div
-              class="grid gap-2.5"
-              :class="paymentMethods.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'"
-            >
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <button
-                v-for="pm in paymentMethods"
+                v-for="(pm, idx) in paymentMethods"
                 :key="pm.id"
                 type="button"
                 @click="$emit('selectPaymentMethod', pm.id)"
                 class="p-3.5 rounded-2xl border text-xs font-bold transition flex items-center gap-3 relative group btn-interactive"
                 :class="[
+                  paymentMethods.length === 3 && idx === 2 ? 'sm:col-span-2' : '',
                   selectedPaymentMethod === pm.id
                     ? (pm.type === 'debt'
                         ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/25 ring-2 ring-amber-500/30'
@@ -113,7 +111,7 @@
                 ]"
               >
                 <div
-                  class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition"
+                  class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition"
                   :class="[
                     selectedPaymentMethod === pm.id
                       ? (pm.type === 'debt' ? 'bg-slate-950/15 text-slate-950' : 'bg-white/20 text-white')
@@ -126,12 +124,12 @@
                   <FileText v-else-if="pm.type === 'debt'" class="w-5 h-5" />
                 </div>
                 <div class="text-left flex-1 min-w-0">
-                  <span class="block text-sm font-bold leading-tight truncate">{{ pm.name }}</span>
+                  <span class="block text-sm font-extrabold leading-tight whitespace-nowrap">{{ pm.name }}</span>
                   <span
-                    class="block text-[10px] font-normal mt-0.5 truncate"
+                    class="block text-[11px] font-normal mt-0.5 whitespace-nowrap"
                     :class="selectedPaymentMethod === pm.id ? (pm.type === 'debt' ? 'text-slate-900/80' : 'text-emerald-100') : 'text-slate-400 dark:text-slate-500'"
                   >
-                    {{ pm.type === 'cash' ? 'Qaytim hisoblash' : pm.type === 'debt' ? 'Qarzga yozish' : 'Karta / Ilova' }}
+                    {{ pm.type === 'cash' ? 'Qaytim hisoblash' : pm.type === 'debt' ? 'Qarzga yozish' : 'Karta / Ilova orqali' }}
                   </span>
                 </div>
               </button>
