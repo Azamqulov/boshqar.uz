@@ -197,6 +197,25 @@ export class BusinessesService {
     });
   }
 
+  async getSettings(businessId: string) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, posSettings: true },
+    });
+    return business?.posSettings || {};
+  }
+
+  async updateSettings(businessId: string, posSettings: any) {
+    const updated = await this.prisma.business.update({
+      where: { id: businessId },
+      data: {
+        posSettings,
+      },
+      select: { id: true, posSettings: true },
+    });
+    return updated.posSettings || {};
+  }
+
   // Delete business and all associated data
   async deleteBusiness(businessId: string, userId: string) {
     const business = await this.prisma.business.findUnique({

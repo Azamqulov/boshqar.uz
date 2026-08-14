@@ -278,6 +278,7 @@ model Business {
   timezone     String         @default("Asia/Tashkent") @db.VarChar(50)
   planId       String         @map("plan_id") @db.Uuid
   status       BusinessStatus @default(trial)
+  posSettings  Json?          @map("pos_settings")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 

@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import api from '../services/api';
 
 export interface PosSettings {
   allowDineIn: boolean;
@@ -48,8 +49,19 @@ export const defaultPosSettings: PosSettings = {
 
 const STORAGE_KEY = 'ubms_pos_feature_settings';
 
+const getBusinessId = (): string => {
+  try {
+    const rawBiz = localStorage.getItem('ubms_active_business');
+    if (rawBiz) {
+      const parsed = JSON.parse(rawBiz);
+      if (parsed?.id) return parsed.id;
+    }
+  } catch {}
+  return localStorage.getItem('ubms_active_business_id') || '';
+};
+
 const getStorageKey = (): string => {
-  const bizId = localStorage.getItem('ubms_active_business_id');
+  const bizId = getBusinessId();
   return bizId ? `ubms_pos_settings_${bizId}` : STORAGE_KEY;
 };
 
@@ -68,13 +80,34 @@ const loadSavedSettings = (): PosSettings => {
 
 // Global reactive state shared across components
 const posSettings = ref<PosSettings>(loadSavedSettings());
+let isFetching = false;
 
 export const usePosSettings = () => {
-  const reloadSettings = () => {
-    posSettings.value = loadSavedSettings();
+  const fetchSettingsFromApi = async () => {
+    const bizId = getBusinessId();
+    if (!bizId || isFetching) return;
+    try {
+      isFetching = true;
+      const res = await api.get(`/businesses/${bizId}/settings`);
+      if (res.data && Object.keys(res.data).length > 0) {
+        posSettings.value = { ...defaultPosSettings, ...res.data };
+        const key = getStorageKey();
+        localStorage.setItem(key, JSON.stringify(posSettings.value));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(posSettings.value));
+      }
+    } catch (err) {
+      console.warn('Could not fetch remote pos settings, using local:', err);
+    } finally {
+      isFetching = false;
+    }
   };
 
-  const saveSettings = (newSettings?: Partial<PosSettings>) => {
+  const reloadSettings = () => {
+    posSettings.value = loadSavedSettings();
+    fetchSettingsFromApi();
+  };
+
+  const saveSettings = async (newSettings?: Partial<PosSettings>) => {
     if (newSettings) {
       posSettings.value = { ...posSettings.value, ...newSettings };
     }
@@ -82,20 +115,41 @@ export const usePosSettings = () => {
     const json = JSON.stringify(posSettings.value);
     localStorage.setItem(key, json);
     localStorage.setItem(STORAGE_KEY, json);
+
+    // Persist to database
+    const bizId = getBusinessId();
+    if (bizId) {
+      try {
+        await api.put(`/businesses/${bizId}/settings`, { posSettings: posSettings.value });
+      } catch (err) {
+        console.error('Failed to persist POS settings to database:', err);
+      }
+    }
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     posSettings.value = { ...defaultPosSettings };
     const key = getStorageKey();
     const json = JSON.stringify(defaultPosSettings);
     localStorage.setItem(key, json);
     localStorage.setItem(STORAGE_KEY, json);
+
+    const bizId = getBusinessId();
+    if (bizId) {
+      try {
+        await api.put(`/businesses/${bizId}/settings`, { posSettings: defaultPosSettings });
+      } catch (err) {}
+    }
   };
+
+  // Initial background fetch
+  fetchSettingsFromApi();
 
   return {
     posSettings,
     saveSettings,
     resetToDefaults,
     reloadSettings,
+    fetchSettingsFromApi,
   };
 };

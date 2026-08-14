@@ -34,6 +34,18 @@ export class BusinessesController {
     return this.businessesService.update(id, dto);
   }
 
+  @Get(':id/settings')
+  getSettings(@Param('id') id: string) {
+    return this.businessesService.getSettings(id);
+  }
+
+  @Put(':id/settings')
+  @RequirePermission('settings.manage')
+  updateSettings(@Param('id') id: string, @Body() body: any) {
+    const settings = body.posSettings !== undefined ? body.posSettings : body;
+    return this.businessesService.updateSettings(id, settings);
+  }
+
   @Delete('current')
   deleteCurrent(
     @Headers('x-business-id') businessId: string,
