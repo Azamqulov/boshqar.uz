@@ -184,11 +184,16 @@ export class ShiftsService {
   async getShiftSummary(businessId: string, shiftId: string) {
     const shift = await this.prisma.posShift.findFirst({
       where: { id: shiftId, businessId },
+      include: {
+        business: { select: { businessType: true } },
+      },
     });
 
     if (!shift) {
       throw new NotFoundException('Smena topilmadi');
     }
+
+    const isRestaurant = shift.business?.businessType === 'restaurant' || shift.business?.businessType === 'cafe';
 
     // Find all completed orders in this shift
     const orders = await this.prisma.order.findMany({
@@ -244,46 +249,67 @@ export class ShiftsService {
     }
 
     const startingCash = Number(shift.startingCash || 0);
-    const expectedCash = startingCash + cashSales - cashExpenses;
+    const rawExpectedCash = startingCash + cashSales - cashExpenses;
+    const expectedCash = Math.max(0, rawExpectedCash);
     const actualCash = shift.actualCash !== null ? Number(shift.actualCash) : null;
-    const difference = actualCash !== null ? actualCash - expectedCash : null;
+    const difference = actualCash !== null ? actualCash - (startingCash + cashSales - cashExpenses) : null;
 
-    // Check for occupied tables in this branch
-    const occupiedTables = await this.prisma.table.findMany({
+    // Check for pending/held/draft orders in this shift
+    const pendingOrders = await this.prisma.order.findMany({
       where: {
-        branchId: shift.branchId,
-        status: 'occupied',
+        businessId,
+        shiftId: shift.id,
+        status: { notIn: ['completed', 'cancelled'] },
       },
       select: {
         id: true,
-        name: true,
+        orderNumber: true,
+        total: true,
         status: true,
+        table: { select: { name: true } },
       },
     });
 
-    // Check for pending/preparing kitchen items in this shift
-    const pendingKitchenItems = await this.prisma.orderItem.findMany({
-      where: {
-        order: {
-          businessId,
-          branchId: shift.branchId,
-          shiftId: shift.id,
-          status: { not: 'completed' },
-        },
-        status: { in: ['pending', 'preparing'] },
-      },
-      include: {
-        product: { select: { name: true } },
-        order: {
-          select: {
-            orderNumber: true,
-            table: { select: { name: true } },
+    // Check for occupied tables in this branch (Only for restaurant / cafe)
+    const occupiedTables = isRestaurant
+      ? await this.prisma.table.findMany({
+          where: {
+            branchId: shift.branchId,
+            status: 'occupied',
           },
-        },
-      },
-    });
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        })
+      : [];
 
-    const canClose = occupiedTables.length === 0 && pendingKitchenItems.length === 0;
+    // Check for pending/preparing kitchen items in this shift (Only for restaurant / cafe)
+    const pendingKitchenItems = isRestaurant
+      ? await this.prisma.orderItem.findMany({
+          where: {
+            order: {
+              businessId,
+              branchId: shift.branchId,
+              shiftId: shift.id,
+              status: { not: 'completed' },
+            },
+            status: { in: ['pending', 'preparing'] },
+          },
+          include: {
+            product: { select: { name: true } },
+            order: {
+              select: {
+                orderNumber: true,
+                table: { select: { name: true } },
+              },
+            },
+          },
+        })
+      : [];
+
+    const canClose = occupiedTables.length === 0 && pendingKitchenItems.length === 0 && pendingOrders.length === 0;
 
     return {
       shiftId: shift.id,
@@ -303,6 +329,7 @@ export class ShiftsService {
       isDifferenceZero: difference === 0,
       isDeficit: difference !== null && difference < 0,
       isSurplus: difference !== null && difference > 0,
+      pendingOrders,
       occupiedTables,
       pendingKitchenItems,
       canClose,
@@ -326,9 +353,12 @@ export class ShiftsService {
     // Calculate final metrics
     const summary = await this.getShiftSummary(businessId, shiftId);
 
-    // Prevent closing if there are occupied tables or unfinished kitchen items
+    // Prevent closing if there are pending orders, occupied tables, or unfinished kitchen items
     if (!summary.canClose) {
       const issues: string[] = [];
+      if (summary.pendingOrders?.length > 0) {
+        issues.push(`${summary.pendingOrders.length} ta yopilmagan yoki kutilayotgan buyurtma mavjud`);
+      }
       if (summary.occupiedTables?.length > 0) {
         issues.push(`${summary.occupiedTables.length} ta band stol hisobi yopilmagan (${summary.occupiedTables.map((t: any) => t.name).join(', ')})`);
       }

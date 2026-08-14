@@ -270,15 +270,15 @@
           </button>
         </div>
 
-        <!-- 4. Nol qoldiq bilan sotish -->
+        <!-- 4. Qoldiqni eslatish (Ombor ogohlantirishi) -->
         <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <Package class="w-5 h-5" />
             </div>
             <div>
-              <h4 class="font-bold text-xs text-slate-900 dark:text-white">0 qoldiqli tovarlarni sotish</h4>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400">Omborda 0 qolgan tovarlarni ham sotishga ruxsat</p>
+              <h4 class="font-bold text-xs text-slate-900 dark:text-white">Qoldiqni eslatish</h4>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Tugagan va kam qolgan tovarlar haqida ekranda jonli ogohlantirish</p>
             </div>
           </div>
           <button
@@ -290,6 +290,33 @@
             <span
               class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
               :class="posSettings.allowZeroStockSale ? 'translate-x-5' : 'translate-x-0'"
+            />
+          </button>
+        </div>
+
+        <!-- 5. Kassa Tezkor Tugmalari (Hotkeys) -->
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between md:col-span-2">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Keyboard class="w-5 h-5" />
+            </div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Kassa tezkor tugmalari (Hotkeys)</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">F1 — F10</span>
+              </h4>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Sichqonchasiz tezkor kassa boshqaruvi: F2 (Qidiruv), F4 (Chegirma), F8 (Kutish), F10 (To'lov), Enter (Tasdiqlash)</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="$emit('togglePosSetting', 'enableHotkeys')"
+            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+            :class="posSettings.enableHotkeys !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+          >
+            <span
+              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+              :class="posSettings.enableHotkeys !== false ? 'translate-x-5' : 'translate-x-0'"
             />
           </button>
         </div>
@@ -310,6 +337,7 @@ import {
   Percent,
   Barcode,
   Package,
+  Keyboard,
 } from 'lucide-vue-next';
 import { useThemeStore } from '../../../stores/theme.store';
 
@@ -322,6 +350,7 @@ defineProps<{
     allowDiscounts: boolean;
     quickBarcode: boolean;
     allowZeroStockSale: boolean;
+    enableHotkeys?: boolean;
   };
 }>();
 

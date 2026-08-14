@@ -1,0 +1,11 @@
+{
+  "framework": "vite",
+  "buildCommand": "cd ubms-frontend && npm run build",
+  "outputDirectory": "ubms-frontend/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

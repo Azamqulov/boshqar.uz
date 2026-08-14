@@ -54,7 +54,7 @@ export class ProductsService {
 
   async findAll(businessId: string, branchId?: string, query?: FindProductsQueryDto) {
     const page = Number(query?.page) || 1;
-    const limit = Number(query?.limit) || 50;
+    const limit = Number(query?.limit) || 1000;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -80,7 +80,7 @@ export class ProductsService {
         include: {
           category: true,
           unit: true,
-          inventory: branchId ? { where: { branchId } } : true,
+          inventory: true,
         },
         skip,
         take: limit,
@@ -97,8 +97,11 @@ export class ProductsService {
         prod.unit?.shortName === 'por' ||
         prod.unitId === '00000000-0000-0000-0000-000000000024';
 
-      const stockQty = prod.inventory.reduce((acc, curr) => acc + Number(curr.quantity), 0);
-      const reservedQty = prod.inventory.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
+      const branchInventories = branchId ? prod.inventory.filter((inv) => inv.branchId === branchId) : prod.inventory;
+      const targetInventories = branchInventories.length > 0 ? branchInventories : prod.inventory;
+
+      const stockQty = targetInventories.reduce((acc, curr) => acc + Number(curr.quantity), 0);
+      const reservedQty = targetInventories.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
 
       // For made-to-order items (food/dishes/services), stock is virtually unlimited unless marked inactive (stop-list)
       const effectiveStockQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : stockQty;
@@ -393,19 +396,36 @@ export class ProductsService {
   }
 
   async remove(businessId: string, id: string) {
-    // Check if product is in orders or inventory transactions
-    const [hasOrders, hasInventoryTx] = await Promise.all([
+    const where: any = { id };
+    if (businessId) {
+      where.businessId = businessId;
+    }
+    const product = await this.prisma.product.findFirst({
+      where,
+    });
+    if (!product) {
+      throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
+    }
+
+    // Check if product is in orders, inventory transactions, or stock transfers
+    const [hasOrders, hasInventoryTx, hasTransferItems] = await Promise.all([
       this.prisma.orderItem.count({ where: { productId: id } }),
       this.prisma.inventoryTransaction.count({ where: { productId: id } }),
+      this.prisma.stockTransferItem.count({ where: { productId: id } }),
     ]);
 
-    if (hasOrders > 0 || hasInventoryTx > 0) {
-      // Soft delete / archive
+    if (hasOrders > 0 || hasInventoryTx > 0 || hasTransferItems > 0) {
+      // Soft delete / archive so historical reports and receipts stay intact
       return this.prisma.product.update({
         where: { id },
         data: { status: 'archived' },
       });
     }
+
+    // Clean up inventory records before hard deleting product
+    await this.prisma.inventory.deleteMany({
+      where: { productId: id },
+    });
 
     return this.prisma.product.delete({
       where: { id },

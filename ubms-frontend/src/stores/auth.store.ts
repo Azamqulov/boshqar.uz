@@ -79,12 +79,15 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     setActiveBusiness(business: BusinessItem) {
+      if (!business) return;
       this.activeBusiness = business;
       localStorage.setItem('ubms_active_business', JSON.stringify(business));
       localStorage.setItem('ubms_active_business_id', business.id);
 
       if (business.branchId) {
         this.setActiveBranch(business.branchId);
+      } else if (business.branches && business.branches.length > 0) {
+        this.setActiveBranch(business.branches[0].id);
       }
     },
     setActiveBranch(branchId: string) {
@@ -98,13 +101,9 @@ export const useAuthStore = defineStore('auth', {
       this.businesses = [];
       this.activeBranchId = null;
 
-      localStorage.removeItem('ubms_access_token');
-      localStorage.removeItem('ubms_refresh_token');
-      localStorage.removeItem('ubms_user');
-      localStorage.removeItem('ubms_businesses');
-      localStorage.removeItem('ubms_active_business');
-      localStorage.removeItem('ubms_active_business_id');
-      localStorage.removeItem('ubms_active_branch_id');
+      // Purge all local and session storage caches completely
+      localStorage.clear();
+      sessionStorage.clear();
     },
     async updateProfile(profileData: { fullName?: string; phone?: string; email?: string }) {
       const { data } = await api.post('/auth/profile/me', profileData);

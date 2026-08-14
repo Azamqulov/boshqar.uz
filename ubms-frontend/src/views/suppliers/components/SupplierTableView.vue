@@ -96,6 +96,16 @@
                   <span>To'lov Berish</span>
                 </button>
 
+                <!-- Statement / Akt Sverka button -->
+                <button
+                  type="button"
+                  @click="$emit('openStatement', s)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+                  title="Solishtirma Dalolatnoma (Akt Sverka)"
+                >
+                  <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
+                </button>
+
                 <!-- Payment History button -->
                 <button
                   type="button"
@@ -137,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { Truck, Building2, Phone, MapPin, AlertCircle, CreditCard, History, Edit, Trash2 } from 'lucide-vue-next';
+import { Truck, Building2, Phone, MapPin, AlertCircle, CreditCard, History, Edit, Trash2, FileSpreadsheet } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 import { usePermissions } from '../../../composables/usePermissions';
 
@@ -148,6 +158,7 @@ defineProps<{
 defineEmits<{
   (e: 'openPay', s: any): void;
   (e: 'openHistory', s: any): void;
+  (e: 'openStatement', s: any): void;
   (e: 'openEdit', s: any): void;
   (e: 'delete', s: any): void;
 }>();

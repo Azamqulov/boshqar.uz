@@ -122,22 +122,62 @@ export class DashboardService {
     };
     if (branchId) where.branchId = branchId;
 
-    const orders = await this.prisma.order.findMany({
-      where,
-      select: {
-        completedAt: true,
-        total: true,
-        items: {
-          select: {
-            quantity: true,
-            product: { select: { purchasePrice: true } },
+    const [orders, expenses] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        select: {
+          completedAt: true,
+          total: true,
+          discountAmount: true,
+          items: {
+            select: {
+              quantity: true,
+              total: true,
+              product: {
+                select: {
+                  name: true,
+                  purchasePrice: true,
+                  category: { select: { name: true } },
+                },
+              },
+            },
+          },
+          payments: {
+            select: {
+              amount: true,
+              paymentMethod: { select: { type: true, name: true } },
+            },
           },
         },
-      },
-      orderBy: { completedAt: 'asc' },
-    });
+        orderBy: { completedAt: 'asc' },
+      }),
+      this.prisma.expense.findMany({
+        where: {
+          businessId,
+          ...(branchId ? { branchId } : {}),
+          recordedAt: { gte: startDate, lte: today },
+        },
+        select: {
+          amount: true,
+          category: true,
+          recordedAt: true,
+        },
+      }),
+    ]);
 
-    const dailyMap = new Map<string, { date: string; sales: number; profit: number; count: number }>();
+    interface DailyItem {
+      date: string;
+      sales: number;
+      profit: number;
+      cogs: number;
+      expenses: number;
+      discount: number;
+      count: number;
+      payments: { [key: string]: number };
+      categories: { [key: string]: { name: string; amount: number; count: number } };
+    }
+
+    const dailyMap = new Map<string, DailyItem>();
 
     for (let i = 0; i < days; i++) {
       const d = new Date(startDate);
@@ -146,32 +186,90 @@ export class DashboardService {
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
       const dateKey = `${year}-${month}-${day}`;
-      dailyMap.set(dateKey, { date: dateKey, sales: 0, profit: 0, count: 0 });
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        sales: 0,
+        profit: 0,
+        cogs: 0,
+        expenses: 0,
+        discount: 0,
+        count: 0,
+        payments: { cash: 0, card: 0, click: 0, other: 0 },
+        categories: {},
+      });
     }
 
-    for (const order of orders) {
-      if (!order.completedAt) continue;
-      const d = new Date(order.completedAt);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const dateKey = `${year}-${month}-${day}`;
-
+    // Process expenses
+    for (const exp of expenses) {
+      if (!exp.recordedAt) continue;
+      const d = new Date(exp.recordedAt);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const entry = dailyMap.get(dateKey);
       if (entry) {
-        const orderSales = Number(order.total);
-        let orderCogs = 0;
-        for (const item of order.items) {
-          if (item.product) {
-            orderCogs += Number(item.quantity) * Number(item.product.purchasePrice);
-          }
-        }
-        entry.sales += orderSales;
-        entry.profit += orderSales - orderCogs;
-        entry.count += 1;
+        entry.expenses += Number(exp.amount) || 0;
       }
     }
 
-    return Array.from(dailyMap.values());
+    // Process orders
+    for (const order of orders) {
+      if (!order.completedAt) continue;
+      const d = new Date(order.completedAt);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      const entry = dailyMap.get(dateKey);
+      if (entry) {
+        const orderSales = Number(order.total) || 0;
+        let orderCogs = 0;
+
+        for (const item of order.items) {
+          const itemQty = Number(item.quantity) || 0;
+          const itemTotal = Number(item.total) || 0;
+          if (item.product) {
+            orderCogs += itemQty * (Number(item.product.purchasePrice) || 0);
+            const catName = item.product.category?.name || 'Boshqa';
+            if (!entry.categories[catName]) {
+              entry.categories[catName] = { name: catName, amount: 0, count: 0 };
+            }
+            entry.categories[catName].amount += itemTotal;
+            entry.categories[catName].count += itemQty;
+          }
+        }
+
+        entry.sales += orderSales;
+        entry.cogs += orderCogs;
+        entry.discount += Number(order.discountAmount) || 0;
+        entry.count += 1;
+
+        // Process payments
+        for (const p of order.payments) {
+          const pAmount = Number(p.amount) || 0;
+          const pType = p.paymentMethod?.type || 'cash';
+          if (entry.payments[pType] !== undefined) {
+            entry.payments[pType] += pAmount;
+          } else {
+            entry.payments.other += pAmount;
+          }
+        }
+      }
+    }
+
+    // Finalize profits and format categories as array
+    return Array.from(dailyMap.values()).map((entry) => {
+      const grossProfit = entry.sales - entry.cogs;
+      const netProfit = Math.max(0, grossProfit - entry.expenses);
+      return {
+        date: entry.date,
+        sales: entry.sales,
+        profit: netProfit,
+        grossProfit,
+        cogs: entry.cogs,
+        expenses: entry.expenses,
+        discount: entry.discount,
+        count: entry.count,
+        avgCheck: entry.count > 0 ? Math.round(entry.sales / entry.count) : 0,
+        payments: entry.payments,
+        categories: Object.values(entry.categories).sort((a, b) => b.amount - a.amount),
+      };
+    });
   }
 }

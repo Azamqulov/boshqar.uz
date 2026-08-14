@@ -14,6 +14,8 @@ export interface CartItem {
   unit?: string;
 }
 
+export type DiscountType = 'percent' | 'fixed';
+
 export const useCartStore = defineStore('cart', {
   state: () => ({
     items: [] as CartItem[],
@@ -21,26 +23,55 @@ export const useCartStore = defineStore('cart', {
     customerName: null as string | null,
     tableId: null as string | null,
     tableName: null as string | null,
-    generalDiscount: 0, // Summa
+    discountType: 'percent' as DiscountType,
+    discountValue: 0, // foizda (masalan, 10) yoki summada (masalan, 15000)
     taxRate: 0, // %
     orderType: 'pos' as 'pos' | 'restaurant' | 'service',
   }),
   getters: {
     itemCount: (state) => state.items.reduce((sum, item) => sum + item.quantity, 0),
+    
+    // Asl jami summa (chegirmasiz)
+    rawSubtotal: (state) =>
+      state.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+
+    // Qator chegirmalari hisobga olingan oraliq summa
     subtotal: (state) =>
-      state.items.reduce((sum, item) => sum + item.price * item.quantity - item.discount, 0),
-    discountTotal: (state) => {
-      const lineDiscounts = state.items.reduce((sum, item) => sum + item.discount, 0);
-      return lineDiscounts + state.generalDiscount;
+      state.items.reduce((sum, item) => sum + (item.price * item.quantity - (item.discount || 0)), 0),
+
+    // Butun buyurtmaga qo'llangan umumiy chegirma summasi
+    generalDiscount(state): number {
+      const sub = this.subtotal;
+      if (sub <= 0 || state.discountValue <= 0) return 0;
+      if (state.discountType === 'percent') {
+        const pct = Math.min(100, Math.max(0, state.discountValue));
+        return Math.round((sub * pct) / 100);
+      }
+      // Fixed sum
+      return Math.min(sub, Math.max(0, state.discountValue));
     },
-    taxAmount: (state) => {
-      const discountedSubtotal = Math.max(
-        0,
-        state.items.reduce((sum, item) => sum + item.price * item.quantity - item.discount, 0) -
-          state.generalDiscount,
-      );
+
+    // Umumiy chegirma foizi (agar summada berilgan bo'lsa ham hisoblab ko'rsatish uchun)
+    calculatedDiscountPercent(state): number {
+      const sub = this.subtotal;
+      if (sub <= 0) return 0;
+      if (state.discountType === 'percent') {
+        return Math.min(100, Math.max(0, state.discountValue));
+      }
+      return Math.round((this.generalDiscount / sub) * 100);
+    },
+
+    // Jami chegirmalar (qatorlar + umumiy chegirma)
+    discountTotal(state): number {
+      const lineDiscounts = state.items.reduce((sum, item) => sum + (item.discount || 0), 0);
+      return lineDiscounts + this.generalDiscount;
+    },
+
+    taxAmount(state): number {
+      const discountedSubtotal = Math.max(0, this.subtotal - this.generalDiscount);
       return (discountedSubtotal * state.taxRate) / 100;
     },
+
     grandTotal(): number {
       const discounted = Math.max(0, this.subtotal - this.generalDiscount);
       return Math.round(discounted + this.taxAmount);
@@ -85,6 +116,22 @@ export const useCartStore = defineStore('cart', {
         item.discount = Math.max(0, discount);
       }
     },
+    setDiscount(type: DiscountType, value: number) {
+      this.discountType = type;
+      this.discountValue = Math.max(0, value);
+    },
+    setDiscountPercent(percent: number) {
+      this.discountType = 'percent';
+      this.discountValue = Math.min(100, Math.max(0, percent));
+    },
+    setDiscountFixed(amount: number) {
+      this.discountType = 'fixed';
+      this.discountValue = Math.max(0, amount);
+    },
+    clearDiscount() {
+      this.discountType = 'percent';
+      this.discountValue = 0;
+    },
     removeItem(id: string) {
       this.items = this.items.filter((item) => item.id !== id);
     },
@@ -102,7 +149,8 @@ export const useCartStore = defineStore('cart', {
       this.customerName = null;
       this.tableId = null;
       this.tableName = null;
-      this.generalDiscount = 0;
+      this.discountType = 'percent';
+      this.discountValue = 0;
     },
   },
 });

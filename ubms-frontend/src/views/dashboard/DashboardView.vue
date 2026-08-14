@@ -69,7 +69,6 @@ const chartPeriods = [
   { days: 14, label: '14 kun' },
   { days: 30, label: '30 kun' },
   { days: 90, label: '3 oy' },
-  { days: 180, label: '6 oy' },
 ];
 
 const defaultSummary = {

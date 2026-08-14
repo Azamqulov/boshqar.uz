@@ -36,7 +36,11 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    // Check if user is owner of the business (Owner has all permissions)
+    // Check if user is SuperAdmin or owner of the business (SuperAdmin & Owner have all permissions)
+    if (user.isSuperAdmin) {
+      return true;
+    }
+
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
     });
@@ -73,7 +77,13 @@ export class PermissionGuard implements CanActivate {
       });
     }
 
-    const hasPermission = businessUser.role.rolePermissions.some(
+    const roleName = businessUser.role?.name?.toLowerCase() || '';
+    // Owner, SuperAdmin, Admin have full access to all actions
+    if (roleName === 'owner' || roleName === 'superadmin' || roleName === 'admin') {
+      return true;
+    }
+
+    const hasPermission = businessUser.role?.rolePermissions?.some(
       (rp) => rp.permission.code === requiredPermission,
     );
 

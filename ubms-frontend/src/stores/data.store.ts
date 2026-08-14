@@ -30,11 +30,12 @@ export const useDataStore = defineStore('ubms_data', () => {
       return products.value;
     }
     try {
-      const { data } = await api.get('/products');
-      products.value = data.items || [];
+      const { data } = await api.get('/products?limit=1000');
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      products.value = items;
       lastFetched.value['products'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch products failed:', e);
     }
     return products.value;
   };
@@ -46,10 +47,11 @@ export const useDataStore = defineStore('ubms_data', () => {
     }
     try {
       const { data } = await api.get('/categories');
-      categories.value = data || [];
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      categories.value = items;
       lastFetched.value['categories'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch categories failed:', e);
     }
     return categories.value;
   };
@@ -68,7 +70,7 @@ export const useDataStore = defineStore('ubms_data', () => {
       dashboardCharts.value = chartRes.data;
       lastFetched.value['dashboard'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch dashboard failed:', e);
     }
     return { summary: dashboardSummary.value, charts: dashboardCharts.value };
   };
@@ -80,7 +82,7 @@ export const useDataStore = defineStore('ubms_data', () => {
       dashboardCharts.value = data;
       return data;
     } catch (e) {
-      console.error(e);
+      console.error('Fetch chart data failed:', e);
       return dashboardCharts.value || [];
     }
   };
@@ -92,10 +94,11 @@ export const useDataStore = defineStore('ubms_data', () => {
     }
     try {
       const { data } = await api.get('/inventory');
-      inventory.value = data || [];
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      inventory.value = items;
       lastFetched.value['inventory'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch inventory failed:', e);
     }
     return inventory.value;
   };
@@ -111,10 +114,10 @@ export const useDataStore = defineStore('ubms_data', () => {
         api.get('/finance/expenses'),
       ]);
       financeSummary.value = sumRes.data;
-      financeExpenses.value = expRes.data || [];
+      financeExpenses.value = Array.isArray(expRes.data) ? expRes.data : (expRes.data?.items || []);
       lastFetched.value['finance'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch finance failed:', e);
     }
     return { summary: financeSummary.value, expenses: financeExpenses.value };
   };
@@ -125,11 +128,12 @@ export const useDataStore = defineStore('ubms_data', () => {
       return customers.value;
     }
     try {
-      const { data } = await api.get('/customers');
-      customers.value = data || [];
+      const { data } = await api.get('/customers?limit=1000');
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      customers.value = items;
       lastFetched.value['customers'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch customers failed:', e);
     }
     return customers.value;
   };
@@ -140,11 +144,12 @@ export const useDataStore = defineStore('ubms_data', () => {
       return suppliers.value;
     }
     try {
-      const { data } = await api.get('/suppliers');
-      suppliers.value = data || [];
+      const { data } = await api.get('/suppliers?limit=1000');
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      suppliers.value = items;
       lastFetched.value['suppliers'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch suppliers failed:', e);
     }
     return suppliers.value;
   };
@@ -155,11 +160,12 @@ export const useDataStore = defineStore('ubms_data', () => {
       return appointments.value;
     }
     try {
-      const { data } = await api.get('/appointments');
-      appointments.value = data || [];
+      const { data } = await api.get('/appointments?limit=1000');
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      appointments.value = items;
       lastFetched.value['appointments'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch appointments failed:', e);
     }
     return appointments.value;
   };
@@ -171,10 +177,11 @@ export const useDataStore = defineStore('ubms_data', () => {
     }
     try {
       const { data } = await api.get('/restaurant/tables');
-      tables.value = data || [];
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      tables.value = items;
       lastFetched.value['tables'] = Date.now();
     } catch (e) {
-      console.error(e);
+      console.error('Fetch tables failed:', e);
     }
     return tables.value;
   };

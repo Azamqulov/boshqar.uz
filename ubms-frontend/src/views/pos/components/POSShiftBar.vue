@@ -30,6 +30,18 @@
 
     <div class="flex items-center gap-1.5">
       <button
+        v-if="enableHotkeys !== false"
+        type="button"
+        @click="$emit('openHotkeys')"
+        class="px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1 sm:gap-1.5 transition btn-interactive"
+        title="Kassa tezkor tugmalari ro'yxati (F1)"
+      >
+        <Keyboard class="w-3.5 h-3.5 text-emerald-500" />
+        <span class="hidden sm:inline">Tugmalar</span>
+        <span class="text-[10px] px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">F1</span>
+      </button>
+
+      <button
         v-if="currentShift"
         type="button"
         @click="$emit('openShift', 'report')"
@@ -61,16 +73,23 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Receipt, Moon, Sun } from 'lucide-vue-next';
+import { AlertTriangle, Receipt, Moon, Sun, Keyboard } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
-  currentShift: any;
-  cashierName?: string;
-}>();
+withDefaults(
+  defineProps<{
+    currentShift: any;
+    cashierName?: string;
+    enableHotkeys?: boolean;
+  }>(),
+  {
+    enableHotkeys: true,
+  }
+);
 
 defineEmits<{
   (e: 'openShift', mode: 'open' | 'close' | 'report'): void;
+  (e: 'openHotkeys'): void;
 }>();
 
 const { formatCurrency, formatDateTime } = useFormat();

@@ -41,6 +41,52 @@
             />
           </div>
 
+          <!-- Payment Source Selector -->
+          <div class="space-y-1.5">
+            <label class="block font-bold text-xs text-slate-700 dark:text-slate-300">To'lov Manbasi (Chiqim turi) *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                @click="$emit('update:paymentSource', 'cash')"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                :class="paymentSource === 'cash' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
+              >
+                <span>💵 Naqd pul</span>
+                <span class="text-[10px] text-slate-400 font-normal">Kassadan</span>
+              </button>
+              <button
+                type="button"
+                @click="$emit('update:paymentSource', 'card')"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                :class="paymentSource === 'card' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
+              >
+                <span>💳 Karta</span>
+                <span class="text-[10px] text-slate-400 font-normal">Korp. karta</span>
+              </button>
+              <button
+                type="button"
+                @click="$emit('update:paymentSource', 'bank')"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                :class="paymentSource === 'bank' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
+              >
+                <span>🏦 Bank Hisobi</span>
+                <span class="text-[10px] text-slate-400 font-normal">Perechislenie</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Notes / Description -->
+          <div>
+            <label class="block font-bold text-xs text-slate-700 dark:text-slate-300 mb-1.5">Izoh / Chek raqami (Ixtiyoriy)</label>
+            <input
+              :value="paymentDescription"
+              @input="$emit('update:paymentDescription', ($event.target as HTMLInputElement).value)"
+              type="text"
+              placeholder="Masalan: 12-avgust kungi mol uchun to'lov..."
+              class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
           <!-- Quick Fill Buttons -->
           <div class="space-y-1.5">
             <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">Tezkor to'lov variantlari:</span>
@@ -87,6 +133,12 @@
             </span>
           </div>
 
+          <!-- Anti-Fraud Audit Notice -->
+          <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-500 flex items-center gap-2">
+            <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Chiqim amali avtomatik ravishda xavfsizlik audit jurnalida qayd etiladi.</span>
+          </div>
+
           <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
             <AppButton variant="ghost" size="md" @click="$emit('close')">
               Bekor qilish
@@ -98,7 +150,7 @@
               :disabled="!payAmount || payAmount <= 0"
               @click="$emit('submit')"
             >
-              To'lovni Bajarish
+              To'lovni Tasdiqlash
             </AppButton>
           </div>
         </div>
@@ -108,21 +160,31 @@
 </template>
 
 <script setup lang="ts">
-import { CreditCard, X } from 'lucide-vue-next';
+import { CreditCard, X, ShieldCheck } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
-  isOpen: boolean;
-  activeSupplier: any;
-  payAmount: number;
-  submitting: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    activeSupplier: any;
+    payAmount: number;
+    submitting: boolean;
+    paymentSource?: string;
+    paymentDescription?: string;
+  }>(),
+  {
+    paymentSource: 'cash',
+    paymentDescription: '',
+  }
+);
 
 defineEmits<{
   (e: 'close'): void;
   (e: 'update:payAmount', val: number): void;
+  (e: 'update:paymentSource', val: string): void;
+  (e: 'update:paymentDescription', val: string): void;
   (e: 'submit'): void;
 }>();
 

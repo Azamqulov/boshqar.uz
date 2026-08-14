@@ -6,6 +6,7 @@
       subtitle="Yopilgan cheklar"
       :icon="DollarSign"
       variant="emerald"
+      to="/finance"
     />
 
     <AppStatCard
@@ -14,6 +15,7 @@
       subtitle="Operatsion xarajatlar"
       :icon="TrendingDown"
       variant="rose"
+      to="/finance"
     />
 
     <AppStatCard
@@ -22,6 +24,7 @@
       subtitle="Savdo − COGS − Xarajat"
       :icon="TrendingUp"
       variant="blue"
+      to="/finance"
     />
 
     <AppStatCard
@@ -30,6 +33,7 @@
       subtitle="Bugungi kassa tranzaksiyalari"
       :icon="ShoppingBag"
       variant="purple"
+      to="/pos"
     />
 
     <AppStatCard
@@ -38,6 +42,7 @@
       subtitle="Tannarx bo'yicha qoldiq"
       :icon="Boxes"
       variant="amber"
+      to="/inventory"
     />
 
     <AppStatCard
@@ -46,6 +51,7 @@
       subtitle="Nasiya daftari"
       :icon="Users"
       variant="indigo"
+      to="/customers"
     />
   </div>
 </template>

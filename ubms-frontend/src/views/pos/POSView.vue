@@ -4,7 +4,9 @@
     <POSShiftBar
       :current-shift="currentShift"
       :cashier-name="authStore.user?.fullName"
+      :enable-hotkeys="posSettings.enableHotkeys"
       @open-shift="openShiftModal"
+      @open-hotkeys="isHotkeysModalOpen = true"
     />
 
     <!-- Mobile Tab Toggle (< lg) -->
@@ -89,10 +91,13 @@
         :available-tables="availableTables"
         :selected-table-number="selectedTableNumber"
         :held-orders-count="heldOrders.length"
+        :allow-discounts="posSettings.allowDiscounts"
+        :enable-hotkeys="posSettings.enableHotkeys"
         @select-table="selectedTableNumber = $event; isCustomTableInput = false;"
         @hold-cart="holdCurrentCart"
         @open-held-orders="isHeldOrdersOpen = true"
         @open-checkout="openCheckoutModal"
+        @open-discount-modal="isDiscountModalOpen = true"
       />
     </div>
 
@@ -121,9 +126,22 @@
       :current-nasiya-amount="currentNasiyaAmount"
       :is-processing="isProcessing"
       :allow-debt="posSettings.allowDebt"
+      :allow-discounts="posSettings.allowDiscounts"
       @close="isCheckoutOpen = false"
       @open-new-customer="isNewCustomerModalOpen = true"
+      @open-discount-modal="isDiscountModalOpen = true"
       @complete-order="handleCompleteOrder"
+    />
+
+    <!-- Discount Modal (% / so'm) -->
+    <POSDiscountModal
+      :is-open="isDiscountModalOpen"
+      :subtotal="cartStore.subtotal"
+      :current-type="cartStore.discountType"
+      :current-value="cartStore.discountValue"
+      @apply="onApplyDiscount"
+      @clear="cartStore.clearDiscount()"
+      @close="isDiscountModalOpen = false"
     />
 
     <!-- Held Orders Modal -->
@@ -156,9 +174,19 @@
       :is-open="shiftModal.open"
       :mode="shiftModal.mode"
       :shift-data="currentShift"
+      :cart-items-count="cartStore.itemCount"
+      :held-orders-count="heldOrders.length"
       @close="shiftModal.open = false"
       @shift-opened="onShiftOpened"
       @shift-closed="onShiftClosed"
+      @go-to-cart="mobileViewTab = 'cart'"
+      @go-to-held-orders="isHeldOrdersOpen = true"
+    />
+
+    <!-- Hotkeys Help Modal -->
+    <POSHotkeysModal
+      :is-open="isHotkeysModalOpen"
+      @close="isHotkeysModalOpen = false"
     />
 
     <!-- Mobile Floating Checkout Bar (< lg) -->
@@ -187,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import api from '../../services/api';
 import { useCartStore } from '../../stores/cart.store';
 import { useDataStore } from '../../stores/data.store';
@@ -212,6 +240,8 @@ import POSCartSidebar from './components/POSCartSidebar.vue';
 import POSCheckoutModal from './components/POSCheckoutModal.vue';
 import POSHeldOrdersModal from './components/POSHeldOrdersModal.vue';
 import POSQuickCustomerModal from './components/POSQuickCustomerModal.vue';
+import POSDiscountModal from './components/POSDiscountModal.vue';
+import POSHotkeysModal from './components/POSHotkeysModal.vue';
 
 const mobileViewTab = ref<'catalog' | 'cart'>('catalog');
 const cartStore = useCartStore();
@@ -220,6 +250,20 @@ const shiftStore = useShiftStore();
 const authStore = useAuthStore();
 const toast = useToast();
 const { formatCurrency, formatDate, formatDateTime } = useFormat();
+
+const isDiscountModalOpen = ref(false);
+const isHotkeysModalOpen = ref(false);
+
+const onApplyDiscount = (payload: { type: 'percent' | 'fixed'; value: number }) => {
+  cartStore.setDiscount(payload.type, payload.value);
+  if (selectedPaymentMethod.value === '1') {
+    cashReceived.value = cartStore.grandTotal;
+  }
+  toast.success(
+    `Chegirma qo'llandi: ${payload.type === 'percent' ? payload.value + '%' : formatCurrency(payload.value)} (-${formatCurrency(cartStore.generalDiscount)})`,
+    'Chegirma'
+  );
+};
 
 const loading = ref(false);
 const products = computed(() => dataStore.products);
@@ -441,6 +485,11 @@ const selectPaymentMethod = (id: string) => {
 };
 
 const openCheckoutModal = () => {
+  if (!currentShift.value) {
+    toast.warning('Kassa smenasi ochilmagan! Savdo qilish uchun avval smenani oching.', 'Smena Ochilmagan');
+    openShiftModal('open');
+    return;
+  }
   if (cartStore.items.length === 0) return;
   if (isRestaurant.value && orderType.value === 'dine_in' && !currentTableDisplayName.value) {
     toast.warning('Iltimos, avval qaysi stol band qilinganligini belgilang!', 'Stol belgilanmagan');
@@ -550,6 +599,11 @@ const isItemAvailable = (prod: any) => {
 };
 
 const handleProductClick = (product: any) => {
+  if (!currentShift.value) {
+    toast.warning('Kassa smenasi ochilmagan! Mahsulot tanlash uchun avval smenani oching.', 'Smena Ochilmagan');
+    openShiftModal('open');
+    return;
+  }
   if (!isItemAvailable(product)) {
     if (product.status === 'inactive') {
       toast.warning(`"${product.name}" hozirda stop-listda (oshxonada tugagan)!`, 'Stop-list');
@@ -562,6 +616,11 @@ const handleProductClick = (product: any) => {
 };
 
 const addToCart = (product: any) => {
+  if (!currentShift.value) {
+    toast.warning('Kassa smenasi ochilmagan! Mahsulotlarni savatga qo\'shish uchun avval smenani oching.', 'Smena Ochilmagan');
+    openShiftModal('open');
+    return;
+  }
   const isDish = isDishItem(product) || product.brand === 'service';
   const existingInCart = cartStore.items.find((i) => (i.productId || i.id) === product.id);
   const currentInCartQty = existingInCart ? existingInCart.quantity : 0;
@@ -581,6 +640,11 @@ const addToCart = (product: any) => {
 
 const handleBarcodeScan = async () => {
   if (!searchQuery.value) return;
+  if (!currentShift.value) {
+    toast.warning('Kassa smenasi ochilmagan! Shtrix-kod skanerlashdan oldin smenani oching.', 'Smena Ochilmagan');
+    openShiftModal('open');
+    return;
+  }
   const exact = products.value.find((p) => p.barcode === searchQuery.value || p.sku === searchQuery.value);
   if (exact) {
     if (!isItemAvailable(exact)) {
@@ -667,7 +731,9 @@ const handleCompleteOrder = async () => {
         serviceId: i.serviceId,
         quantity: i.quantity,
         unitPrice: i.price,
+        discountAmount: i.discount || 0,
       })),
+      discountAmount: cartStore.generalDiscount || 0,
       payments: [
         {
           paymentMethodId: selectedPaymentMethod.value,
@@ -737,14 +803,123 @@ const handleCompleteOrder = async () => {
   }
 };
 
-const printReceipt = () => {
-  window.print();
+const handleGlobalKeyDown = (e: KeyboardEvent) => {
+  // Check if hotkeys are enabled in POS settings
+  if (posSettings.value?.enableHotkeys === false) return;
+
+  const key = e.key;
+
+  // F1: Open Hotkeys cheat sheet modal
+  if (key === 'F1') {
+    e.preventDefault();
+    isHotkeysModalOpen.value = !isHotkeysModalOpen.value;
+    return;
+  }
+
+  // Escape: Close any open modal
+  if (key === 'Escape') {
+    if (isHotkeysModalOpen.value) { isHotkeysModalOpen.value = false; return; }
+    if (isCheckoutOpen.value) { isCheckoutOpen.value = false; return; }
+    if (isDiscountModalOpen.value) { isDiscountModalOpen.value = false; return; }
+    if (isHeldOrdersOpen.value) { isHeldOrdersOpen.value = false; return; }
+    if (completedOrder.value) { completedOrder.value = null; return; }
+    if (isNewCustomerModalOpen.value) { isNewCustomerModalOpen.value = false; return; }
+    return;
+  }
+
+  // If Checkout Modal is open:
+  if (isCheckoutOpen.value) {
+    if (key === 'Enter') {
+      const activeEl = document.activeElement as HTMLElement;
+      if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.classList.contains('no-hotkey-enter'))) {
+        return;
+      }
+      e.preventDefault();
+      handleCompleteOrder();
+      return;
+    }
+
+    // Number keys 1, 2, 3, 4 for payment method if not typing in input/textarea
+    const activeEl = document.activeElement as HTMLElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+    if (!isTyping) {
+      if (key === '1') { e.preventDefault(); selectPaymentMethod('1'); return; }
+      if (key === '2') { e.preventDefault(); selectPaymentMethod('2'); return; }
+      if (key === '3') { e.preventDefault(); selectPaymentMethod('3'); return; }
+      if (key === '4' && posSettings.value?.allowDebt) { e.preventDefault(); selectPaymentMethod('4'); return; }
+    }
+    return;
+  }
+
+  // F2: Focus Search / Barcode input
+  if (key === 'F2') {
+    e.preventDefault();
+    const searchEl = document.getElementById('pos-search-input');
+    if (searchEl) {
+      searchEl.focus();
+      (searchEl as HTMLInputElement).select?.();
+    }
+    return;
+  }
+
+  // F4: Open Discount Modal (agar sozlamalarda ruxsat berilgan bo'lsa)
+  if (key === 'F4') {
+    e.preventDefault();
+    if (posSettings.value?.allowDiscounts === false) {
+      toast.warning('Sozlamalarda chegirma berish o\'chirilgan!', 'Chegirma taqiqlangan');
+      return;
+    }
+    if (cartStore.items.length > 0) {
+      isDiscountModalOpen.value = true;
+    } else {
+      toast.warning('Chegirma berish uchun avval savatga tovar qo\'shing!', 'Savat bo\'sh');
+    }
+    return;
+  }
+
+  // F7: Clear Cart
+  if (key === 'F7') {
+    e.preventDefault();
+    if (cartStore.items.length > 0) {
+      cartStore.clearCart();
+      toast.info('Savat tozalandi', 'Savat');
+    }
+    return;
+  }
+
+  // F8: Hold Current Cart
+  if (key === 'F8') {
+    e.preventDefault();
+    holdCurrentCart();
+    return;
+  }
+
+  // F9: Open Held Orders
+  if (key === 'F9') {
+    e.preventDefault();
+    isHeldOrdersOpen.value = true;
+    return;
+  }
+
+  // F10: Open Checkout Modal
+  if (key === 'F10') {
+    e.preventDefault();
+    openCheckoutModal();
+    return;
+  }
 };
 
 onMounted(() => {
   loadProducts();
   fetchCurrentShift();
   dataStore.fetchCustomers();
-  searchInputRef.value?.focus();
+  window.addEventListener('keydown', handleGlobalKeyDown);
+  setTimeout(() => {
+    document.getElementById('pos-search-input')?.focus();
+  }, 300);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeyDown);
 });
 </script>

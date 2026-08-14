@@ -62,7 +62,8 @@
             </button>
             <button
               v-if="canDelete('products')"
-              @click="$emit('delete', prod.id)"
+              type="button"
+              @click.stop="$emit('delete', prod.id)"
               class="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition"
               title="O'chirish"
             >

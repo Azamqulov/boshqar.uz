@@ -133,38 +133,108 @@
             ></div>
 
             <!-- Group Items -->
-            <router-link
-              v-for="item in group.items"
-              :key="item.name"
-              :to="item.to"
-              @click="isMobileSidebarOpen = false"
-              class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
-              :class="[
-                isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
-                $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-              ]"
-              :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
-            >
-              <component
-                :is="item.icon"
-                class="w-5 h-5 transition-colors shrink-0"
+            <div v-for="item in group.items" :key="item.name" class="space-y-1">
+              <!-- Case A: Item with Submenu Children (e.g. SuperAdmin) -->
+              <div v-if="item.children && item.children.length > 0" class="relative group/menu">
+                <!-- Parent Row -->
+                <div
+                  @click="toggleDropdown(item.name)"
+                  class="flex items-center justify-between rounded-xl text-sm font-medium transition-all cursor-pointer select-none"
+                  :class="[
+                    isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
+                    $route.path === item.to || $route.path.startsWith(item.to + '/')
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                  ]"
+                  :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
+                >
+                  <div class="flex items-center min-w-0">
+                    <component
+                      :is="item.icon"
+                      class="w-5 h-5 transition-colors shrink-0"
+                      :class="[
+                        isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
+                        $route.path === item.to || $route.path.startsWith(item.to + '/')
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-slate-400 group-hover/menu:text-slate-600 dark:group-hover/menu:text-slate-200'
+                      ]"
+                    />
+                    <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">
+                      {{ item.label }}
+                    </span>
+                  </div>
+
+                  <!-- Dropdown Chevron -->
+                  <div v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="shrink-0 ml-1">
+                    <ChevronDown
+                      class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                      :class="{ 'rotate-180 text-emerald-500': isDropdownOpen(item.name) }"
+                    />
+                  </div>
+                </div>
+
+                <!-- Submenu Items (Expanded in Sidebar) -->
+                <transition name="dropdown">
+                  <div
+                    v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && isDropdownOpen(item.name)"
+                    class="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-emerald-500/30 ml-5 my-1"
+                  >
+                    <router-link
+                      v-for="child in item.children"
+                      :key="child.name"
+                      :to="child.to"
+                      @click="isMobileSidebarOpen = false"
+                      class="flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium"
+                      :class="[
+                        isChildActive(child)
+                          ? 'bg-emerald-500 text-white shadow-xs font-bold'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
+                      ]"
+                    >
+                      <component
+                        :is="child.icon"
+                        class="w-3.5 h-3.5 mr-2 shrink-0"
+                        :class="isChildActive(child) ? 'text-white' : 'text-slate-400'"
+                      />
+                      <span class="truncate text-[11px]">{{ child.label }}</span>
+                    </router-link>
+                  </div>
+                </transition>
+              </div>
+
+              <!-- Case B: Standard Single Item -->
+              <router-link
+                v-else
+                :to="item.to"
+                @click="isMobileSidebarOpen = false"
+                class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
                 :class="[
-                  isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
+                  isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
                   $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 ]"
-              />
-              <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">{{ item.label }}</span>
-              <span
-                v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
-                class="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
               >
-                {{ item.badge }}
-              </span>
-            </router-link>
+                <component
+                  :is="item.icon"
+                  class="w-5 h-5 transition-colors shrink-0"
+                  :class="[
+                    isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
+                    $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
+                  ]"
+                />
+                <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">{{ item.label }}</span>
+                <span
+                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
+                  class="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                >
+                  {{ item.badge }}
+                </span>
+              </router-link>
+            </div>
           </div>
         </nav>
 
@@ -303,6 +373,11 @@ import {
   Zap,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronDown,
+  Crown,
+  CreditCard,
+  Sliders,
+  X,
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -312,8 +387,35 @@ const route = useRoute();
 const isMobileSidebarOpen = ref(false);
 const isSidebarCollapsed = ref(false);
 
-watch(() => route.path, () => {
+const openDropdowns = ref<Record<string, boolean>>({
+  superadmin: true,
+});
+
+const toggleDropdown = (name: string) => {
+  if (isSidebarCollapsed.value && !isMobileSidebarOpen.value) {
+    isSidebarCollapsed.value = false;
+    openDropdowns.value[name] = true;
+    return;
+  }
+  openDropdowns.value[name] = !openDropdowns.value[name];
+};
+
+const isDropdownOpen = (name: string) => {
+  return !!openDropdowns.value[name];
+};
+
+const isChildActive = (child: NavSubItem) => {
+  if (child.tab) {
+    return route.path === '/superadmin' && (route.query.tab === child.tab || (!route.query.tab && child.tab === 'owners'));
+  }
+  return route.fullPath === child.to;
+};
+
+watch(() => route.path, (newPath) => {
   isMobileSidebarOpen.value = false;
+  if (newPath.startsWith('/superadmin')) {
+    openDropdowns.value.superadmin = true;
+  }
 });
 
 const businessType = computed(() => authStore.businessType);
@@ -326,6 +428,14 @@ const isWorker = computed(() => {
   return role !== 'owner' && role !== 'admin';
 });
 
+interface NavSubItem {
+  name: string;
+  label: string;
+  to: string;
+  icon: any;
+  tab?: string;
+}
+
 interface NavItem {
   name: string;
   label: string;
@@ -333,6 +443,7 @@ interface NavItem {
   icon: any;
   types: string[];
   badge?: string;
+  children?: NavSubItem[];
 }
 
 interface NavGroup {
@@ -394,7 +505,21 @@ const allNavGroups: NavGroup[] = [
     title: 'SOZLAMALAR',
     items: [
       { name: 'settings', label: 'Sozlamalar', to: '/settings', icon: Settings, types: ['all'] },
-      { name: 'superadmin', label: 'SuperAdmin', to: '/superadmin', icon: ShieldCheck, types: ['superadmin'] },
+      {
+        name: 'superadmin',
+        label: 'SuperAdmin',
+        to: '/superadmin',
+        icon: ShieldCheck,
+        types: ['superadmin'],
+        children: [
+          { name: 'sa-owners', label: 'Firma Egalari (Owners)', to: '/superadmin?tab=owners', tab: 'owners', icon: Crown },
+          { name: 'sa-businesses', label: 'Barcha Bizneslar', to: '/superadmin?tab=businesses', tab: 'businesses', icon: Building2 },
+          { name: 'sa-users', label: 'Foydalanuvchilar', to: '/superadmin?tab=users', tab: 'users', icon: Users },
+          { name: 'sa-plans', label: 'Tarif Rejalari (SaaS)', to: '/superadmin?tab=plans', tab: 'plans', icon: CreditCard },
+          { name: 'sa-audit', label: 'Global Audit Tarixi', to: '/superadmin?tab=audit', tab: 'audit', icon: ShieldCheck },
+          { name: 'sa-biztypes', label: 'Biznes Turlari', to: '/superadmin?tab=businessTypes', tab: 'businessTypes', icon: Sliders },
+        ],
+      },
     ],
   },
 ];

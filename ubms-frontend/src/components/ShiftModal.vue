@@ -93,7 +93,7 @@
 
     <!-- 2. CLOSE SHIFT MODAL -->
     <div v-else-if="isOpen && mode === 'close'" @click.self="$emit('close')" class="modal-overlay">
-      <!-- 2.A: BLOCKED STATE MODAL (When there are occupied tables or pending kitchen orders) -->
+      <!-- 2.A: BLOCKED STATE MODAL (When there are unfinished carts, held orders, occupied tables or kitchen items) -->
       <div v-if="hasUnfinishedTasks" class="modal-container max-w-md bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden animate-scale-up" @click.stop>
         <div class="modal-header border-b border-rose-500/20 px-6 py-4 flex items-center justify-between bg-rose-50/50 dark:bg-rose-950/20">
           <div class="flex items-center gap-2.5">
@@ -102,7 +102,7 @@
             </div>
             <div>
               <h3 class="text-base font-black text-rose-600 dark:text-rose-400">Smenani Yopib Bo'lmaydi!</h3>
-              <p class="text-[11px] text-slate-500 dark:text-slate-400">Tugallanmagan jarayonlar mavjud</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Kassada tugallanmagan jarayonlar mavjud</p>
             </div>
           </div>
           <button @click="$emit('close')" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
@@ -110,16 +110,68 @@
           </button>
         </div>
 
-        <div class="p-6 space-y-4 text-xs">
+        <div class="p-6 space-y-3.5 text-xs max-h-[75vh] overflow-y-auto">
           <p class="text-slate-600 dark:text-slate-300 font-semibold leading-relaxed">
-            Kassa smenasini yopishdan oldin quyidagi band stollarning hisobini yopishingiz va oshxonadagi taomlarni yakunlashingiz shart:
+            Kassa smenasini yopishdan oldin quyidagi ochiq buyurtmalar va tovarlarni yakunlashingiz yoki bekor qilishingiz shart:
           </p>
 
-          <!-- List of Occupied Tables -->
-          <div v-if="shiftSummary.occupiedTables && shiftSummary.occupiedTables.length > 0" class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 space-y-2">
+          <!-- 1. Active Cart Warning (Savatchada mahsulot qolib ketgan) -->
+          <div v-if="effectiveCartItemsCount > 0" class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-                <span>🍽️</span>
+                <ShoppingCart class="w-4 h-4 text-rose-500" />
+                <span>Savatchada tovarlar mavjud:</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 text-[11px] font-black">
+                {{ effectiveCartItemsCount }} ta tovar
+              </span>
+            </div>
+            <p class="text-[11px] text-rose-600 dark:text-rose-400">
+              Kassada to'lanmagan tovarlar savatda qolib ketgan. Avval savatdagi to'lovni yakunlang yoki savatni tozalang.
+            </p>
+            <div class="pt-1">
+              <button
+                type="button"
+                @click="$emit('goToCart'); $emit('close')"
+                class="w-full py-1.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
+              >
+                <ShoppingCart class="w-3.5 h-3.5" />
+                <span>Savatga O'tish va Yakunlash</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Held / Parked Orders Warning (Kutishdagi buyurtmalar) -->
+          <div v-if="effectiveHeldOrdersCount > 0" class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                <Clock class="w-4 h-4 text-amber-500" />
+                <span>Kutishdagi (Saqlangan) Buyurtmalar:</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[11px] font-black">
+                {{ effectiveHeldOrdersCount }} ta buyurtma
+              </span>
+            </div>
+            <p class="text-[11px] text-amber-700 dark:text-amber-300">
+              Kutish rejimiga olingan mijoz buyurtmalari mavjud. Ularni to'lab yoping yoki o'chirib tashlang.
+            </p>
+            <div class="pt-1">
+              <button
+                type="button"
+                @click="$emit('goToHeldOrders'); $emit('close')"
+                class="w-full py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
+              >
+                <Clock class="w-3.5 h-3.5" />
+                <span>Kutishdagi Buyurtmalarga O'tish</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. List of Occupied Tables -->
+          <div v-if="shiftSummary?.occupiedTables && shiftSummary.occupiedTables.length > 0" class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                <UtensilsCrossed class="w-4 h-4 text-rose-500" />
                 <span>Band Stollar (Hisobi yopilmagan):</span>
               </span>
               <span class="px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 text-[11px] font-black">
@@ -135,13 +187,23 @@
                 {{ t.name }}
               </span>
             </div>
+            <div class="pt-1">
+              <button
+                type="button"
+                @click="goToTables"
+                class="w-full py-1.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
+              >
+                <UtensilsCrossed class="w-3.5 h-3.5" />
+                <span>Stollar Xaritasiga O'tish</span>
+              </button>
+            </div>
           </div>
 
-          <!-- List of Pending Kitchen Items -->
-          <div v-if="shiftSummary.pendingKitchenItems && shiftSummary.pendingKitchenItems.length > 0" class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
+          <!-- 4. List of Pending Kitchen Items -->
+          <div v-if="shiftSummary?.pendingKitchenItems && shiftSummary.pendingKitchenItems.length > 0" class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
-                <span>🔥</span>
+                <Flame class="w-4 h-4 text-amber-500" />
                 <span>Oshxonada tayyorlanayotgan taomlar:</span>
               </span>
               <span class="px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[11px] font-black">
@@ -156,8 +218,31 @@
               >
                 <span class="font-bold text-slate-800 dark:text-slate-200">{{ item.product?.name || 'Taom' }} (x{{ item.quantity || 1 }})</span>
                 <span class="font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px]">
-                  {{ item.order?.tableNumber ? `Stol: ${item.order.tableNumber}` : 'Oshxonada' }}
+                  {{ item.order?.table?.name || 'Oshxonada' }}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. List of Pending Orders in DB -->
+          <div v-if="shiftSummary?.pendingOrders && shiftSummary.pendingOrders.length > 0" class="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                <Receipt class="w-4 h-4 text-indigo-500" />
+                <span>Tizimda yopilmagan buyurtmalar:</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 text-[11px] font-black">
+                {{ shiftSummary.pendingOrders.length }} ta
+              </span>
+            </div>
+            <div class="max-h-32 overflow-y-auto space-y-1 pr-1">
+              <div
+                v-for="order in shiftSummary.pendingOrders"
+                :key="order.id"
+                class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700/60 flex justify-between items-center text-[11px]"
+              >
+                <span class="font-bold text-slate-800 dark:text-slate-200">#{{ order.orderNumber }}</span>
+                <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400">{{ formatCurrency(order.total) }}</span>
               </div>
             </div>
           </div>
@@ -165,16 +250,8 @@
           <!-- Action Buttons -->
           <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
             <AppButton variant="secondary" size="md" @click="$emit('close')">
-              Tushundim
+              Tushundim, yopish
             </AppButton>
-            <button
-              type="button"
-              @click="goToTables"
-              class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition active:scale-95 btn-interactive"
-            >
-              <UtensilsCrossed class="w-4 h-4" />
-              <span>Stollar Xaritasiga O'tish</span>
-            </button>
           </div>
         </div>
       </div>
@@ -198,38 +275,59 @@
 
         <div class="p-6 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
           <!-- Real-Time Metrics Card -->
-          <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-4 space-y-2.5">
-            <div class="flex justify-between items-center text-slate-600 dark:text-slate-300">
-              <span class="text-slate-400 font-medium">Boshlang'ich kassa:</span>
-              <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.startingCash || 0) }}</span>
+          <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-4 space-y-3">
+            <!-- Total Sales Highlight -->
+            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 flex justify-between items-center text-xs shadow-xs">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-base">
+                  🛍️
+                </div>
+                <div>
+                  <span class="text-[11px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                    Bugungi Jami Sotuv (Savdo):
+                  </span>
+                  <span class="text-[10px] text-slate-500 dark:text-slate-400">Naqd + Plastik + Click/Payme</span>
+                </div>
+              </div>
+              <span class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-lg">
+                {{ formatCurrency(shiftSummary?.totalSales || 0) }}
+              </span>
             </div>
-            <div class="flex justify-between items-center text-emerald-600 dark:text-emerald-400 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
-              <span class="font-medium">+ Naqd savdo tushumi:</span>
-              <span class="font-bold font-mono">+{{ formatCurrency(shiftSummary?.cashSales || 0) }}</span>
-            </div>
-            <div class="flex justify-between items-center text-blue-600 dark:text-blue-400">
-              <span class="font-medium">Plastik karta savdosi:</span>
-              <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.cardSales || 0) }}</span>
-            </div>
-            <div class="flex justify-between items-center text-purple-600 dark:text-purple-400">
-              <span class="font-medium">Click / Payme / Boshqa:</span>
-              <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.otherSales || 0) }}</span>
-            </div>
-            <div v-if="shiftSummary?.cashExpenses > 0" class="flex justify-between items-center text-rose-500 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
-              <span class="font-medium">- Kassadan xarajatlar:</span>
-              <span class="font-bold font-mono">-{{ formatCurrency(shiftSummary?.cashExpenses || 0) }}</span>
+
+            <!-- Detailed Breakdown -->
+            <div class="space-y-2 pt-1">
+              <div class="flex justify-between items-center text-slate-600 dark:text-slate-300">
+                <span class="text-slate-400 font-medium">Boshlang'ich kassa:</span>
+                <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.startingCash || 0) }}</span>
+              </div>
+              <div class="flex justify-between items-center text-emerald-600 dark:text-emerald-400 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
+                <span class="font-medium">+ Naqd savdo tushumi:</span>
+                <span class="font-bold font-mono">+{{ formatCurrency(shiftSummary?.cashSales || 0) }}</span>
+              </div>
+              <div class="flex justify-between items-center text-blue-600 dark:text-blue-400">
+                <span class="font-medium">Plastik karta savdosi:</span>
+                <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.cardSales || 0) }}</span>
+              </div>
+              <div class="flex justify-between items-center text-purple-600 dark:text-purple-400">
+                <span class="font-medium">Click / Payme / Boshqa:</span>
+                <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.otherSales || 0) }}</span>
+              </div>
+              <div v-if="shiftSummary?.cashExpenses > 0" class="flex justify-between items-center text-rose-500 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
+                <span class="font-medium">- Kassadan xarajatlar:</span>
+                <span class="font-bold font-mono">-{{ formatCurrency(shiftSummary?.cashExpenses || 0) }}</span>
+              </div>
             </div>
 
             <!-- Expected Cash Highlight -->
-            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex justify-between items-center text-xs mt-2">
+            <div class="p-3 rounded-xl bg-slate-900/5 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
               <div>
-                <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">
+                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
                   Kassada Kutilayotgan Naqd Pul:
                 </span>
                 <span class="text-[10px] text-slate-400">Boshlang'ich + Naqd savdo - Xarajat</span>
               </div>
-              <span class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-base">
-                {{ formatCurrency(shiftSummary?.expectedCash || 0) }}
+              <span class="font-black font-mono text-slate-900 dark:text-white text-base">
+                {{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}
               </span>
             </div>
           </div>
@@ -237,15 +335,44 @@
           <!-- Actual Cash Counted Input -->
           <form @submit.prevent="handleCloseShift" class="space-y-4">
             <div>
-              <label class="block font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                Kassada Haqiqatda Sanalgan Naqd Pul *
-              </label>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="block font-bold text-slate-800 dark:text-slate-200">
+                  Kassada Haqiqatda Sanalgan Naqd Pul *
+                </label>
+              </div>
               <CurrencyInput
                 v-model="actualCash"
                 placeholder="0"
                 suffix="so'm"
                 :inputClass="'font-black text-lg ' + (difference === 0 ? 'text-emerald-600 dark:text-emerald-400' : (difference < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'))"
               />
+
+              <!-- Fast Amount Fill Buttons -->
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                <button
+                  type="button"
+                  @click="actualCash = Number(shiftSummary?.totalSales || 0)"
+                  class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] transition flex items-center gap-1"
+                >
+                  <span>💰 Jami Savdo:</span>
+                  <span class="font-mono">{{ formatCurrency(shiftSummary?.totalSales || 0) }}</span>
+                </button>
+                <button
+                  type="button"
+                  @click="actualCash = Math.max(0, Number(shiftSummary?.expectedCash || 0))"
+                  class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px] transition flex items-center gap-1"
+                >
+                  <span>💵 Kutilayotgan Naqd:</span>
+                  <span class="font-mono">{{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}</span>
+                </button>
+                <button
+                  type="button"
+                  @click="actualCash = 0"
+                  class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 font-bold text-[11px] transition"
+                >
+                  0 so'm
+                </button>
+              </div>
             </div>
 
             <!-- Difference / Kamomad or Surplus Banner -->
@@ -435,6 +562,9 @@ import {
   AlertTriangle,
   TrendingUp,
   UtensilsCrossed,
+  ShoppingCart,
+  Clock,
+  Flame,
 } from 'lucide-vue-next';
 import AppButton from './AppButton.vue';
 import CurrencyInput from './CurrencyInput.vue';
@@ -455,12 +585,16 @@ const props = defineProps<{
   isOpen: boolean;
   mode: 'open' | 'close' | 'report';
   shiftData?: any;
+  cartItemsCount?: number;
+  heldOrdersCount?: number;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'shiftOpened', shift: any): void;
   (e: 'shiftClosed', shift: any): void;
+  (e: 'goToCart'): void;
+  (e: 'goToHeldOrders'): void;
 }>();
 
 const { formatCurrency, formatDateTime } = useFormat();
@@ -476,11 +610,28 @@ const submitting = ref(false);
 const shiftSummary = ref<any>(null);
 const reportData = ref<any>(null);
 
+const effectiveCartItemsCount = computed(() => {
+  if (props.cartItemsCount !== undefined) return props.cartItemsCount;
+  return 0;
+});
+
+const effectiveHeldOrdersCount = computed(() => {
+  if (props.heldOrdersCount !== undefined) return props.heldOrdersCount;
+  return 0;
+});
+
+const isRestaurant = computed(() => {
+  const type = (authStore.businessType || authStore.activeBusiness?.businessType || '').toLowerCase();
+  return type === 'restaurant' || type === 'cafe';
+});
+
 const hasUnfinishedTasks = computed(() => {
-  if (!shiftSummary.value) return false;
-  const tablesCount = shiftSummary.value.occupiedTables?.length || 0;
-  const kitchenCount = shiftSummary.value.pendingKitchenItems?.length || 0;
-  return tablesCount > 0 || kitchenCount > 0;
+  const cartCount = effectiveCartItemsCount.value;
+  const heldCount = effectiveHeldOrdersCount.value;
+  const tablesCount = isRestaurant.value ? (shiftSummary.value?.occupiedTables?.length || 0) : 0;
+  const kitchenCount = isRestaurant.value ? (shiftSummary.value?.pendingKitchenItems?.length || 0) : 0;
+  const pendingOrdersCount = shiftSummary.value?.pendingOrders?.length || 0;
+  return cartCount > 0 || heldCount > 0 || tablesCount > 0 || kitchenCount > 0 || pendingOrdersCount > 0;
 });
 
 const difference = computed(() => {
@@ -492,6 +643,7 @@ const difference = computed(() => {
 // Load summary when closing or reporting
 const loadShiftSummary = async (shift: any) => {
   if (shift) {
+    const defaultExp = Math.max(0, Number(shift.expectedCash ?? shift.totalSales ?? shift.startingCash ?? 0));
     shiftSummary.value = {
       startingCash: Number(shift.startingCash || 0),
       cashSales: Number(shift.cashSales || 0),
@@ -499,12 +651,12 @@ const loadShiftSummary = async (shift: any) => {
       otherSales: Number(shift.otherSales || 0),
       totalSales: Number(shift.totalSales || 0),
       cashExpenses: Number(shift.cashExpenses || 0),
-      expectedCash: Number(shift.expectedCash || shift.startingCash || 0),
+      expectedCash: defaultExp,
       occupiedTables: [],
       pendingKitchenItems: [],
       canClose: true,
     };
-    actualCash.value = Number(shift.expectedCash || shift.startingCash || 0);
+    actualCash.value = defaultExp;
   }
 
   try {
@@ -518,7 +670,7 @@ const loadShiftSummary = async (shift: any) => {
     }
     if (data) {
       shiftSummary.value = data;
-      actualCash.value = Number(data.expectedCash || 0);
+      actualCash.value = Math.max(0, Number(data.expectedCash ?? data.totalSales ?? 0));
     }
   } catch {
     // Keep local shiftSummary

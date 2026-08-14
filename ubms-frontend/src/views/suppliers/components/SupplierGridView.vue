@@ -62,6 +62,13 @@
 
           <div class="flex items-center gap-1">
             <button
+              @click="$emit('openStatement', s)"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+              title="Solishtirma Dalolatnoma (Akt Sverka)"
+            >
+              <FileSpreadsheet class="w-3.5 h-3.5" />
+            </button>
+            <button
               @click="$emit('openHistory', s)"
               class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition"
               title="To'lov tarixi"
@@ -92,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { Truck, Building2, Phone, MapPin, CreditCard, History, Edit, Trash2 } from 'lucide-vue-next';
+import { Truck, Building2, Phone, MapPin, CreditCard, History, Edit, Trash2, FileSpreadsheet } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 import { usePermissions } from '../../../composables/usePermissions';
 
@@ -103,6 +110,7 @@ defineProps<{
 defineEmits<{
   (e: 'openPay', s: any): void;
   (e: 'openHistory', s: any): void;
+  (e: 'openStatement', s: any): void;
   (e: 'openEdit', s: any): void;
   (e: 'delete', s: any): void;
 }>();

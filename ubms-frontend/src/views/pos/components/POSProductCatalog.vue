@@ -9,51 +9,95 @@
       <div class="relative w-full">
         <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
         <input
+          id="pos-search-input"
           ref="searchInputRef"
           :value="searchQuery"
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
           @keydown.enter="$emit('barcodeScan')"
           type="text"
-          placeholder="Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)..."
-          class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+          :placeholder="posSettings?.enableHotkeys !== false ? 'Mahsulot nomi yoki Shtrix-kodni skanerlang (F2 / Enter)...' : 'Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)...'"
+          class="w-full pl-10 pr-20 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
         />
-        <button
-          v-if="searchQuery"
-          @click="$emit('update:searchQuery', '')"
-          class="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-        >
-          <X class="w-4 h-4" />
-        </button>
+        <div class="absolute right-3 top-2.5 flex items-center gap-1.5">
+          <kbd
+            v-if="posSettings?.enableHotkeys !== false"
+            class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] text-slate-500 dark:text-slate-400 font-mono font-bold"
+          >
+            F2
+          </kbd>
+          <button
+            v-if="searchQuery"
+            @click="$emit('update:searchQuery', '')"
+            class="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <!-- Category Filter Tabs -->
-      <div class="flex items-center space-x-2 overflow-x-auto scrollbar-none pb-0.5">
+      <!-- Category Filter Tabs with Horizontal Smooth Scroll & Navigation Arrows -->
+      <div class="relative flex items-center group/cat">
+        <!-- Left Arrow Button -->
         <button
-          @click="$emit('update:selectedCategory', '')"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition"
-          :class="selectedCategory === '' ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          v-if="canScrollLeft"
+          type="button"
+          @click="scrollCategories('left')"
+          class="absolute left-0 z-10 p-1.5 rounded-full bg-white/95 dark:bg-slate-900/95 shadow-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-emerald-500 hover:scale-110 transition -translate-x-1"
+          title="Chapga surish"
         >
-          Barchasi
+          <ChevronLeft class="w-3.5 h-3.5" />
         </button>
 
-        <!-- Bestseller Fast Filter -->
-        <button
-          @click="$emit('update:selectedCategory', '__bestsellers__')"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1"
-          :class="selectedCategory === '__bestsellers__' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'"
+        <!-- Scrollable Category Track -->
+        <div
+          ref="categoryScrollContainer"
+          @wheel="onCategoryWheel"
+          @scroll="checkScroll"
+          @mousedown="onMouseDown"
+          @mouseleave="onMouseLeave"
+          @mouseup="onMouseUp"
+          @mousemove="onMouseMove"
+          class="flex items-center space-x-2 overflow-x-auto pb-1.5 pt-0.5 w-full cursor-grab active:cursor-grabbing select-none scroll-smooth scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700"
         >
-          <Flame class="w-3.5 h-3.5" />
-          <span>Top Tovar</span>
-        </button>
+          <button
+            @click="$emit('update:selectedCategory', '')"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition shrink-0"
+            :class="selectedCategory === '' ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          >
+            Barchasi
+          </button>
 
+          <!-- Bestseller Fast Filter -->
+          <button
+            @click="$emit('update:selectedCategory', '__bestsellers__')"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1 shrink-0"
+            :class="selectedCategory === '__bestsellers__' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'"
+          >
+            <Flame class="w-3.5 h-3.5" />
+            <span>Top Tovar</span>
+          </button>
+
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            @click="$emit('update:selectedCategory', cat.id)"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition shrink-0 flex items-center gap-1.5"
+            :class="selectedCategory === cat.id ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          >
+            <span v-if="cat.icon">{{ cat.icon }}</span>
+            <span>{{ cat.name }}</span>
+          </button>
+        </div>
+
+        <!-- Right Arrow Button -->
         <button
-          v-for="cat in categories"
-          :key="cat.id"
-          @click="$emit('update:selectedCategory', cat.id)"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition"
-          :class="selectedCategory === cat.id ? 'bg-emerald-500 text-white shadow-sm font-bold' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'"
+          v-if="canScrollRight"
+          type="button"
+          @click="scrollCategories('right')"
+          class="absolute right-0 z-10 p-1.5 rounded-full bg-white/95 dark:bg-slate-900/95 shadow-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-emerald-500 hover:scale-110 transition translate-x-1"
+          title="O'ngga surish"
         >
-          {{ cat.name }}
+          <ChevronRight class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -148,8 +192,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Search, X, Flame, Package } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { Search, X, Flame, Package, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
 
@@ -174,7 +218,82 @@ defineEmits<{
 }>();
 
 const searchInputRef = ref<HTMLInputElement | null>(null);
+const categoryScrollContainer = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
 const { formatCurrency } = useFormat();
+
+const checkScroll = () => {
+  if (!categoryScrollContainer.value) return;
+  const { scrollLeft, scrollWidth, clientWidth } = categoryScrollContainer.value;
+  canScrollLeft.value = scrollLeft > 10;
+  canScrollRight.value = scrollLeft < scrollWidth - clientWidth - 10;
+};
+
+const scrollCategories = (direction: 'left' | 'right') => {
+  if (!categoryScrollContainer.value) return;
+  const scrollAmount = 260;
+  categoryScrollContainer.value.scrollBy({
+    left: direction === 'left' ? -scrollAmount : scrollAmount,
+    behavior: 'smooth',
+  });
+  setTimeout(checkScroll, 320);
+};
+
+const onCategoryWheel = (e: WheelEvent) => {
+  if (!categoryScrollContainer.value) return;
+  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+    e.preventDefault();
+    categoryScrollContainer.value.scrollLeft += e.deltaY * 1.5;
+  }
+  checkScroll();
+};
+
+// Drag to scroll
+let isDown = false;
+let startX = 0;
+let scrollLeftInit = 0;
+
+const onMouseDown = (e: MouseEvent) => {
+  if (!categoryScrollContainer.value) return;
+  isDown = true;
+  startX = e.pageX - categoryScrollContainer.value.offsetLeft;
+  scrollLeftInit = categoryScrollContainer.value.scrollLeft;
+};
+
+const onMouseLeave = () => {
+  isDown = false;
+};
+
+const onMouseUp = () => {
+  isDown = false;
+};
+
+const onMouseMove = (e: MouseEvent) => {
+  if (!isDown || !categoryScrollContainer.value) return;
+  e.preventDefault();
+  const x = e.pageX - categoryScrollContainer.value.offsetLeft;
+  const walk = (x - startX) * 1.5;
+  categoryScrollContainer.value.scrollLeft = scrollLeftInit - walk;
+  checkScroll();
+};
+
+watch(
+  () => props.categories,
+  () => {
+    nextTick(() => checkScroll());
+  },
+  { deep: true }
+);
+
+onMounted(() => {
+  nextTick(() => checkScroll());
+  window.addEventListener('resize', checkScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScroll);
+});
 
 const isDishItem = (prod: any) => {
   return prod.brand === 'dish' || prod.brand === 'kitchen' || prod.isMadeToOrder;

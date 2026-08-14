@@ -1,17 +1,22 @@
 <template>
-  <div
-    class="glass-card rounded-2xl p-4 flex flex-col justify-between h-full min-h-[104px] border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
-    :class="cardClass"
+  <component
+    :is="to ? 'router-link' : 'div'"
+    :to="to"
+    class="glass-card rounded-2xl p-4 flex flex-col justify-between h-full min-h-[104px] border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group block"
+    :class="[
+      to ? 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-600' : '',
+      cardClass
+    ]"
   >
     <!-- Top Row: Title & Top-Right Icon Badge -->
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 line-clamp-1">
+      <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 line-clamp-1 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
         {{ title }}
       </span>
 
       <div
         v-if="icon"
-        class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+        class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
         :class="badgeClasses"
       >
         <component :is="icon" class="w-4 h-4" />
@@ -29,13 +34,14 @@
 
       <p
         v-if="subtitle"
-        class="text-[11px] font-medium mt-1 truncate"
+        class="text-[11px] font-medium mt-1 truncate flex items-center justify-between"
         :class="subtitleClass || defaultSubtitleClass"
       >
-        {{ subtitle }}
+        <span>{{ subtitle }}</span>
+        <span v-if="to" class="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold ml-1">→</span>
       </p>
     </div>
-  </div>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -53,6 +59,7 @@ const props = withDefaults(
     valueClass?: string;
     subtitleClass?: string;
     cardClass?: string;
+    to?: string;
   }>(),
   {
     variant: 'emerald',

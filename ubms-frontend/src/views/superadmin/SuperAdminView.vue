@@ -204,7 +204,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { useToast } from '../../composables/useToast';
@@ -240,12 +241,31 @@ import { usePersistentTab } from '../../composables/usePersistentTab';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 
 const toast = useToast();
+const route = useRoute();
+const router = useRouter();
 const { formatCurrency, formatDate } = useFormat();
 
 const validTabs = ['owners', 'businesses', 'users', 'plans', 'audit', 'businessTypes'] as const;
 type SuperAdminTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'owners', validTabs);
+
+// Sync with route query tab
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (newTab && validTabs.includes(newTab as SuperAdminTab)) {
+      activeTab.value = newTab as SuperAdminTab;
+    }
+  },
+  { immediate: true }
+);
+
+watch(activeTab, (tab) => {
+  if (route.path === '/superadmin' && route.query.tab !== tab) {
+    router.replace({ query: { ...route.query, tab } });
+  }
+});
 const viewMode = usePersistentViewMode('superadmin', 'table');
 const loading = ref(false);
 

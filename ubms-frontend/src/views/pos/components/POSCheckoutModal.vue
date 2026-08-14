@@ -10,12 +10,94 @@
         </div>
 
         <div class="modal-body space-y-4">
-          <!-- Total display -->
-          <div class="text-center py-4 bg-slate-100/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <span class="text-xs text-slate-500 dark:text-slate-400">To'lanishi kerak bo'lgan summa:</span>
-            <h2 class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
+          <!-- Total display with dynamic discount breakdown -->
+          <div class="p-4 bg-slate-100/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-1">
+            <div v-if="allowDiscounts !== false && cartStore.generalDiscount > 0" class="flex items-center justify-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <span>Oraliq: <strong class="font-mono text-slate-700 dark:text-slate-300">{{ formatCurrency(cartStore.subtotal) }}</strong></span>
+              <span>•</span>
+              <span class="text-rose-500 font-bold">Chegirma: <strong class="font-mono">-{{ formatCurrency(cartStore.generalDiscount) }}</strong> ({{ cartStore.discountType === 'percent' ? cartStore.discountValue + '%' : formatCurrency(cartStore.discountValue) }})</span>
+            </div>
+            <span class="text-xs text-slate-500 dark:text-slate-400 block">To'lanishi kerak bo'lgan jami summa:</span>
+            <h2 class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
               {{ formatCurrency(cartStore.grandTotal) }}
             </h2>
+          </div>
+
+          <!-- Quick Discount Box inside Checkout Modal (Faqat sozlamalarda ruxsat berilgan bo'lsa chiqadi) -->
+          <div v-if="allowDiscounts !== false" class="p-3 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                <Tag class="w-3.5 h-3.5" />
+                <span>Chegirma qo'llash:</span>
+              </span>
+              <button
+                v-if="cartStore.generalDiscount > 0"
+                type="button"
+                @click="clearDiscount"
+                class="text-[11px] font-bold text-rose-500 hover:text-rose-700 underline"
+              >
+                Chegirmani bekor qilish
+              </button>
+            </div>
+
+            <!-- % or So'm Toggle & Presets -->
+            <div class="flex items-center gap-1.5">
+              <div class="inline-flex rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-0.5 text-xs font-bold shrink-0">
+                <button
+                  type="button"
+                  @click="setDiscountType('percent')"
+                  class="px-2.5 py-1 rounded-lg transition"
+                  :class="discountMode === 'percent' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'"
+                >
+                  %
+                </button>
+                <button
+                  type="button"
+                  @click="setDiscountType('fixed')"
+                  class="px-2.5 py-1 rounded-lg transition"
+                  :class="discountMode === 'fixed' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300'"
+                >
+                  so'm
+                </button>
+              </div>
+
+              <!-- Presets -->
+              <div v-if="discountMode === 'percent'" class="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1">
+                <button
+                  v-for="p in [5, 10, 15, 20, 50]"
+                  :key="p"
+                  type="button"
+                  @click="applyPercentDiscount(p)"
+                  class="px-2 py-1 rounded-lg text-xs font-bold font-mono transition shrink-0"
+                  :class="cartStore.discountType === 'percent' && cartStore.discountValue === p ? 'bg-rose-500 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'"
+                >
+                  {{ p }}%
+                </button>
+              </div>
+
+              <div v-else class="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1">
+                <button
+                  v-for="amt in [5000, 10000, 20000, 50000]"
+                  :key="amt"
+                  type="button"
+                  @click="applyFixedDiscount(amt)"
+                  class="px-2 py-1 rounded-lg text-xs font-bold font-mono transition shrink-0"
+                  :class="cartStore.discountType === 'fixed' && cartStore.discountValue === amt ? 'bg-rose-500 text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'"
+                >
+                  {{ formatCurrency(amt) }}
+                </button>
+              </div>
+
+              <!-- More / Custom discount button -->
+              <button
+                type="button"
+                @click="$emit('openDiscountModal')"
+                class="px-2 py-1 rounded-lg bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-rose-500 shrink-0"
+                title="Boshqa summa kiritish"
+              >
+                Kiritish...
+              </button>
+            </div>
           </div>
 
           <!-- Restaurant Service & Table Confirmation / Selection in Checkout Modal -->
@@ -299,7 +381,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import {
   X,
   CreditCard,
@@ -308,6 +390,7 @@ import {
   FileText,
   Users,
   CheckCircle,
+  Tag,
 } from 'lucide-vue-next';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
@@ -335,13 +418,15 @@ const props = withDefaults(
     currentNasiyaAmount: number;
     isProcessing: boolean;
     allowDebt?: boolean;
+    allowDiscounts?: boolean;
   }>(),
   {
     allowDebt: true,
+    allowDiscounts: true,
   }
 );
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'selectTable', name: string): void;
   (e: 'update:customTableNumber', val: string): void;
@@ -350,10 +435,44 @@ defineEmits<{
   (e: 'update:cashReceived', val: number): void;
   (e: 'update:selectedCustomerId', val: string): void;
   (e: 'openNewCustomer'): void;
+  (e: 'openDiscountModal'): void;
   (e: 'completeOrder'): void;
 }>();
 
 const { formatCurrency } = useFormat();
+
+const discountMode = ref<'percent' | 'fixed'>('percent');
+
+const setDiscountType = (mode: 'percent' | 'fixed') => {
+  discountMode.value = mode;
+  props.cartStore.discountType = mode;
+  if (props.selectedPaymentMethod === '1') {
+    emit('update:cashReceived', props.cartStore.grandTotal);
+  }
+};
+
+const applyPercentDiscount = (p: number) => {
+  discountMode.value = 'percent';
+  props.cartStore.setDiscountPercent(p);
+  if (props.selectedPaymentMethod === '1') {
+    emit('update:cashReceived', props.cartStore.grandTotal);
+  }
+};
+
+const applyFixedDiscount = (amt: number) => {
+  discountMode.value = 'fixed';
+  props.cartStore.setDiscountFixed(amt);
+  if (props.selectedPaymentMethod === '1') {
+    emit('update:cashReceived', props.cartStore.grandTotal);
+  }
+};
+
+const clearDiscount = () => {
+  props.cartStore.clearDiscount();
+  if (props.selectedPaymentMethod === '1') {
+    emit('update:cashReceived', props.cartStore.grandTotal);
+  }
+};
 
 const isSubmitDisabled = computed(() => {
   if (props.isProcessing) return true;

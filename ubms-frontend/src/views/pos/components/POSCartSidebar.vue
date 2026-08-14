@@ -14,9 +14,11 @@
       <button
         v-if="cartStore.items.length > 0"
         @click="cartStore.clearCart"
-        class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 font-medium"
+        class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1"
+        :title="enableHotkeys !== false ? 'Savatni tozalash (F7)' : 'Savatni tozalash'"
       >
-        Tozalash
+        <span>Tozalash</span>
+        <kbd v-if="enableHotkeys !== false" class="px-1 rounded bg-rose-500/10 text-[9px] font-mono font-bold">F7</kbd>
       </button>
     </div>
 
@@ -99,20 +101,22 @@
         @click="$emit('holdCart')"
         :disabled="cartStore.items.length === 0"
         class="flex-1 py-1.5 px-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-40 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1 border border-amber-500/20 transition btn-interactive"
-        title="Joriy savatni kutish rejimiga saqlash"
+        :title="enableHotkeys !== false ? 'Joriy savatni kutish rejimiga saqlash (F8)' : 'Joriy savatni kutish rejimiga saqlash'"
       >
         <PauseCircle class="w-3.5 h-3.5" />
         <span>Kutishga Qo'yish</span>
+        <kbd v-if="enableHotkeys !== false" class="px-1 rounded bg-amber-500/20 text-[9px] font-mono font-bold">F8</kbd>
       </button>
 
       <button
         type="button"
         @click="$emit('openHeldOrders')"
         class="py-1.5 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1 transition relative btn-interactive"
-        title="Kutishdagi savatlar ro'yxati"
+        :title="enableHotkeys !== false ? 'Kutishdagi savatlar ro\'yxati (F9)' : 'Kutishdagi savatlar ro\'yxati'"
       >
         <History class="w-3.5 h-3.5" />
         <span>Kutishdagilar</span>
+        <kbd v-if="enableHotkeys !== false" class="px-1 rounded bg-slate-200 dark:bg-slate-700 text-[9px] font-mono font-bold">F9</kbd>
         <span
           v-if="heldOrdersCount > 0"
           class="w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center -mr-1"
@@ -173,15 +177,53 @@
     </div>
 
     <!-- Cart Totals & Checkout -->
-    <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
+    <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 shrink-0">
+      <!-- Discount Quick Button / Active Badge (Faqat Sozlamalarda Chegirma Yoqilgan Bo'lsa Ko'rinadi) -->
+      <div v-if="allowDiscounts !== false && cartStore.items.length > 0" class="pt-0.5">
+        <div
+          v-if="cartStore.generalDiscount > 0"
+          class="flex items-center justify-between p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs"
+        >
+          <button
+            type="button"
+            @click="$emit('openDiscountModal')"
+            class="flex items-center gap-1.5 font-bold text-rose-600 dark:text-rose-400 hover:underline"
+          >
+            <Tag class="w-3.5 h-3.5" />
+            <span>Chegirma ({{ cartStore.discountType === 'percent' ? cartStore.discountValue + '%' : formatCurrency(cartStore.discountValue) }}):</span>
+            <span class="font-mono font-black">-{{ formatCurrency(cartStore.generalDiscount) }}</span>
+          </button>
+          <button
+            type="button"
+            @click="cartStore.clearDiscount()"
+            class="p-1 text-slate-400 hover:text-rose-500 transition rounded-lg hover:bg-rose-500/20"
+            title="Chegirmani bekor qilish"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <button
+          v-else
+          type="button"
+          @click="$emit('openDiscountModal')"
+          class="w-full py-1.5 px-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 transition bg-slate-50/50 dark:bg-slate-800/50"
+          :title="enableHotkeys !== false ? 'Chegirma berish oynasini ochish (F4)' : 'Chegirma berish oynasini ochish'"
+        >
+          <Percent class="w-3.5 h-3.5 text-emerald-500" />
+          <span>+ Chegirma qo'shish (% / so'm)</span>
+          <kbd v-if="enableHotkeys !== false" class="px-1 rounded bg-slate-200 dark:bg-slate-700 text-[9px] font-mono font-bold">F4</kbd>
+        </button>
+      </div>
+
       <div class="space-y-1 text-xs">
         <div class="flex justify-between text-slate-500 dark:text-slate-400">
           <span>Oraliq summa:</span>
           <span class="text-slate-800 dark:text-slate-200 font-medium">{{ formatCurrency(cartStore.subtotal) }}</span>
         </div>
-        <div class="flex justify-between text-slate-500 dark:text-slate-400">
-          <span>Chegirma:</span>
-          <span class="text-rose-500">-{{ formatCurrency(cartStore.discountTotal) }}</span>
+        <div v-if="allowDiscounts !== false && cartStore.discountTotal > 0" class="flex justify-between text-rose-500 font-bold">
+          <span>Jami chegirma:</span>
+          <span>-{{ formatCurrency(cartStore.discountTotal) }}</span>
         </div>
         <div class="flex justify-between text-sm font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-slate-800">
           <span>Jami to'lov:</span>
@@ -195,7 +237,7 @@
         class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-sm shadow-lg shadow-emerald-500/25 transition flex items-center justify-center space-x-2 btn-interactive"
       >
         <CreditCard class="w-4 h-4" />
-        <span>To'lovga O'tish (F10)</span>
+        <span>{{ enableHotkeys !== false ? "To'lovga O'tish (F10)" : "To'lovga O'tish" }}</span>
       </button>
     </div>
   </div>
@@ -209,20 +251,31 @@ import {
   CreditCard,
   PauseCircle,
   History,
+  Tag,
+  Percent,
+  X,
 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
-  mobileViewTab: 'catalog' | 'cart';
-  cartStore: any;
-  isRestaurant: boolean;
-  enabledServiceTypes: string[];
-  orderType: string;
-  currentTableDisplayName: string;
-  availableTables: any[];
-  selectedTableNumber: string;
-  heldOrdersCount: number;
-}>();
+withDefaults(
+  defineProps<{
+    mobileViewTab: 'catalog' | 'cart';
+    cartStore: any;
+    isRestaurant: boolean;
+    enabledServiceTypes: string[];
+    orderType: string;
+    currentTableDisplayName: string;
+    availableTables: any[];
+    selectedTableNumber: string;
+    heldOrdersCount: number;
+    allowDiscounts?: boolean;
+    enableHotkeys?: boolean;
+  }>(),
+  {
+    allowDiscounts: true,
+    enableHotkeys: true,
+  }
+);
 
 defineEmits<{
   (e: 'update:orderType', val: string): void;
@@ -230,6 +283,7 @@ defineEmits<{
   (e: 'holdCart'): void;
   (e: 'openHeldOrders'): void;
   (e: 'openCheckout'): void;
+  (e: 'openDiscountModal'): void;
 }>();
 
 const { formatCurrency } = useFormat();

@@ -9,6 +9,7 @@ export interface PosSettings {
   quickBarcode: boolean;
   autoShowReceipt: boolean;
   allowZeroStockSale: boolean;
+  enableHotkeys: boolean;
   // Receipt & Printer Settings
   enableReceiptPrinting: boolean;
   autoPrintReceipt: boolean;
@@ -31,6 +32,7 @@ export const defaultPosSettings: PosSettings = {
   quickBarcode: true,
   autoShowReceipt: true,
   allowZeroStockSale: true,
+  enableHotkeys: true,
   // Receipt & Printer defaults
   enableReceiptPrinting: true,
   autoPrintReceipt: false,

@@ -109,13 +109,15 @@
 
     <!-- Confirm Dialog Component -->
     <AppConfirmDialog
-      :open="confirmModal.open"
-      :title="confirmModal.title"
-      :message="confirmModal.message"
+      :open="isDeleteModalOpen"
+      title="Mahsulotni o'chirish"
+      :message="productToDelete ? `&quot;${productToDelete.name}&quot; mahsulotini o'chirishni tasdiqlaysizmi?` : ''"
       variant="danger"
       confirm-text="Ha, o'chirish"
-      @confirm="confirmModal.onConfirm"
-      @cancel="confirmModal.open = false"
+      cancel-text="Bekor qilish"
+      :loading="isDeleting"
+      @confirm="executeDeleteProduct"
+      @cancel="isDeleteModalOpen = false"
     />
   </div>
 </template>
@@ -130,8 +132,10 @@ import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
+import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
+import { useAuthStore } from '../../stores/auth.store';
 import { getCategoryIcon } from '../../composables/useCategoryIcon';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
@@ -144,6 +148,7 @@ import CategoryManageModal from './components/CategoryManageModal.vue';
 
 const toast = useToast();
 const dataStore = useDataStore();
+const authStore = useAuthStore();
 const { formatCurrency } = useFormat();
 const { canCreate } = usePermissions();
 
@@ -217,7 +222,8 @@ const handleImageFileUpload = (e: Event) => {
   reader.readAsDataURL(file);
 };
 
-const fastImagePresets = [
+// Biznes turiga qarab tayyor rasm shablonlari
+const restaurantImagePresets = [
   { name: 'Pitsa 🍕', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300' },
   { name: 'Burger 🍔', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300' },
   { name: 'Lavash 🌯', url: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=300' },
@@ -228,17 +234,62 @@ const fastImagePresets = [
   { name: 'Non 🍞', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300' },
 ];
 
-const confirmModal = ref<{
-  open: boolean;
-  title: string;
-  message: string;
-  onConfirm: () => Promise<void> | void;
-}>({
-  open: false,
-  title: 'Tasdiqlash',
-  message: '',
-  onConfirm: () => {},
+const shopImagePresets = [
+  { name: 'Kiyim 👕', url: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300' },
+  { name: 'Elektronika 📱', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' },
+  { name: 'Oziq-ovqat 🛒', url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300' },
+  { name: 'Kosmetika 💄', url: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=300' },
+  { name: 'Tovar 📦', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300' },
+  { name: 'Qurilish 🔧', url: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300' },
+  { name: 'Sport 🏋️', url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300' },
+  { name: 'Kitob 📚', url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300' },
+];
+
+const pharmacyImagePresets = [
+  { name: 'Dori 💊', url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300' },
+  { name: 'Vitamin 🧴', url: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=300' },
+  { name: 'Shpris 💉', url: 'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=300' },
+  { name: 'Bandaj 🩹', url: 'https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=300' },
+  { name: 'Malham 🧪', url: 'https://images.unsplash.com/photo-1616671276441-2f2c277b8bf6?w=300' },
+  { name: 'Toniometer 🩺', url: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300' },
+  { name: 'Mask 😷', url: 'https://images.unsplash.com/photo-1584483766114-2cea6facdf57?w=300' },
+  { name: 'Quti 📦', url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300' },
+];
+
+const barbershopImagePresets = [
+  { name: 'Soch 💈', url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300' },
+  { name: 'Soqol ✂️', url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=300' },
+  { name: 'Shampun 🧴', url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300' },
+  { name: 'Moshinka 🪒', url: 'https://images.unsplash.com/photo-1626808642875-0aa545482dfb?w=300' },
+  { name: 'Makiyaj 💄', url: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=300' },
+  { name: 'Tirnoq 💅', url: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=300' },
+  { name: 'Krem 🧪', url: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300' },
+  { name: 'Xizmat 🛠', url: 'https://images.unsplash.com/photo-1560066984-138daaa70c8f?w=300' },
+];
+
+const serviceImagePresets = [
+  { name: 'Ta\'mirlash 🔧', url: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300' },
+  { name: 'Kompyuter 💻', url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=300' },
+  { name: 'Telefon 📱', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' },
+  { name: 'Avto 🚗', url: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=300' },
+  { name: 'Kir yuvish 🧺', url: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=300' },
+  { name: 'Tozalash 🧹', url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300' },
+  { name: 'Yetkazib berish 📦', url: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=300' },
+  { name: 'Xizmat 🛠', url: 'https://images.unsplash.com/photo-1560066984-138daaa70c8f?w=300' },
+];
+
+const fastImagePresets = computed(() => {
+  const bType = authStore.businessType;
+  if (bType === 'restaurant' || bType === 'cafe') return restaurantImagePresets;
+  if (bType === 'pharmacy') return pharmacyImagePresets;
+  if (bType === 'barbershop') return barbershopImagePresets;
+  if (bType === 'service') return serviceImagePresets;
+  return shopImagePresets; // shop (default)
 });
+
+const isDeleteModalOpen = ref(false);
+const productToDelete = ref<any>(null);
+const isDeleting = ref(false);
 
 const searchQuery = ref('');
 const selectedCategoryId = ref('');
@@ -454,30 +505,35 @@ const saveProduct = async () => {
 const deleteProduct = (prodIdOrProd: any) => {
   const id = typeof prodIdOrProd === 'string' ? prodIdOrProd : prodIdOrProd.id;
   const prod = products.value.find((p: any) => p.id === id);
-  const name = prod ? prod.name : 'Mahsulot';
+  productToDelete.value = prod || { id, name: 'Mahsulot' };
+  isDeleteModalOpen.value = true;
+};
 
-  confirmModal.value = {
-    open: true,
-    title: "Mahsulotni o'chirish",
-    message: `"${name}" mahsulotini o'chirishni tasdiqlaysizmi?`,
-    onConfirm: async () => {
-      try {
-        await api.delete(`/products/${id}`);
-        // Optimistic: remove from store immediately
-        const idx = dataStore.products.findIndex((p: any) => p.id === id);
-        if (idx !== -1) dataStore.products.splice(idx, 1);
-        toast.success("Mahsulot o'chirildi", 'Mahsulot');
-        dataStore.invalidate('products');
-        dataStore.invalidate('dashboard');
-        dataStore.invalidate('inventory');
-        loadProducts(true); // background refresh
-      } catch (err: any) {
-        toast.error(getErrorMessage(err, "O'chirishda xatolik yuz berdi"), 'Xatolik');
-      } finally {
-        confirmModal.value.open = false;
-      }
-    },
-  };
+const executeDeleteProduct = async () => {
+  if (!productToDelete.value?.id) return;
+  const id = productToDelete.value.id;
+  const name = productToDelete.value.name || 'Mahsulot';
+
+  isDeleting.value = true;
+  try {
+    await api.delete(`/products/${id}`);
+    
+    // Immediate reactive removal from Pinia store
+    dataStore.products = dataStore.products.filter((p: any) => p.id !== id);
+    
+    toast.success(`"${name}" muvaffaqiyatli o'chirildi`, 'Mahsulot');
+    dataStore.invalidate('products');
+    dataStore.invalidate('dashboard');
+    dataStore.invalidate('inventory');
+    isDeleteModalOpen.value = false;
+    productToDelete.value = null;
+    await dataStore.fetchProducts(true);
+  } catch (err: any) {
+    console.error('Delete product error:', err);
+    toast.error(getErrorMessage(err, "Mahsulotni o'chirishda xatolik yuz berdi"), 'Xatolik');
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
 const toggleAvailability = async (prod: any) => {
@@ -568,25 +624,19 @@ const saveCategory = async () => {
   }
 };
 
-const deleteCategory = (cat: any) => {
-  confirmModal.value = {
-    open: true,
-    title: "Kategoriyani o'chirish",
-    message: `"${cat.name}" kategoriyasini o'chirishni tasdiqlaysizmi? (Unga tegishli tovarlar saqlanadi)`,
-    onConfirm: async () => {
-      try {
-        await api.delete(`/categories/${cat.id}`);
-        toast.success(`"${cat.name}" kategoriyasi o'chirildi`, 'Kategoriya');
-        dataStore.invalidate('categories');
-        await loadCategories(true);
-        await loadProducts(true);
-      } catch (err: any) {
-        toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik'), 'Xatolik');
-      } finally {
-        confirmModal.value.open = false;
-      }
-    },
-  };
+const deleteCategory = async (cat: any) => {
+  if (!window.confirm(`"${cat.name}" kategoriyasini o'chirishni tasdiqlaysizmi? (Unga tegishli tovarlar saqlanadi)`)) {
+    return;
+  }
+  try {
+    await api.delete(`/categories/${cat.id}`);
+    toast.success(`"${cat.name}" kategoriyasi o'chirildi`, 'Kategoriya');
+    dataStore.invalidate('categories');
+    await loadCategories(true);
+    await loadProducts(true);
+  } catch (err: any) {
+    toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik'), 'Xatolik');
+  }
 };
 
 onMounted(() => {

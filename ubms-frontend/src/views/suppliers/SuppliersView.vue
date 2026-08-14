@@ -83,6 +83,7 @@
       :suppliers="filteredSuppliers"
       @open-pay="openPayModal"
       @open-history="openHistoryModal"
+      @open-statement="openStatementModal"
       @open-edit="openEditModal"
       @delete="confirmDeleteSupplier"
     />
@@ -93,6 +94,7 @@
       :suppliers="filteredSuppliers"
       @open-pay="openPayModal"
       @open-history="openHistoryModal"
+      @open-statement="openStatementModal"
       @open-edit="openEditModal"
       @delete="confirmDeleteSupplier"
     />
@@ -112,6 +114,8 @@
       :is-open="isPayModalOpen"
       :active-supplier="activeSupplier"
       v-model:pay-amount="payAmount"
+      v-model:payment-source="paymentSource"
+      v-model:payment-description="paymentDescription"
       :submitting="submitting"
       @close="isPayModalOpen = false"
       @submit="submitPay"
@@ -125,6 +129,13 @@
       :total-paid="totalPaid"
       :loading="historyLoading"
       @close="isHistoryModalOpen = false"
+    />
+
+    <!-- Modal 4: Solishtirma Dalolatnoma (Akt Sverka) & Audit -->
+    <SupplierStatementModal
+      :is-open="isStatementModalOpen"
+      :supplier="statementSupplier"
+      @close="isStatementModalOpen = false"
     />
 
     <!-- Confirm Delete Dialog -->
@@ -164,6 +175,7 @@ import SupplierGridView from './components/SupplierGridView.vue';
 import SupplierFormModal from './components/SupplierFormModal.vue';
 import SupplierPayModal from './components/SupplierPayModal.vue';
 import SupplierHistoryModal from './components/SupplierHistoryModal.vue';
+import SupplierStatementModal from './components/SupplierStatementModal.vue';
 
 const toast = useToast();
 const dataStore = useDataStore();
@@ -178,11 +190,17 @@ const activeFilter = ref<'all' | 'debtors' | 'clear'>('all');
 const isCreateModalOpen = ref(false);
 const isPayModalOpen = ref(false);
 const isHistoryModalOpen = ref(false);
+const isStatementModalOpen = ref(false);
 
 const editingSupplier = ref<any>(null);
 const activeSupplier = ref<any>(null);
 const historySupplier = ref<any>(null);
+const statementSupplier = ref<any>(null);
+
 const payAmount = ref<number | null>(null);
+const paymentSource = ref<string>('cash');
+const paymentDescription = ref<string>('');
+
 const paymentHistory = ref<any[]>([]);
 const historyLoading = ref(false);
 
@@ -304,7 +322,14 @@ const saveSupplier = async () => {
 const openPayModal = (s: any) => {
   activeSupplier.value = s;
   payAmount.value = Number(s.balance || 0);
+  paymentSource.value = 'cash';
+  paymentDescription.value = '';
   isPayModalOpen.value = true;
+};
+
+const openStatementModal = (s: any) => {
+  statementSupplier.value = s;
+  isStatementModalOpen.value = true;
 };
 
 const totalPaid = computed(() => {
@@ -337,8 +362,10 @@ const submitPay = async () => {
   try {
     await api.post(`/suppliers/${activeSupplier.value.id}/pay`, {
       amount: payAmount.value,
+      paymentSource: paymentSource.value,
+      description: paymentDescription.value,
     });
-    toast.success('To\'lov bajarildi!', 'To\'lov');
+    toast.success('To\'lov muvaffaqiyatli bajarildi va audit jurnaliga qayd etildi!', 'To\'lov');
     isPayModalOpen.value = false;
     await dataStore.fetchSuppliers(true);
   } catch (err: any) {

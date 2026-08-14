@@ -30,11 +30,12 @@ defineEmits<{
   <Teleport to="body">
     <div
       v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+      class="modal-overlay !z-[999999]"
       @click.self="$emit('cancel')"
     >
       <div
-        class="glass-card rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 space-y-4 animate-in fade-in zoom-in-95 duration-150"
+        class="glass-card rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 space-y-4 animate-in fade-in zoom-in-95 duration-150 relative z-10"
+        @click.stop
       >
         <div class="flex items-start gap-3.5">
           <div

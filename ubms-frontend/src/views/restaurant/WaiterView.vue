@@ -241,9 +241,10 @@
     <ShiftModal
       :is-open="shiftModal.open"
       :mode="shiftModal.mode"
+      :shift-data="currentShift"
       @close="shiftModal.open = false"
-      @opened="onShiftOpened"
-      @closed="onShiftClosed"
+      @shift-opened="onShiftOpened"
+      @shift-closed="onShiftClosed"
     />
 
     <!-- Delete Confirmation Modal -->

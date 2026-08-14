@@ -7,17 +7,28 @@ export function usePermissions() {
   const authStore = useAuthStore();
 
   const isOwner = computed(() => {
-    return authStore.activeBusiness?.role === 'Owner' || authStore.user?.isSuperAdmin || false;
+    const role = (authStore.activeBusiness?.role || '').toLowerCase();
+    const allowedModules = (authStore.activeBusiness as any)?.allowedModules || (authStore.user as any)?.allowedModules || [];
+    return (
+      role === 'owner' ||
+      role === 'superadmin' ||
+      role === 'admin' ||
+      authStore.user?.isSuperAdmin === true ||
+      allowedModules.includes('all')
+    );
   });
 
   const can = (moduleName: string, action: ActionType = 'view'): boolean => {
+    // 1. Owner & SuperAdmin & Admin have FULL permissions across all modules
     if (isOwner.value) return true;
 
-    const allowed = (authStore.user as any)?.allowedModules || (authStore.activeBusiness as any)?.allowedModules || ['all'];
+    // 2. Module check for staff
+    const allowed = (authStore.user as any)?.allowedModules || (authStore.activeBusiness as any)?.allowedModules || [];
     if (allowed.includes('all')) return true;
     if (!allowed.includes(moduleName)) return false;
 
-    const actionPermissions = (authStore.user as any)?.actionPermissions || {};
+    // 3. Action permissions for staff
+    const actionPermissions = (authStore.user as any)?.actionPermissions || (authStore.activeBusiness as any)?.actionPermissions || {};
     const modPerms = actionPermissions[moduleName];
 
     if (!modPerms) {
