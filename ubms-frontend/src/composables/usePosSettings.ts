@@ -9,6 +9,17 @@ export interface PosSettings {
   quickBarcode: boolean;
   autoShowReceipt: boolean;
   allowZeroStockSale: boolean;
+  // Receipt & Printer Settings
+  enableReceiptPrinting: boolean;
+  autoPrintReceipt: boolean;
+  receiptWidth: '58mm' | '80mm';
+  receiptHeaderTitle: string;
+  receiptAddress: string;
+  receiptPhone: string;
+  receiptFooterMessage: string;
+  showQrCode: boolean;
+  showCashierName: boolean;
+  showItemCount: boolean;
 }
 
 export const defaultPosSettings: PosSettings = {
@@ -20,6 +31,17 @@ export const defaultPosSettings: PosSettings = {
   quickBarcode: true,
   autoShowReceipt: true,
   allowZeroStockSale: true,
+  // Receipt & Printer defaults
+  enableReceiptPrinting: true,
+  autoPrintReceipt: false,
+  receiptWidth: '58mm',
+  receiptHeaderTitle: 'Boshqar.uz',
+  receiptAddress: '',
+  receiptPhone: '',
+  receiptFooterMessage: 'Xaridingiz uchun rahmat! Yana kutib qolamiz!',
+  showQrCode: true,
+  showCashierName: true,
+  showItemCount: true,
 };
 
 const STORAGE_KEY = 'ubms_pos_feature_settings';

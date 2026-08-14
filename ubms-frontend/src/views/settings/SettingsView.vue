@@ -292,7 +292,7 @@ const togglePosSetting = (key: keyof PosSettings) => {
       title: info.title,
       message: `"${info.label}" funksiyasini o'chirmoqchimisiz? ${info.desc}`,
       onConfirm: () => {
-        posSettings.value[key] = false;
+        (posSettings.value as any)[key] = false;
         saveSettings();
         confirmModal.value.open = false;
         toast.info(`"${info.label}" muvaffaqiyatli o'chirildi`, 'Kassa sozlamalari');
@@ -302,7 +302,7 @@ const togglePosSetting = (key: keyof PosSettings) => {
   }
 
   // If turning ON -> direct enable
-  posSettings.value[key] = true;
+  (posSettings.value as any)[key] = true;
   saveSettings();
   const info = posSettingInfo[key];
   toast.success(`"${info?.label || 'Funksiya'}" faollashtirildi!`, 'Kassa sozlamalari');
@@ -689,7 +689,8 @@ const executeDeletion = async () => {
 const testOrderForReceipt = ref<any | null>(null);
 
 const receiptSettings = ref({
-  paperSize: '80mm',
+  enableReceiptPrinting: true,
+  paperSize: '58mm',
   headerTitle: '',
   headerSubtitle: '',
   footerText: 'Xaridingiz uchun rahmat! Qaytarish 24 soat ichida chek bilan.',
@@ -705,12 +706,29 @@ const loadReceiptSettings = () => {
     const raw = localStorage.getItem('ubms_receipt_settings');
     if (raw) {
       receiptSettings.value = { ...receiptSettings.value, ...JSON.parse(raw) };
+    } else {
+      receiptSettings.value.enableReceiptPrinting = posSettings.value.enableReceiptPrinting !== false;
+      receiptSettings.value.paperSize = posSettings.value.receiptWidth || '58mm';
+      receiptSettings.value.headerTitle = posSettings.value.receiptHeaderTitle || '';
+      receiptSettings.value.headerSubtitle = posSettings.value.receiptAddress || '';
+      receiptSettings.value.footerText = posSettings.value.receiptFooterMessage || 'Xaridingiz uchun rahmat! Qaytarish 24 soat ichida chek bilan.';
+      receiptSettings.value.autoPrint = posSettings.value.autoPrintReceipt || false;
+      receiptSettings.value.showCashier = posSettings.value.showCashierName !== false;
     }
   } catch (e) {}
 };
 
 const saveReceiptSettings = () => {
   localStorage.setItem('ubms_receipt_settings', JSON.stringify(receiptSettings.value));
+  saveSettings({
+    enableReceiptPrinting: receiptSettings.value.enableReceiptPrinting,
+    autoPrintReceipt: receiptSettings.value.autoPrint,
+    receiptWidth: (receiptSettings.value.paperSize as any) || '58mm',
+    receiptHeaderTitle: receiptSettings.value.headerTitle,
+    receiptAddress: receiptSettings.value.headerSubtitle,
+    receiptFooterMessage: receiptSettings.value.footerText,
+    showCashierName: receiptSettings.value.showCashier,
+  });
   toast.success('Chek va printer sozlamalari muvaffaqiyatli saqlandi!', 'Chek Sozlamalari');
 };
 

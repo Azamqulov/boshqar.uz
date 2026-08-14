@@ -703,7 +703,19 @@ const handleCompleteOrder = async () => {
       };
     }
 
-    completedOrder.value = data;
+    const posSet = posSettings.value;
+    // Check if receipt printing is enabled
+    if (posSet.enableReceiptPrinting !== false && posSet.autoShowReceipt !== false) {
+      completedOrder.value = data;
+      if (posSet.autoPrintReceipt) {
+        setTimeout(() => {
+          window.print();
+        }, 300);
+      }
+    } else {
+      completedOrder.value = null;
+    }
+
     isCheckoutOpen.value = false;
     cartStore.clearCart();
     selectedCustomerId.value = '';
