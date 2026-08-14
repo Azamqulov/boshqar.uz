@@ -9,6 +9,7 @@
 
       <div class="flex items-center gap-2">
         <AppButton
+          v-if="canCreate('suppliers')"
           variant="primary"
           size="md"
           :icon="Plus"
@@ -154,6 +155,7 @@ import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+import { usePermissions } from '../../composables/usePermissions';
 import api, { getErrorMessage } from '../../services/api';
 
 import SupplierStatsCards from './components/SupplierStatsCards.vue';
@@ -165,6 +167,7 @@ import SupplierHistoryModal from './components/SupplierHistoryModal.vue';
 
 const toast = useToast();
 const dataStore = useDataStore();
+const { canCreate } = usePermissions();
 
 const viewMode = usePersistentViewMode('suppliers', 'table');
 const loading = ref(false);

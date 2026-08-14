@@ -9,6 +9,7 @@
 
       <div class="flex items-center gap-2">
         <AppButton
+          v-if="canCreate('customers')"
           variant="primary"
           size="md"
           :icon="Plus"
@@ -163,6 +164,7 @@ import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+import { usePermissions } from '../../composables/usePermissions';
 
 import CustomerStatsCards from './components/CustomerStatsCards.vue';
 import CustomerTableView from './components/CustomerTableView.vue';
@@ -174,6 +176,7 @@ import CustomerHistoryModal from './components/CustomerHistoryModal.vue';
 const toast = useToast();
 const dataStore = useDataStore();
 const { formatCurrency, formatDate } = useFormat();
+const { canCreate } = usePermissions();
 
 const viewMode = usePersistentViewMode('customers', 'table');
 const loading = ref(false);

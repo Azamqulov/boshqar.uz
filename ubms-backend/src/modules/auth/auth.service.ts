@@ -8,7 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, VerifyOtpDto, ResetPasswordDto } from './dto/auth.dto';
-import { mapPermModulesToUiModules } from '../employees/employees.service';
+import { mapPermModulesToUiModules, extractActionPermissions } from '../employees/employees.service';
 import * as bcrypt from 'bcrypt';
 
 function normalizePhone(raw: string): string {
@@ -195,7 +195,16 @@ export class AuthService {
     );
 
     let allowedModules: string[] = [];
-    if (activeBusiness?.role?.name === 'Owner' || user.isSuperAdmin) {
+    let actionPermissions = {
+      pos: { create: true, edit: true, delete: true },
+      products: { create: true, edit: true, delete: true },
+      inventory: { create: true, edit: true, delete: true },
+      customers: { create: true, edit: true, delete: true },
+      suppliers: { create: true, edit: true, delete: true },
+      finance: { create: true, edit: true, delete: true },
+    };
+
+    if (activeBusiness?.role.name === 'Owner' || user.isSuperAdmin) {
       allowedModules = ['all'];
     } else if (activeBusiness?.roleId) {
       const rolePerms = await this.prisma.rolePermission.findMany({
@@ -204,6 +213,7 @@ export class AuthService {
       });
       const perms = rolePerms.map((rp) => rp.permission.module);
       allowedModules = mapPermModulesToUiModules(perms);
+      actionPermissions = extractActionPermissions(rolePerms);
       if (allowedModules.length === 0) {
         const lower = (activeBusiness.role.name || '').toLowerCase();
         if (lower.includes('waiter') || lower.includes('ofitsiant')) allowedModules = ['tables', 'pos'];
@@ -230,6 +240,7 @@ export class AuthService {
             role: activeBusiness.role.name,
             branchId: activeBusiness.branchId,
             allowedModules,
+            actionPermissions,
           }
         : null,
     };

@@ -17,6 +17,7 @@
         </router-link>
 
         <button
+          v-if="canCreate('products')"
           @click="openCreateModal"
           class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive"
         >
@@ -133,6 +134,7 @@ import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 import { getCategoryIcon } from '../../composables/useCategoryIcon';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+import { usePermissions } from '../../composables/usePermissions';
 
 import ProductStatsCards from './components/ProductStatsCards.vue';
 import ProductTableView from './components/ProductTableView.vue';
@@ -143,6 +145,7 @@ import CategoryManageModal from './components/CategoryManageModal.vue';
 const toast = useToast();
 const dataStore = useDataStore();
 const { formatCurrency } = useFormat();
+const { canCreate } = usePermissions();
 
 const viewMode = usePersistentViewMode('products', 'table');
 const loading = ref(false);

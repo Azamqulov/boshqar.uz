@@ -591,6 +591,7 @@ const saveEmployee = async () => {
       phone: clean,
       position: empForm.value.position,
       allowedModules: empForm.value.allowedModules,
+      actionPermissions: empForm.value.actionPermissions,
     };
     if (empForm.value.password && empForm.value.password.trim()) {
       payload.password = empForm.value.password.trim();

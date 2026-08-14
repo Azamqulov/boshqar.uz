@@ -18,6 +18,14 @@ function normalizePhone(raw: string): string {
   return '+998' + digits;
 }
 
+export interface ActionPermissionMap {
+  [module: string]: {
+    create?: boolean;
+    edit?: boolean;
+    delete?: boolean;
+  };
+}
+
 export interface CreateEmployeeDto {
   fullName: string;
   phone: string;
@@ -27,6 +35,7 @@ export interface CreateEmployeeDto {
   branchId?: string;
   salary?: number | string;
   allowedModules?: string[];
+  actionPermissions?: ActionPermissionMap;
 }
 
 export interface UpdateEmployeeDto extends Partial<CreateEmployeeDto> {
@@ -56,6 +65,73 @@ export function resolvePermissionModules(uiModules: string[]): string[] {
     dbModules.add(mod);
   }
   return Array.from(dbModules);
+}
+
+export function extractActionPermissions(
+  rolePermissions: any[],
+): Record<string, { create: boolean; edit: boolean; delete: boolean }> {
+  const codes = new Set(
+    rolePermissions.map((rp) => rp.permission?.code || rp.code || rp || ''),
+  );
+  return {
+    pos: {
+      create: codes.has('orders.create') || codes.has('pos.create'),
+      edit: true,
+      delete: codes.has('orders.cancel') || codes.has('pos.delete'),
+    },
+    products: {
+      create: codes.has('products.create'),
+      edit: codes.has('products.update') || codes.has('products.edit'),
+      delete: codes.has('products.delete'),
+    },
+    inventory: {
+      create: codes.has('inventory.create'),
+      edit: codes.has('inventory.create') || codes.has('inventory.transfer'),
+      delete: codes.has('inventory.delete'),
+    },
+    customers: {
+      create: codes.has('customers.manage') || codes.has('customers.create'),
+      edit: codes.has('customers.manage') || codes.has('customers.edit'),
+      delete: codes.has('customers.delete'),
+    },
+    suppliers: {
+      create: codes.has('suppliers.manage') || codes.has('suppliers.create'),
+      edit: codes.has('suppliers.manage') || codes.has('suppliers.edit'),
+      delete: codes.has('suppliers.delete'),
+    },
+    finance: {
+      create: codes.has('finance.create'),
+      edit: true,
+      delete: codes.has('finance.delete'),
+    },
+  };
+}
+
+export function filterPermissionsByActions(
+  permissions: any[],
+  actionPermissions?: ActionPermissionMap,
+): any[] {
+  if (!actionPermissions) return permissions;
+  return permissions.filter((p) => {
+    const code = p.code;
+    if (code === 'products.create' && actionPermissions.products?.create === false) return false;
+    if (code === 'products.update' && actionPermissions.products?.edit === false) return false;
+    if (code === 'products.delete' && actionPermissions.products?.delete === false) return false;
+
+    if (code === 'orders.create' && actionPermissions.pos?.create === false) return false;
+    if (code === 'orders.cancel' && actionPermissions.pos?.delete === false) return false;
+
+    if (code === 'inventory.create' && actionPermissions.inventory?.create === false) return false;
+    if (code === 'inventory.delete' && actionPermissions.inventory?.delete === false) return false;
+
+    if (code === 'customers.delete' && actionPermissions.customers?.delete === false) return false;
+    if (code === 'customers.manage' && actionPermissions.customers?.delete === false && actionPermissions.customers?.edit === false) return false;
+
+    if (code === 'suppliers.delete' && actionPermissions.suppliers?.delete === false) return false;
+    if (code === 'suppliers.manage' && actionPermissions.suppliers?.delete === false && actionPermissions.suppliers?.edit === false) return false;
+
+    return true;
+  });
 }
 
 export function mapPermModulesToUiModules(permModules: string[]): string[] {
@@ -119,6 +195,17 @@ export class EmployeesService {
       const bu = emp.user?.businessUsers?.[0];
       const perms = bu?.role?.rolePermissions?.map((rp) => rp.permission.module) || [];
       const allowedModules = mapPermModulesToUiModules(perms);
+      const isOwner = bu?.role?.name === 'Owner';
+      const actionPermissions = isOwner
+        ? {
+            pos: { create: true, edit: true, delete: true },
+            products: { create: true, edit: true, delete: true },
+            inventory: { create: true, edit: true, delete: true },
+            customers: { create: true, edit: true, delete: true },
+            suppliers: { create: true, edit: true, delete: true },
+            finance: { create: true, edit: true, delete: true },
+          }
+        : extractActionPermissions(bu?.role?.rolePermissions || []);
 
       return {
         id: emp.id,
@@ -130,7 +217,8 @@ export class EmployeesService {
         branchId: emp.branchId,
         branchName: emp.branch?.name,
         roleName: bu?.role?.name || emp.position,
-        allowedModules: bu?.role?.name === 'Owner' ? ['all'] : (allowedModules.length > 0 ? allowedModules : ['pos']),
+        allowedModules: isOwner ? ['all'] : (allowedModules.length > 0 ? allowedModules : ['pos']),
+        actionPermissions,
         status: emp.status,
         createdAt: emp.createdAt,
       };
@@ -179,7 +267,7 @@ export class EmployeesService {
     const resolvedDbModules = resolvePermissionModules(selectedModules);
 
     // 2. Pre-fetch permissions and default branch outside transaction for maximum speed
-    const [permissions, defaultBranch] = await Promise.all([
+    const [rawPermissions, defaultBranch] = await Promise.all([
       this.prisma.permission.findMany({
         where: {
           module: { in: resolvedDbModules },
@@ -190,6 +278,7 @@ export class EmployeesService {
       }),
     ]);
 
+    const permissions = filterPermissionsByActions(rawPermissions, data.actionPermissions);
     const branchId = data.branchId || defaultBranch?.id;
 
     // 3. Execute fast writes inside transaction with generous timeout
@@ -325,9 +414,10 @@ export class EmployeesService {
     let permissions: Array<{ id: string; code: string; module: string; description: string }> = [];
     if (selectedModules) {
       const resolvedDbModules = resolvePermissionModules(selectedModules);
-      permissions = await this.prisma.permission.findMany({
+      const rawPermissions = await this.prisma.permission.findMany({
         where: { module: { in: resolvedDbModules } },
       });
+      permissions = filterPermissionsByActions(rawPermissions, data.actionPermissions);
     }
 
     return this.prisma.$transaction(

@@ -118,6 +118,7 @@
             <!-- Amallar -->
             <td class="py-2.5 px-2.5 sm:px-3 text-right space-x-1 whitespace-nowrap">
               <button
+                v-if="canEdit('products')"
                 @click="$emit('edit', prod)"
                 class="p-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
                 title="Tahrirlash"
@@ -125,6 +126,7 @@
                 <Edit2 class="w-3.5 h-3.5" />
               </button>
               <button
+                v-if="canDelete('products')"
                 @click="$emit('delete', prod.id)"
                 class="p-1 rounded-md bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition"
                 title="O'chirish"
@@ -142,6 +144,7 @@
 <script setup lang="ts">
 import { Package, Edit2, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
 
 defineProps<{
   products: any[];
@@ -154,4 +157,5 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+const { canEdit, canDelete } = usePermissions();
 </script>

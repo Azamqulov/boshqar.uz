@@ -108,6 +108,7 @@
 
                 <!-- Edit button -->
                 <button
+                  v-if="canEdit('suppliers')"
                   type="button"
                   @click="$emit('openEdit', s)"
                   class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -118,6 +119,7 @@
 
                 <!-- Delete button -->
                 <button
+                  v-if="canDelete('suppliers')"
                   type="button"
                   @click="$emit('delete', s)"
                   class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
@@ -137,6 +139,7 @@
 <script setup lang="ts">
 import { Truck, Building2, Phone, MapPin, AlertCircle, CreditCard, History, Edit, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
 
 defineProps<{
   suppliers: any[];
@@ -150,4 +153,5 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+const { canEdit, canDelete } = usePermissions();
 </script>

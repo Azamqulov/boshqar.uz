@@ -69,6 +69,7 @@
               <History class="w-3.5 h-3.5" />
             </button>
             <button
+              v-if="canEdit('suppliers')"
               @click="$emit('openEdit', s)"
               class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
               title="Tahrirlash"
@@ -76,6 +77,7 @@
               <Edit class="w-4 h-4" />
             </button>
             <button
+              v-if="canDelete('suppliers')"
               @click="$emit('delete', s)"
               class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
               title="O'chirish"
@@ -92,6 +94,7 @@
 <script setup lang="ts">
 import { Truck, Building2, Phone, MapPin, CreditCard, History, Edit, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
 
 defineProps<{
   suppliers: any[];
@@ -105,4 +108,5 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+const { canEdit, canDelete } = usePermissions();
 </script>

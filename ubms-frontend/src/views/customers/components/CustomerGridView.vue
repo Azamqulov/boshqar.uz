@@ -68,6 +68,7 @@
               <History class="w-4 h-4" />
             </button>
             <button
+              v-if="canEdit('customers')"
               @click="$emit('openEdit', c)"
               class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
               title="Tahrirlash"
@@ -84,6 +85,7 @@
 <script setup lang="ts">
 import { Users, CreditCard, History, Edit2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
 
 defineProps<{
   customers: any[];
@@ -96,4 +98,5 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+const { canEdit } = usePermissions();
 </script>

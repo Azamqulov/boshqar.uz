@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../prisma/prisma.service';
 import { BusinessType } from '@prisma/client';
 import { getBusinessTypesConfig } from '../../common/config/business-types.config';
-import { mapPermModulesToUiModules } from '../employees/employees.service';
+import { mapPermModulesToUiModules, extractActionPermissions } from '../employees/employees.service';
 
 export interface CreateBusinessDto {
   name: string;
@@ -139,7 +139,19 @@ export class BusinessesService {
 
     return businessUsers.map((bu) => {
       const perms = bu.role?.rolePermissions?.map((rp) => rp.permission.module) || [];
-      const allowedModules = bu.role?.name === 'Owner' ? ['all'] : mapPermModulesToUiModules(perms);
+      const isOwner = bu.role?.name === 'Owner';
+      const allowedModules = isOwner ? ['all'] : mapPermModulesToUiModules(perms);
+      const actionPermissions = isOwner
+        ? {
+            pos: { create: true, edit: true, delete: true },
+            products: { create: true, edit: true, delete: true },
+            inventory: { create: true, edit: true, delete: true },
+            customers: { create: true, edit: true, delete: true },
+            suppliers: { create: true, edit: true, delete: true },
+            finance: { create: true, edit: true, delete: true },
+          }
+        : extractActionPermissions(bu.role?.rolePermissions || []);
+
       return {
         id: bu.business.id,
         name: bu.business.name,
@@ -150,6 +162,7 @@ export class BusinessesService {
         role: bu.role.name,
         branches: bu.business.branches,
         allowedModules: allowedModules.length > 0 ? allowedModules : ['pos'],
+        actionPermissions,
       };
     });
   }

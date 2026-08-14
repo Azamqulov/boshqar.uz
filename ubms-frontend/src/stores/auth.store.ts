@@ -19,6 +19,7 @@ export interface BusinessItem {
   branchId?: string;
   branches?: any[];
   allowedModules?: string[];
+  actionPermissions?: Record<string, { create?: boolean; edit?: boolean; delete?: boolean }>;
 }
 
 export const useAuthStore = defineStore('auth', {

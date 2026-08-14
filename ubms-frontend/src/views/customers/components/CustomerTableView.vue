@@ -104,6 +104,7 @@
 
                 <!-- 4. Edit (Tahrirlash) -->
                 <button
+                  v-if="canEdit('customers')"
                   type="button"
                   @click="$emit('openEdit', c)"
                   title="Mijozni tahrirlash"
@@ -114,6 +115,7 @@
 
                 <!-- 5. Delete (O'chirish) -->
                 <button
+                  v-if="canDelete('customers')"
                   type="button"
                   @click="$emit('delete', c)"
                   title="Mijozni o'chirish"
@@ -134,6 +136,7 @@
 import { Users, Plus, CreditCard, History, Edit2, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 import { formatUzbekPhone } from '../../../composables/usePhoneMask';
+import { usePermissions } from '../../../composables/usePermissions';
 
 defineProps<{
   customers: any[];
@@ -148,4 +151,5 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+const { canCreate, canEdit, canDelete } = usePermissions();
 </script>
