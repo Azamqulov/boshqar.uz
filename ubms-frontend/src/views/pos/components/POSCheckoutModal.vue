@@ -194,30 +194,40 @@
                 {{ formatCurrency(cashReceived - cartStore.grandTotal) }}
               </span>
             </div>
-
             <!-- Underpaid Cash: Partial Payment Alert -->
             <div v-else-if="cashReceived > 0 && cashReceived < cartStore.grandTotal" class="pt-1 border-t border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="text-slate-500 dark:text-slate-400 font-semibold">Naqd to'langan:</span>
+                <span class="text-slate-500 dark:text-slate-400 font-semibold">Naqd kiritilgan:</span>
                 <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-sm">
                   {{ formatCurrency(cashReceived) }}
                 </span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-rose-600 dark:text-rose-400 font-bold">Nasiyaga yoziladigan qoldiq:</span>
+                <span class="text-rose-600 dark:text-rose-400 font-bold">
+                  {{ allowDebt ? 'Nasiyaga yoziladigan qoldiq:' : 'Yetishmayotgan summa:' }}
+                </span>
                 <span class="font-bold font-mono text-rose-600 dark:text-rose-400 text-sm">
                   {{ formatCurrency(cartStore.grandTotal - cashReceived) }}
                 </span>
               </div>
-              <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-1.5">
+              <div
+                v-if="allowDebt"
+                class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-1.5"
+              >
                 <span>⚠️ Mijoz to'liq summa bermadi. Qolgan summa nasiyaga yozilishi uchun pastda mijozni tanlang.</span>
+              </div>
+              <div
+                v-else
+                class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-300 text-[11px] font-bold flex items-center gap-1.5"
+              >
+                <span>⛔ Nasiya savdosi o'chirilgan! To'lov to'liq summa bo'lishi shart.</span>
               </div>
             </div>
           </div>
 
-          <!-- Customer / Nasiya Selector in Checkout Modal (FAKAT NASIYA BO'LGANDA CHIQADI) -->
+          <!-- Customer / Nasiya Selector in Checkout Modal (FAKAT NASIYA BO'LGANDA VA RUXSAT BERILGANDA CHIQADI) -->
           <div
-            v-if="isNasiyaNeeded"
+            v-if="isNasiyaNeeded && allowDebt"
             class="p-3.5 rounded-2xl transition-all duration-300 border space-y-2.5 animate-in fade-in slide-in-from-top-2"
             :class="[
               !selectedCustomerId
@@ -225,19 +235,14 @@
                 : 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/40'
             ]"
           >
-            <div class="flex items-center justify-between text-xs font-bold">
-              <span class="flex items-center gap-1.5" :class="!selectedCustomerId ? 'text-amber-800 dark:text-amber-300' : 'text-emerald-800 dark:text-emerald-300'">
-                <Users class="w-4 h-4 text-amber-500" />
-                <span>Mijoz (Nasiya / Qarzga yozish uchun) *</span>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                <Users class="w-4 h-4 text-amber-600" />
+                <span>Nasiyaga yoziladigan mijozni tanlang: *</span>
+              </label>
+              <span v-if="!selectedCustomerId" class="text-[10px] text-rose-600 font-extrabold animate-pulse">
+                Mijoz tanlanmagan!
               </span>
-              <button
-                v-if="selectedCustomerId"
-                type="button"
-                @click="$emit('update:selectedCustomerId', '')"
-                class="text-[11px] text-rose-500 hover:underline font-bold"
-              >
-                Tozalash
-              </button>
             </div>
 
             <div class="flex items-center gap-2">
@@ -247,7 +252,7 @@
                   @update:model-value="$emit('update:selectedCustomerId', $event)"
                   :options="customerSelectOptions"
                   :searchable="true"
-                  placeholder="Mijozni qidiring yoki tanlang..."
+                  placeholder="Mijozni qidirish yoki tanlash..."
                 />
               </div>
               <button
@@ -274,15 +279,17 @@
                 <span class="font-mono font-black text-rose-600 dark:text-rose-400">+{{ formatCurrency(currentNasiyaAmount) }}</span>
               </div>
             </div>
-            <div v-else class="text-[11px] text-amber-800 dark:text-amber-300 font-medium">
-              ⚠️ Qarz yozilishi uchun yuqoridagi ro'yxatdan mijozni tanlang yoki <b>+ Yangi</b> tugmasi orqali yangi mijoz oching.
-            </div>
           </div>
 
           <button
             @click="$emit('completeOrder')"
-            :disabled="isProcessing"
-            class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-black text-sm shadow-lg shadow-emerald-500/25 transition flex items-center justify-center space-x-2 btn-interactive"
+            :disabled="isSubmitDisabled"
+            class="w-full py-3.5 rounded-xl font-black text-sm shadow-lg transition flex items-center justify-center space-x-2 btn-interactive"
+            :class="[
+              isSubmitDisabled
+                ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60 text-slate-500 shadow-none'
+                : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25 text-white cursor-pointer'
+            ]"
           >
             <CheckCircle class="w-5 h-5" />
             <span>{{ isProcessing ? 'Chek chiqarilmoqda...' : 'To\'lovni Yakunlash (Chek Chiqarish)' }}</span>
@@ -294,6 +301,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import {
   X,
   CreditCard,
@@ -307,27 +315,33 @@ import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
-  isOpen: boolean;
-  cartStore: any;
-  isRestaurant: boolean;
-  enabledServiceTypes: string[];
-  orderType: string;
-  currentTableDisplayName: string;
-  availableTables: any[];
-  selectedTableNumber: string;
-  isCustomTableInput: boolean;
-  customTableNumber: string;
-  paymentMethods: any[];
-  selectedPaymentMethod: string;
-  cashReceived: number;
-  isNasiyaNeeded: boolean;
-  selectedCustomerId: string;
-  customerSelectOptions: any[];
-  selectedCustomer: any;
-  currentNasiyaAmount: number;
-  isProcessing: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    isOpen: boolean;
+    cartStore: any;
+    isRestaurant: boolean;
+    enabledServiceTypes: string[];
+    orderType: string;
+    currentTableDisplayName: string;
+    availableTables: any[];
+    selectedTableNumber: string;
+    isCustomTableInput: boolean;
+    customTableNumber: string;
+    paymentMethods: any[];
+    selectedPaymentMethod: string;
+    cashReceived: number;
+    isNasiyaNeeded: boolean;
+    selectedCustomerId: string;
+    customerSelectOptions: any[];
+    selectedCustomer: any;
+    currentNasiyaAmount: number;
+    isProcessing: boolean;
+    allowDebt?: boolean;
+  }>(),
+  {
+    allowDebt: true,
+  }
+);
 
 defineEmits<{
   (e: 'close'): void;
@@ -342,4 +356,21 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+
+const isSubmitDisabled = computed(() => {
+  if (props.isProcessing) return true;
+  // If cash is selected and cash is underpaid while debt is disabled -> disabled!
+  if (!props.allowDebt && props.selectedPaymentMethod === '1' && props.cashReceived < props.cartStore.grandTotal) {
+    return true;
+  }
+  // If cash entered is 0 or negative
+  if (props.selectedPaymentMethod === '1' && props.cashReceived <= 0) {
+    return true;
+  }
+  // If nasiya is needed and no customer is selected -> disabled!
+  if (props.isNasiyaNeeded && props.allowDebt && !props.selectedCustomerId) {
+    return true;
+  }
+  return false;
+});
 </script>

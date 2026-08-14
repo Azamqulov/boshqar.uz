@@ -120,6 +120,7 @@
       :selected-customer="selectedCustomer"
       :current-nasiya-amount="currentNasiyaAmount"
       :is-processing="isProcessing"
+      :allow-debt="posSettings.allowDebt"
       @close="isCheckoutOpen = false"
       @open-new-customer="isNewCustomerModalOpen = true"
       @complete-order="handleCompleteOrder"
