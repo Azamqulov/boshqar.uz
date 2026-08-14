@@ -1,4 +1,4 @@
-﻿# ════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════
 #  boshqar.uz — GitHub Actions CI/CD Pipeline
 #  Trigger: push yoki PR → main branch
 #  Jobs:
@@ -101,13 +101,13 @@ jobs:
           JWT_SECRET: test-jwt-secret-key-for-ci-only
 
   # ───────────────────────────────────────────────────
-  # JOB 3: Production Deploy (faqat main branch'da)
+  # JOB 3: Production Deploy (agar SSH server sirlari sozlangan bo'lsa)
   # ───────────────────────────────────────────────────
   deploy:
     name: '🚀 Production Deploy'
     runs-on: ubuntu-latest
     needs: [frontend-build, backend-build-test]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.DEPLOY_HOST != ''
 
     environment:
       name: production
