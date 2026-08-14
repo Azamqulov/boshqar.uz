@@ -18,17 +18,19 @@ export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
   @Get()
+  @RequirePermission('employees.view')
   findAll(
-    @Headers('x-business-id') businessId: string,
-    @Headers('x-branch-id') branchId?: string,
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId?: string,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
     return this.employeesService.findAll(businessId, branchId);
   }
 
   @Post()
+  @RequirePermission('employees.create')
   create(
-    @Headers('x-business-id') businessId: string,
+    @CurrentBusinessId() businessId: string,
     @Body() body: CreateEmployeeDto,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
@@ -36,8 +38,9 @@ export class EmployeesController {
   }
 
   @Put(':id')
+  @RequirePermission('employees.edit')
   update(
-    @Headers('x-business-id') businessId: string,
+    @CurrentBusinessId() businessId: string,
     @Param('id') id: string,
     @Body() body: UpdateEmployeeDto,
   ) {
@@ -46,8 +49,9 @@ export class EmployeesController {
   }
 
   @Delete(':id')
+  @RequirePermission('employees.delete')
   delete(
-    @Headers('x-business-id') businessId: string,
+    @CurrentBusinessId() businessId: string,
     @Param('id') id: string,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
@@ -60,11 +64,14 @@ export class RolesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
   @Get()
-  getRoles(@Headers('x-business-id') businessId: string) {
+  @RequirePermission('employees.view')
+  getRoles(@CurrentBusinessId() businessId: string) {
+    if (!businessId) throw new BadRequestException('Biznes tanlanmagan');
     return this.employeesService.getRoles(businessId);
   }
 
   @Get('permissions')
+  @RequirePermission('employees.view')
   getPermissions() {
     return this.employeesService.getPermissions();
   }

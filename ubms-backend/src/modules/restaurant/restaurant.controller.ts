@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RestaurantService } from './restaurant.service';
 import { TableStatus, KitchenOrderStatus } from '@prisma/client';
+import { CurrentBusinessId, CurrentBranchId } from '../../common/decorators/context.decorator';
+import { RequirePermission } from '../../common/decorators/custom.decorator';
 
 @ApiTags('Restoran & KDS (Stollar va Oshxona)')
 @ApiBearerAuth()
@@ -10,16 +12,18 @@ export class RestaurantController {
   constructor(private restaurantService: RestaurantService) {}
 
   @Get('tables')
+  @RequirePermission('restaurant.view')
   @ApiOperation({ summary: 'Filialdagi stollar xaritasi va faol buyurtmalari' })
-  getTables(@Headers('x-branch-id') branchId: string) {
+  getTables(@CurrentBranchId() branchId: string) {
     if (!branchId) throw new BadRequestException('Filial tanlanmagan');
     return this.restaurantService.getTables(branchId);
   }
 
   @Post('tables')
+  @RequirePermission('restaurant.manage')
   @ApiOperation({ summary: 'Yangi stol qo\'shish' })
   createTable(
-    @Headers('x-branch-id') branchId: string,
+    @CurrentBranchId() branchId: string,
     @Body() body: { name: string; capacity?: number },
   ) {
     if (!branchId) throw new BadRequestException('Filial tanlanmagan');
@@ -27,6 +31,7 @@ export class RestaurantController {
   }
 
   @Patch('tables/:id')
+  @RequirePermission('restaurant.manage')
   @ApiOperation({ summary: 'Stol ma\'lumotlarini tahrirlash' })
   updateTable(
     @Param('id') id: string,
@@ -36,12 +41,14 @@ export class RestaurantController {
   }
 
   @Delete('tables/:id')
+  @RequirePermission('restaurant.manage')
   @ApiOperation({ summary: 'Stolni o\'chirish' })
   deleteTable(@Param('id') id: string) {
     return this.restaurantService.deleteTable(id);
   }
 
   @Patch('tables/:id/status')
+  @RequirePermission('restaurant.view')
   @ApiOperation({ summary: 'Stol holatini o\'zgartirish (available, occupied, cleaning)' })
   updateTableStatus(
     @Param('id') id: string,
@@ -51,10 +58,11 @@ export class RestaurantController {
   }
 
   @Post('tables/:tableId/order')
+  @RequirePermission('restaurant.order')
   @ApiOperation({ summary: 'Afitsiant stolga buyurtma kiritishi / Oshxonaga taomlarni yuborish' })
   submitTableOrder(
-    @Headers('x-business-id') businessId: string,
-    @Headers('x-branch-id') branchId: string,
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
     @Param('tableId') tableId: string,
     @Body() body: { waiterId?: string; items: { productId: string; quantity: number; notes?: string }[] },
   ) {
@@ -63,16 +71,18 @@ export class RestaurantController {
   }
 
   @Get('tables/:tableId/pre-bill')
+  @RequirePermission('restaurant.view')
   @ApiOperation({ summary: 'Stol uchun Pre-chek (oralik hisob) chiqarish' })
   getTablePreBill(@Param('tableId') tableId: string) {
     return this.restaurantService.getTablePreBill(tableId);
   }
 
   @Post('tables/:tableId/pay')
+  @RequirePermission('restaurant.pay')
   @ApiOperation({ summary: 'Stol hisobini yopish va to\'lovni qabul qilish' })
   payTableOrder(
-    @Headers('x-business-id') businessId: string,
-    @Headers('x-branch-id') branchId: string,
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
     @Param('tableId') tableId: string,
     @Body() body: { paymentMethodId: string; amount: number; serviceFee?: number; discountAmount?: number },
   ) {
@@ -81,13 +91,15 @@ export class RestaurantController {
   }
 
   @Get('kds')
+  @RequirePermission('restaurant.kds')
   @ApiOperation({ summary: 'Oshxona (KDS) ekrani: Pishirilishi kerak bo\'lgan taomlar' })
-  getKitchenOrders(@Headers('x-branch-id') branchId: string) {
+  getKitchenOrders(@CurrentBranchId() branchId: string) {
     if (!branchId) throw new BadRequestException('Filial tanlanmagan');
     return this.restaurantService.getKitchenOrders(branchId);
   }
 
   @Patch('kds/:id/status')
+  @RequirePermission('restaurant.kds')
   @ApiOperation({ summary: 'Oshxona taom holatini o\'zgartirish (new -> cooking -> ready -> served)' })
   updateKitchenStatus(
     @Param('id') id: string,

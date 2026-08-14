@@ -11,13 +11,13 @@ export const CurrentUser = createParamDecorator(
 export const CurrentBusinessId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.businessId || request.headers['x-business-id'] || request.user?.businessId;
+    return request.user?.businessId || request.businessId;
   },
 );
 
 export const CurrentBranchId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.branchId || request.headers['x-branch-id'] || request.user?.branchId;
+    return request.user?.branchId || request.branchId || request.headers['x-branch-id'];
   },
 );

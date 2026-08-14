@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ShiftsService } from './shifts.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
+import { RequirePermission } from '../../common/decorators/custom.decorator';
 import { OpenShiftDto, CloseShiftDto } from './dto/shift.dto';
 
 @Controller('shifts')
@@ -8,6 +9,7 @@ export class ShiftsController {
   constructor(private readonly shiftsService: ShiftsService) {}
 
   @Get('current')
+  @RequirePermission('orders.create')
   getCurrentShift(
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId?: string,
@@ -17,6 +19,7 @@ export class ShiftsController {
   }
 
   @Post('open')
+  @RequirePermission('orders.create')
   openShift(
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
@@ -27,6 +30,7 @@ export class ShiftsController {
   }
 
   @Get(':id/summary')
+  @RequirePermission('orders.view')
   getShiftSummary(
     @CurrentBusinessId() businessId: string,
     @Param('id') shiftId: string,
@@ -35,6 +39,7 @@ export class ShiftsController {
   }
 
   @Post(':id/close')
+  @RequirePermission('orders.create')
   closeShift(
     @CurrentBusinessId() businessId: string,
     @Param('id') shiftId: string,
@@ -45,6 +50,7 @@ export class ShiftsController {
   }
 
   @Get(':id/report')
+  @RequirePermission('orders.view')
   getShiftReport(
     @CurrentBusinessId() businessId: string,
     @Param('id') shiftId: string,
@@ -53,6 +59,7 @@ export class ShiftsController {
   }
 
   @Get()
+  @RequirePermission('orders.view')
   findAll(
     @CurrentBusinessId() businessId: string,
     @Query('branchId') branchId?: string,

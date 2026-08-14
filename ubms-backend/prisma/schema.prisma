@@ -211,6 +211,9 @@ model User {
   avatarUrl    String?     @map("avatar_url") @db.Text
   status       UserStatus  @default(active)
   isSuperAdmin Boolean     @default(false) @map("is_super_admin")
+  tokenVersion Int         @default(1) @map("token_version")
+  resetOtp     String?     @map("reset_otp") @db.VarChar(10)
+  resetOtpExpiresAt DateTime? @map("reset_otp_expires_at")
   lastLoginAt  DateTime?   @map("last_login_at")
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")

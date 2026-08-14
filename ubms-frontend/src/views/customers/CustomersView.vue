@@ -130,6 +130,18 @@
       :loading="customerOrdersLoading"
       @close="isHistoryModalOpen = false"
     />
+
+    <!-- Delete Confirmation Dialog -->
+    <AppConfirmDialog
+      :open="isDeleteDialogOpen"
+      title="Mijozni o'chirish"
+      :message="customerToDelete ? `'${customerToDelete.fullName}' mijozini tizimdan o'chirishni tasdiqlaysizmi? Barcha qarz va xarid tarixlari saqlanadi.` : ''"
+      confirm-text="Ha, o'chirish"
+      cancel-text="Bekor qilish"
+      variant="danger"
+      @confirm="executeDeleteCustomer"
+      @cancel="isDeleteDialogOpen = false"
+    />
   </div>
 </template>
 
@@ -146,6 +158,7 @@ import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppButton from '../../components/AppButton.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
+import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
@@ -386,8 +399,18 @@ const openHistoryModal = async (c: any) => {
 };
 
 // 5. Delete Customer
-const confirmDeleteCustomer = async (c: any) => {
-  if (!confirm(`"${c.fullName}" mijozini o'chirishni tasdiqlaysizmi?`)) return;
+const isDeleteDialogOpen = ref(false);
+const customerToDelete = ref<any>(null);
+
+const confirmDeleteCustomer = (c: any) => {
+  customerToDelete.value = c;
+  isDeleteDialogOpen.value = true;
+};
+
+const executeDeleteCustomer = async () => {
+  if (!customerToDelete.value) return;
+  const c = customerToDelete.value;
+  isDeleteDialogOpen.value = false;
   try {
     await api.delete(`/customers/${c.id}`);
     toast.success('Mijoz muvaffaqiyatli o\'chirildi', 'CRM');
@@ -395,6 +418,8 @@ const confirmDeleteCustomer = async (c: any) => {
     loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Mijozni o\'chirishda xatolik yuz berdi', 'Xatolik');
+  } finally {
+    customerToDelete.value = null;
   }
 };
 

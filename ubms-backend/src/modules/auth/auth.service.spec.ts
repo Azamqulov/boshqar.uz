@@ -139,4 +139,76 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('refreshToken', 'mock-token');
     });
   });
+
+  describe('forgotPassword and resetPassword flow', () => {
+    it('should create OTP and store in DB for forgotPassword', async () => {
+      prisma.user.findFirst.mockResolvedValue(mockUser);
+      prisma.user.update.mockResolvedValue(mockUser);
+
+      const result = await service.forgotPassword({ login: '+998901234567' });
+      expect(result.success).toBe(true);
+      expect(prisma.user.update).toHaveBeenCalled();
+    });
+
+    it('should verify OTP and return resetToken', async () => {
+      const userWithOtp = {
+        ...mockUser,
+        resetOtp: '123456',
+        resetOtpExpiresAt: new Date(Date.now() + 60000),
+      };
+      prisma.user.findFirst.mockResolvedValue(userWithOtp);
+      jwtService.signAsync.mockResolvedValue('valid-reset-token');
+
+      const result = await service.verifyResetOtp({
+        login: '+998901234567',
+        otp: '123456',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.resetToken).toBe('valid-reset-token');
+    });
+
+    it('should reset password and increment tokenVersion', async () => {
+      jwtService.verify.mockReturnValue({ sub: 'user-1', type: 'password_reset' });
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.user.update.mockResolvedValue(mockUser);
+
+      const result = await service.resetPassword({
+        resetToken: 'valid-reset-token',
+        newPassword: 'NewSecurePassword123!',
+      });
+
+      expect(result.success).toBe(true);
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({
+            tokenVersion: { increment: 1 },
+            resetOtp: null,
+            resetOtpExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it('should change password and increment tokenVersion on changePassword', async () => {
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.user.update.mockResolvedValue(mockUser);
+
+      const result = await service.changePassword('user-1', {
+        currentPassword: 'CorrectPassword123!',
+        newPassword: 'BrandNewPassword123!',
+      });
+
+      expect(result.success).toBe(true);
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({
+            tokenVersion: { increment: 1 },
+          }),
+        }),
+      );
+    });
+  });
 });

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, VerifyOtpDto, ResetPasswordDto } from './dto/auth.dto';
 import { mapPermModulesToUiModules } from '../employees/employees.service';
 import * as bcrypt from 'bcrypt';
 
@@ -287,11 +287,59 @@ export class AuthService {
     }
 
     const resetOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`[SMS-MOCK] Reset password OTP for ${user.phone}: ${resetOtp}`);
+    const resetOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 daqiqa
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetOtp,
+        resetOtpExpiresAt,
+      },
+    });
+
+    console.log(`[SMS-AUTH] Parolni tiklash kodi (${user.phone}): ${resetOtp}`);
 
     return {
       success: true,
       message: 'Parolni tiklash kodi SMS orqali yuborildi',
+      devOtp: process.env.NODE_ENV !== 'production' ? resetOtp : undefined,
+    };
+  }
+
+  async verifyResetOtp(dto: VerifyOtpDto) {
+    const cleanLogin = normalizePhone(dto.login);
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanLogin },
+          { phone: dto.login },
+          { email: dto.login },
+        ],
+      },
+    });
+
+    if (!user || !user.resetOtp || !user.resetOtpExpiresAt) {
+      throw new BadRequestException({ code: 'INVALID_OTP', message: 'Tasdiqlash kodi topilmadi yoki eskirgan' });
+    }
+
+    if (new Date() > user.resetOtpExpiresAt) {
+      throw new BadRequestException({ code: 'EXPIRED_OTP', message: 'Tasdiqlash kodining amal qilish muddati tugagan' });
+    }
+
+    if (user.resetOtp !== dto.otp.trim()) {
+      throw new BadRequestException({ code: 'INVALID_OTP', message: 'Tasdiqlash kodi noto\'g\'ri' });
+    }
+
+    // Generate short-lived reset token (15 mins)
+    const resetToken = await this.jwtService.signAsync(
+      { sub: user.id, type: 'password_reset' },
+      { secret: process.env.JWT_SECRET!, expiresIn: '15m' },
+    );
+
+    return {
+      success: true,
+      resetToken,
+      message: 'Kod tasdiqlandi. Yangi parolni kiriting.',
     };
   }
 
@@ -301,6 +349,10 @@ export class AuthService {
         secret: process.env.JWT_SECRET!,
       });
 
+      if (payload.type !== 'password_reset') {
+        throw new BadRequestException({ code: 'INVALID_TOKEN', message: 'Tiklash tokeni yaroqsiz' });
+      }
+
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
       });
@@ -309,16 +361,26 @@ export class AuthService {
         throw new BadRequestException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
       }
 
+      if (!dto.newPassword || dto.newPassword.length < 6) {
+        throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
+      }
+
       const passwordHash = await bcrypt.hash(dto.newPassword, 10);
 
+      // Update password, increment tokenVersion (revoking old sessions), and clear OTP
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: {
+          passwordHash,
+          tokenVersion: { increment: 1 },
+          resetOtp: null,
+          resetOtpExpiresAt: null,
+        },
       });
 
-      return { success: true, message: 'Parol muvaffaqiyatli yangilandi' };
+      return { success: true, message: 'Parol muvaffaqiyatli yangilandi. Yangi parol bilan tizimga kiring.' };
     } catch {
-      throw new BadRequestException({ code: 'INVALID_TOKEN', message: 'Parolni tiklash havolasi yaroqsiz' });
+      throw new BadRequestException({ code: 'INVALID_TOKEN', message: 'Parolni tiklash havolasi yaroqsiz yoki muddati tugagan' });
     }
   }
 
@@ -386,14 +448,18 @@ export class AuthService {
       throw new BadRequestException({ code: 'INVALID_CURRENT_PASSWORD', message: 'Amaldagi parol noto\'g\'ri kiritildi' });
     }
 
-    if (!dto.newPassword || dto.newPassword.length < 4) {
-      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak' });
+    if (!dto.newPassword || dto.newPassword.length < 6) {
+      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    // Increment tokenVersion to revoke other existing active sessions
     await this.prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return { success: true, message: 'Parol muvaffaqiyatli o\'zgartirildi' };
@@ -407,13 +473,24 @@ export class AuthService {
   ) {
     let permissions: string[] = [];
 
-    if (roleId) {
-      const rolePerms = await this.prisma.rolePermission.findMany({
-        where: { roleId },
-        include: { permission: true },
-      });
+    const [rolePerms, dbUser] = await Promise.all([
+      roleId
+        ? this.prisma.rolePermission.findMany({
+            where: { roleId },
+            include: { permission: true },
+          })
+        : Promise.resolve([]),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { tokenVersion: true },
+      }),
+    ]);
+
+    if (rolePerms.length > 0) {
       permissions = rolePerms.map((rp) => rp.permission.code);
     }
+
+    const tokenVersion = dbUser?.tokenVersion || 1;
 
     const payload = {
       sub: userId,
@@ -421,6 +498,7 @@ export class AuthService {
       branchId,
       roleId,
       permissions,
+      tokenVersion,
     };
 
     const [accessToken, refreshToken] = await Promise.all([

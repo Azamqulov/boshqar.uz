@@ -14,7 +14,7 @@ export class RegisterDto {
   email?: string;
 
   @IsString()
-  @MinLength(4, { message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart' })
+  @MinLength(6, { message: 'Parol kamida 6 ta belgidan iborat bo\'lishi shart' })
   password: string;
 }
 
@@ -44,12 +44,22 @@ export class ForgotPasswordDto {
   login: string;
 }
 
+export class VerifyOtpDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Telefon yoki email kiriting' })
+  login: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Tasdiqlash kodini kiriting' })
+  otp: string;
+}
+
 export class ResetPasswordDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Tiklash tokeni talab qilinadi' })
   resetToken: string;
 
   @IsString()
-  @MinLength(4, { message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi shart' })
+  @MinLength(6, { message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi shart' })
   newPassword: string;
 }
