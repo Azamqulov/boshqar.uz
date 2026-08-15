@@ -53,9 +53,14 @@ function mapInputToPaymentType(input: string): { type: 'cash' | 'card' | 'click'
   return { type: 'other', name: input || 'Boshqa' };
 }
 
+import { TelegramService } from '../telegram/telegram.service';
+
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegramService?: TelegramService,
+  ) {}
 
   async findAll(
     businessId: string,
@@ -163,10 +168,9 @@ export class OrdersService {
       where: { businessId, userId },
     });
 
-    // 1. Fetch item prices and prepare lines outside transaction
+    // 1. Fetch item prices and prepare lines
     let subtotal = 0;
     const orderItemsData = [];
-    const inventoryUpdates: { invId: string; productId: string; beforeQty: number; afterQty: number; buyQty: number }[] = [];
 
     for (const item of dto.items) {
       let unitPrice = item.unitPrice || 0;
@@ -178,43 +182,6 @@ export class OrdersService {
         });
         if (!product) throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
         if (!item.unitPrice) unitPrice = Number(product.salePrice);
-
-        // Pre-check inventory
-        const inv = await this.prisma.inventory.findUnique({
-          where: {
-            branchId_productId: {
-              branchId,
-              productId: item.productId,
-            },
-          },
-        });
-
-        const isMadeToOrder =
-          product.brand === 'dish' ||
-          product.brand === 'kitchen' ||
-          product.brand === 'service' ||
-          product.unitId === '00000000-0000-0000-0000-000000000024';
-
-        const currentQty = inv ? Number(inv.quantity) : 0;
-        const buyQty = Number(item.quantity);
-
-        if (!isMadeToOrder && inv && currentQty < buyQty) {
-          throw new ConflictException({
-            code: 'INSUFFICIENT_STOCK',
-            message: `"${product.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,
-          });
-        }
-
-        if (inv) {
-          const afterQty = Math.max(0, currentQty - buyQty);
-          inventoryUpdates.push({
-            invId: inv.id,
-            productId: item.productId,
-            beforeQty: currentQty,
-            afterQty,
-            buyQty,
-          });
-        }
       } else if (item.serviceId) {
         const service = await this.prisma.service.findUnique({
           where: { id: item.serviceId },
@@ -324,7 +291,7 @@ export class OrdersService {
       activeShiftId = null;
     }
 
-    return this.prisma.$transaction(
+    const result = await this.prisma.$transaction(
       async (tx) => {
         // 2. Create Order
         const order = await tx.order.create({
@@ -353,27 +320,62 @@ export class OrdersService {
           },
         });
 
-        // 3. Update inventory & log transactions
-        for (const up of inventoryUpdates) {
-          await tx.inventory.update({
-            where: { id: up.invId },
-            data: { quantity: up.afterQty },
-          });
+        // 3. Atomically update inventory & log transactions inside transaction
+        for (const item of dto.items) {
+          if (!item.productId) continue;
 
-          await tx.inventoryTransaction.create({
-            data: {
-              branchId,
-              productId: up.productId,
-              type: 'out',
-              reason: 'sale',
-              quantity: up.buyQty,
-              quantityBefore: up.beforeQty,
-              quantityAfter: up.afterQty,
-              referenceType: 'order',
-              referenceId: order.id,
-              createdBy: userId,
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+          });
+          if (!product) continue;
+
+          const isMadeToOrder =
+            product.brand === 'dish' ||
+            product.brand === 'kitchen' ||
+            product.brand === 'service' ||
+            product.unitId === '00000000-0000-0000-0000-000000000024';
+
+          const inv = await tx.inventory.findUnique({
+            where: {
+              branchId_productId: {
+                branchId,
+                productId: item.productId,
+              },
             },
           });
+
+          const currentQty = inv ? Number(inv.quantity) : 0;
+          const buyQty = Number(item.quantity);
+
+          if (!isMadeToOrder && inv && currentQty < buyQty) {
+            throw new ConflictException({
+              code: 'INSUFFICIENT_STOCK',
+              message: `"${product.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,
+            });
+          }
+
+          if (inv) {
+            const afterQty = Math.max(0, currentQty - buyQty);
+            await tx.inventory.update({
+              where: { id: inv.id },
+              data: { quantity: afterQty },
+            });
+
+            await tx.inventoryTransaction.create({
+              data: {
+                branchId,
+                productId: item.productId,
+                type: 'out',
+                reason: 'sale',
+                quantity: buyQty,
+                quantityBefore: currentQty,
+                quantityAfter: afterQty,
+                referenceType: 'order',
+                referenceId: order.id,
+                createdBy: userId,
+              },
+            });
+          }
         }
 
         // 4. Save Payments & Revenue
@@ -449,10 +451,17 @@ export class OrdersService {
         timeout: 30000,
       },
     );
+
+    // Send asynchronous Telegram notification (fire-and-forget)
+    if (result && isImmediateComplete) {
+      this.telegramService?.sendOrderNotification(businessId, result).catch(() => null);
+    }
+
+    return result;
   }
 
   async completeOrder(businessId: string, branchId: string, userId: string, orderId: string, payments: { paymentMethodId: string; amount: number }[]) {
-    return this.prisma.$transaction(
+    const result = await this.prisma.$transaction(
       async (tx) => {
         const order = await tx.order.findUnique({
           where: { id: orderId },
@@ -470,24 +479,24 @@ export class OrdersService {
           return order;
         }
 
-        // Save Payments & Complete
+        // Save Payments & Complete — fetch or create default payment method once
+        let pm = await tx.paymentMethod.findFirst({
+          where: { businessId: order.businessId },
+        });
+
+        if (!pm) {
+          pm = await tx.paymentMethod.create({
+            data: {
+              businessId: order.businessId,
+              name: 'Naqd pul',
+              type: 'cash',
+              isActive: true,
+            },
+          });
+        }
+
         let totalPaid = 0;
         for (const p of payments) {
-          let pm = await tx.paymentMethod.findFirst({
-            where: { businessId: order.businessId },
-          });
-
-          if (!pm) {
-            pm = await tx.paymentMethod.create({
-              data: {
-                businessId: order.businessId,
-                name: 'Naqd pul',
-                type: 'cash',
-                isActive: true,
-              },
-            });
-          }
-
           await tx.payment.create({
             data: {
               orderId: order.id,
@@ -538,6 +547,12 @@ export class OrdersService {
         timeout: 30000,
       },
     );
+
+    if (result) {
+      this.telegramService?.sendOrderNotification(businessId, result).catch(() => null);
+    }
+
+    return result;
   }
 
   async cancel(businessId: string, orderId: string) {

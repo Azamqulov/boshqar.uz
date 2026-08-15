@@ -45,6 +45,15 @@
       </button>
 
       <button
+        @click="activeTab = 'telegram'"
+        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
+        :class="activeTab === 'telegram' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+      >
+        <Bot class="w-4 h-4" />
+        <span>Telegram Bot</span>
+      </button>
+
+      <button
         @click="activeTab = 'audit'"
         class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
         :class="activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
@@ -111,14 +120,19 @@
       @close="testOrderForReceipt = null"
     />
 
-    <!-- Tab 4: Audit Jurnallari -->
+    <!-- Tab 4: Telegram Bot -->
+    <SettingsTelegramTab
+      v-else-if="activeTab === 'telegram'"
+    />
+
+    <!-- Tab 5: Audit Jurnallari -->
     <SettingsAuditTab
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
       :loading="loadingAudit"
     />
 
-    <!-- Tab 5: Xavfli Hudud -->
+    <!-- Tab 6: Xavfli Hudud -->
     <SettingsDangerTab
       v-else-if="activeTab === 'danger'"
       @open-delete-business="openDeleteBusinessModal"
@@ -208,6 +222,7 @@ import SettingsProfileTab from './components/SettingsProfileTab.vue';
 import SettingsAppearanceTab from './components/SettingsAppearanceTab.vue';
 import SettingsEmployeesTab from './components/SettingsEmployeesTab.vue';
 import SettingsReceiptTab from './components/SettingsReceiptTab.vue';
+import SettingsTelegramTab from './components/SettingsTelegramTab.vue';
 import SettingsAuditTab from './components/SettingsAuditTab.vue';
 import SettingsDangerTab from './components/SettingsDangerTab.vue';
 import EmployeeModal from './components/EmployeeModal.vue';
@@ -217,6 +232,7 @@ import {
   Palette,
   Users,
   Printer,
+  Bot,
   ScrollText,
   Trash2,
   X,
@@ -323,7 +339,7 @@ const handleSetDebtLimit = (val: number) => {
   }
 };
 
-const validTabs = ['my-profile', 'appearance', 'employees', 'receipt', 'audit', 'danger'] as const;
+const validTabs = ['my-profile', 'appearance', 'employees', 'receipt', 'telegram', 'audit', 'danger'] as const;
 type SettingsTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SettingsTab>('settings', 'my-profile', validTabs);

@@ -31,10 +31,10 @@
           </div>
 
           <!-- Category Form -->
-          <form @submit.prevent="$emit('saveCategory')" class="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+          <form @submit.prevent="$emit('saveCategory')" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-3.5 text-xs">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-xs text-slate-800 dark:text-slate-200">
-                {{ editingCatId ? 'Kategoriyani Tahrirlash' : 'Yangi Kategoriya Yaratish' }}
+              <span class="font-black text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>{{ editingCatId ? '✏️ Kategoriyani Tahrirlash' : '✨ Yangi Kategoriya Yaratish' }}</span>
               </span>
               <button
                 v-if="editingCatId"
@@ -46,29 +46,36 @@
               </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <AppInput
+            <!-- Name Input -->
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-[11px]">Kategoriya Nomi *</label>
+              <input
                 v-model="catForm.name"
-                label="Kategoriya Nomi *"
-                placeholder="Masalan: Ichimliklar, Shirinliklar..."
-                :required="true"
+                required
+                placeholder="Masalan: Pitsa, Fast Food, Ichimliklar..."
+                class="w-full px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500 shadow-inner"
               />
+            </div>
 
+            <!-- Icon & Color in Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/60">
               <!-- Icon Selector -->
-              <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ikonka (Emoji)</label>
+              <div class="space-y-1.5">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">Ikonka</label>
                 <div class="flex items-center gap-2">
                   <input
                     v-model="catForm.icon"
-                    class="w-12 h-9 text-center text-lg bg-white dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 focus:outline-none focus:border-emerald-500"
+                    placeholder="📦"
+                    class="w-10 h-10 text-center text-lg rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold shrink-0 shadow-inner"
                   />
-                  <div class="flex items-center gap-1 overflow-x-auto py-1">
+                  <div class="grid grid-cols-4 gap-1 flex-1">
                     <button
                       type="button"
-                      v-for="emoji in quickEmojis"
+                      v-for="emoji in quickEmojis.slice(0, 8)"
                       :key="emoji"
                       @click="catForm.icon = emoji"
-                      class="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm transition"
+                      class="h-7 rounded-lg border text-xs transition flex items-center justify-center btn-interactive"
+                      :class="catForm.icon === emoji ? 'bg-emerald-500/20 border-emerald-500' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-500'"
                     >
                       {{ emoji }}
                     </button>
@@ -77,29 +84,45 @@
               </div>
 
               <!-- Color Palette -->
-              <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Rang</label>
-                <div class="flex items-center gap-1.5 flex-wrap">
+              <div class="space-y-1.5">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">Rang Tusi</label>
+                <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
                   <button
                     type="button"
                     v-for="color in quickColors"
                     :key="color"
                     @click="catForm.color = color"
-                    class="w-6 h-6 rounded-full border-2 transition transform hover:scale-110"
-                    :class="catForm.color === color ? 'border-slate-900 dark:border-white ring-2 ring-emerald-500/30' : 'border-transparent'"
+                    class="w-6 h-6 rounded-lg border-2 transition transform hover:scale-110 shadow-xs"
+                    :class="catForm.color === color ? 'border-slate-900 dark:border-white ring-2 ring-emerald-500/40' : 'border-transparent'"
                     :style="{ backgroundColor: color }"
                   ></button>
-                  <input
-                    type="color"
-                    v-model="catForm.color"
-                    class="w-6 h-6 rounded-full cursor-pointer border border-slate-300 dark:border-slate-700 p-0 bg-transparent"
+                  <label
+                    class="w-6 h-6 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition bg-slate-50 dark:bg-slate-800 text-[10px]"
                     title="Boshqa rang"
-                  />
+                  >
+                    <input
+                      type="color"
+                      v-model="catForm.color"
+                      class="w-0 h-0 opacity-0"
+                    />
+                    <span>🎨</span>
+                  </label>
                 </div>
               </div>
             </div>
 
-            <div class="mt-2">
+            <!-- Live Preview -->
+            <div class="p-2.5 rounded-xl border flex items-center justify-between transition" :style="{ backgroundColor: (catForm.color || '#10b981') + '10', borderColor: (catForm.color || '#10b981') + '30' }">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-sm" :style="{ backgroundColor: (catForm.color || '#10b981') + '25', color: catForm.color || '#10b981' }">
+                  {{ catForm.icon || '📦' }}
+                </span>
+                <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ catForm.name || "Kategoriya Nomi" }}</span>
+              </div>
+              <span class="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">Prevyu</span>
+            </div>
+
+            <div>
               <AppButton type="submit" variant="primary" size="md" class="w-full" :loading="savingCategory">
                 {{ savingCategory ? 'Saqlanmoqda...' : (editingCatId ? 'Kategoriyani Yangilash' : 'Kategoriyani Saqlash') }}
               </AppButton>

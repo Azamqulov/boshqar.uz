@@ -434,6 +434,20 @@ export class SuperAdminService {
     return this.prisma.plan.findMany({ orderBy: { priceMonthly: 'asc' } });
   }
 
+  async updatePlan(id: string, dto: { name?: string; priceMonthly?: number; maxBranches?: number; maxUsers?: number; features?: any }) {
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.priceMonthly !== undefined) data.priceMonthly = dto.priceMonthly;
+    if (dto.maxBranches !== undefined) data.maxBranches = dto.maxBranches === 0 ? null : dto.maxBranches;
+    if (dto.maxUsers !== undefined) data.maxUsers = dto.maxUsers === 0 ? null : dto.maxUsers;
+    if (dto.features !== undefined) data.features = dto.features;
+
+    return this.prisma.plan.update({
+      where: { id },
+      data,
+    });
+  }
+
   // 9. Global Audit Logs
   async getGlobalAuditLogs(limit: number = 50) {
     return this.prisma.auditLog.findMany({

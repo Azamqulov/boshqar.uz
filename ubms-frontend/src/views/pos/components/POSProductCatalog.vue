@@ -159,7 +159,7 @@
               <span v-if="prod.status === 'inactive'">Stop-list</span>
               <span v-else-if="isDishItem(prod)">🍕 Taom</span>
               <span v-else-if="prod.brand === 'service'">🛠 Xizmat</span>
-              <span v-else>{{ prod.stockQty <= 0 ? 'Qolmagan' : `${prod.stockQty} ${prod.unit?.shortName || 'dona'}` }}</span>
+              <span v-else>{{ prod.stockQty <= 0 ? 'Qolmagan' : formatStock(prod.stockQty, prod.unit?.shortName || 'dona') }}</span>
             </span>
 
             <!-- Bestseller Flame Badge if in top selling -->
@@ -179,7 +179,10 @@
           </div>
 
           <div class="mt-2 flex items-center justify-between">
-            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(prod.salePrice) }}</span>
+            <div>
+              <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(prod.salePrice) }}</span>
+              <span v-if="prod.unit?.shortName && prod.unit.shortName !== 'dona'" class="text-[9px] text-slate-400 font-bold ml-1">/ {{ prod.unit.shortName }}</span>
+            </div>
             <span
               class="text-[10px] font-bold px-1.5 py-0.5 rounded"
               :class="!isItemAvailable(prod) ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
@@ -304,6 +307,13 @@ const isItemAvailable = (prod: any) => {
   if (isDishItem(prod) || prod.brand === 'service') return true;
   if (props.posSettings?.allowZeroStockSale) return true;
   return prod.stockQty > 0;
+};
+
+const formatStock = (qty: number, unitName = 'dona') => {
+  if (qty === undefined || qty === null) return `0 ${unitName}`;
+  const num = Number(qty);
+  const formatted = num % 1 === 0 ? num.toString() : num.toFixed(3).replace(/\.?0+$/, '');
+  return `${formatted} ${unitName}`;
 };
 
 defineExpose({

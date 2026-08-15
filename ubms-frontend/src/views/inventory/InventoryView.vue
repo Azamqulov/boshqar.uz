@@ -175,6 +175,8 @@ const editForm = ref({
   purchasePrice: 0,
   quantity: 0,
   minStock: 5,
+  unit: 'dona',
+  allowDecimal: false,
 });
 
 const confirmModal = ref<{
@@ -217,17 +219,28 @@ const stockOutForm = ref({
 });
 
 const inventoryInOptions = computed(() => {
-  return inventory.value.map((inv) => ({
-    value: inv.productId || inv.product?.id,
-    label: `${inv.productName || inv.product?.name} (${inv.sku || inv.product?.sku || 'SKU yoq'})`,
-  }));
+  return inventory.value.map((inv) => {
+    const unit = inv.unit || inv.product?.unit?.shortName || inv.product?.unit?.name || inv.product?.unit || 'dona';
+    return {
+      value: inv.productId || inv.product?.id,
+      label: `${inv.productName || inv.product?.name} (${inv.sku || inv.product?.sku || 'SKU yoq'}) - ${unit}`,
+      unit,
+      allowDecimal: inv.allowDecimal || inv.product?.unit?.allowDecimal || ['kg', 'l', 'g', 'm', 'ml'].includes(unit),
+      purchasePrice: Number(inv.purchasePrice || inv.product?.purchasePrice) || 0,
+    };
+  });
 });
 
 const inventoryOutOptions = computed(() => {
-  return inventory.value.map((inv) => ({
-    value: inv.productId || inv.product?.id,
-    label: `${inv.productName || inv.product?.name} (Qoldiq: ${inv.quantity})`,
-  }));
+  return inventory.value.map((inv) => {
+    const unit = inv.unit || inv.product?.unit?.shortName || inv.product?.unit?.name || inv.product?.unit || 'dona';
+    return {
+      value: inv.productId || inv.product?.id,
+      label: `${inv.productName || inv.product?.name} (Qoldiq: ${inv.quantity} ${unit})`,
+      unit,
+      allowDecimal: inv.allowDecimal || inv.product?.unit?.allowDecimal || ['kg', 'l', 'g', 'm', 'ml'].includes(unit),
+    };
+  });
 });
 
 const filteredInventory = computed(() => {
@@ -346,12 +359,15 @@ const submitStockOut = async () => {
 
 const openEditModal = (inv: any) => {
   editingItem.value = inv;
+  const unit = inv.unit || inv.product?.unit?.shortName || inv.product?.unit?.name || inv.product?.unit || 'dona';
   editForm.value = {
     name: inv.productName || inv.product?.name || '',
     sku: inv.sku || inv.product?.sku || '',
     purchasePrice: Number(inv.purchasePrice || inv.product?.purchasePrice) || 0,
     quantity: Number(inv.quantity) || 0,
     minStock: Number(inv.product?.minStock) || 5,
+    unit: unit,
+    allowDecimal: inv.allowDecimal || inv.product?.unit?.allowDecimal || ['kg', 'l', 'g', 'm', 'ml'].includes(unit.toLowerCase()),
   };
   isEditModalOpen.value = true;
 };

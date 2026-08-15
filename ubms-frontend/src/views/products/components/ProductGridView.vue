@@ -45,7 +45,12 @@
 
         <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
-            <span class="text-[10px] text-slate-400 block font-semibold">Sotuv Narxi</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] text-slate-400 font-semibold">Sotuv Narxi</span>
+              <span v-if="prod.unit?.shortName" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                1 {{ prod.unit.shortName }}
+              </span>
+            </div>
             <span class="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
               {{ formatCurrency(prod.salePrice) }}
             </span>

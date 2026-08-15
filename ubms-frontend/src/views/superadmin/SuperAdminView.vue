@@ -126,6 +126,7 @@
     <SuperAdminPlansTab
       v-else-if="activeTab === 'plans'"
       :plans="plans"
+      @plan-updated="loadAllData"
     />
 
     <!-- TAB 5: AUDIT LOGS -->

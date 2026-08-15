@@ -106,6 +106,15 @@ export class SuperAdminController {
     return this.superAdminService.getPlans();
   }
 
+  @Patch('plans/:id')
+  @ApiOperation({ summary: 'Tarif rejasini tahrirlash (narx, limitlar)' })
+  updatePlan(
+    @Param('id') id: string,
+    @Body() dto: { name?: string; priceMonthly?: number; maxBranches?: number; maxUsers?: number; features?: any },
+  ) {
+    return this.superAdminService.updatePlan(id, dto);
+  }
+
   @Get('audit-logs')
   @ApiOperation({ summary: 'Global tizim audit jurnali' })
   getGlobalAuditLogs(@Query('limit') limit?: number) {

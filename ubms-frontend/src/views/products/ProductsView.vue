@@ -81,6 +81,7 @@
       :editing-id="editingId"
       :form="form"
       :category-options="categoryOptions"
+      :unit-options="units"
       :fast-image-presets="fastImagePresets"
       @close="isModalOpen = false"
       @save="saveProduct"
@@ -320,11 +321,14 @@ const photoPresets = [
   { name: 'Non', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200' },
 ];
 
+const units = ref<any[]>([]);
+
 const form = ref({
   name: '',
   sku: '',
   barcode: '',
   categoryId: '',
+  unitId: '',
   imageUrl: '',
   productType: 'goods' as 'goods' | 'dish' | 'service',
   purchasePrice: 0,
@@ -369,6 +373,15 @@ const filteredModalCategories = computed(() => {
   );
 });
 
+const loadUnits = async () => {
+  try {
+    const { data } = await api.get('/units');
+    units.value = Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.warn('Load units error:', e);
+  }
+};
+
 const loadProducts = async (force = false) => {
   if (dataStore.products.length === 0) {
     loading.value = true;
@@ -377,6 +390,7 @@ const loadProducts = async (force = false) => {
     await Promise.all([
       dataStore.fetchProducts(force),
       dataStore.fetchCategories(force),
+      loadUnits(),
     ]);
   } catch (err) {
     console.error(err);
@@ -417,6 +431,7 @@ const openCreateModal = () => {
     sku: '',
     barcode: '',
     categoryId: categories.value[0]?.id || '',
+    unitId: units.value[0]?.id || '00000000-0000-0000-0000-000000000020',
     imageUrl: '',
     productType: 'goods',
     purchasePrice: 0,
@@ -439,12 +454,13 @@ const editProduct = (prod: any) => {
     sku: prod.sku,
     barcode: prod.barcode || '',
     categoryId: prod.categoryId || '',
+    unitId: prod.unitId || prod.unit?.id || units.value[0]?.id || '00000000-0000-0000-0000-000000000020',
     imageUrl: prod.imageUrl || '',
     productType: isDish ? 'dish' : isService ? 'service' : 'goods',
     purchasePrice: Number(prod.purchasePrice) || 0,
     salePrice: Number(prod.salePrice) || 0,
     minStock: Number(prod.minStock) || 0,
-    initialStock: prod.stockQty !== undefined ? Number(prod.stockQty) : 0,
+    initialStock: prod.stockQty !== undefined ? Number(prod.stockQty) : (prod.availableQty !== undefined ? Number(prod.availableQty) : 0),
   };
   isModalOpen.value = true;
 };
@@ -465,6 +481,7 @@ const saveProduct = async () => {
       sku: form.value.sku || undefined,
       barcode: form.value.barcode || undefined,
       categoryId: form.value.categoryId || undefined,
+      unitId: form.value.unitId || undefined,
       imageUrl: form.value.imageUrl || undefined,
       brand: form.value.productType,
       productType: form.value.productType,

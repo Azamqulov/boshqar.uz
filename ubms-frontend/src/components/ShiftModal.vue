@@ -258,14 +258,14 @@
 
       <!-- 2.B: NORMAL CLOSE MODAL (When all tables are free and orders completed) -->
       <div v-else class="modal-container max-w-lg bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden" @click.stop>
-        <div class="modal-header border-b border-rose-500/20 px-6 py-4 flex items-center justify-between">
+        <div class="modal-header border-b border-rose-500/20 px-5 py-3 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center shadow-inner">
+            <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center shadow-inner">
               <Moon class="w-5 h-5" />
             </div>
             <div>
-              <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Smenani Yopish & Kassa Xatlovi</h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400">Kunlik yakuniy hisob-kitob va tafovut</p>
+              <h3 class="text-sm font-black text-slate-900 dark:text-white tracking-tight">Smenani Yopish & Kassa Xatlovi</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Kunlik yakuniy hisob-kitob va tafovut</p>
             </div>
           </div>
           <button @click="$emit('close')" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
@@ -273,102 +273,86 @@
           </button>
         </div>
 
-        <div class="p-6 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
-          <!-- Real-Time Metrics Card -->
-          <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-4 space-y-3">
-            <!-- Total Sales Highlight -->
-            <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 flex justify-between items-center text-xs shadow-xs">
-              <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-base">
-                  🛍️
-                </div>
-                <div>
-                  <span class="text-[11px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
-                    Bugungi Jami Sotuv (Savdo):
-                  </span>
-                  <span class="text-[10px] text-slate-500 dark:text-slate-400">Naqd + Plastik + Click/Payme</span>
-                </div>
+        <div class="p-4 sm:p-5 space-y-3 text-xs">
+          <!-- Real-Time Metrics Card (Compact Grid) -->
+          <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 space-y-2.5">
+            <!-- 2 Highlight Cards: Total Sales & Expected Cash -->
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                  Jami Sotuv (Savdo):
+                </span>
+                <span class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm sm:text-base mt-0.5">
+                  {{ formatCurrency(shiftSummary?.totalSales || 0) }}
+                </span>
               </div>
-              <span class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-lg">
-                {{ formatCurrency(shiftSummary?.totalSales || 0) }}
-              </span>
+
+              <div class="p-2.5 rounded-xl bg-slate-900/5 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Kutilayotgan Naqd:
+                </span>
+                <span class="font-black font-mono text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">
+                  {{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}
+                </span>
+              </div>
             </div>
 
-            <!-- Detailed Breakdown -->
-            <div class="space-y-2 pt-1">
+            <!-- Detailed Breakdown in 2 Columns -->
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1 pt-1 text-[11px] border-t border-slate-200/60 dark:border-slate-700/40">
               <div class="flex justify-between items-center text-slate-600 dark:text-slate-300">
-                <span class="text-slate-400 font-medium">Boshlang'ich kassa:</span>
+                <span class="text-slate-400">Boshlang'ich:</span>
                 <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.startingCash || 0) }}</span>
               </div>
-              <div class="flex justify-between items-center text-emerald-600 dark:text-emerald-400 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
-                <span class="font-medium">+ Naqd savdo tushumi:</span>
+              <div class="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                <span class="text-slate-400">Naqd tushum:</span>
                 <span class="font-bold font-mono">+{{ formatCurrency(shiftSummary?.cashSales || 0) }}</span>
               </div>
               <div class="flex justify-between items-center text-blue-600 dark:text-blue-400">
-                <span class="font-medium">Plastik karta savdosi:</span>
+                <span class="text-slate-400">Karta savdo:</span>
                 <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.cardSales || 0) }}</span>
               </div>
               <div class="flex justify-between items-center text-purple-600 dark:text-purple-400">
-                <span class="font-medium">Click / Payme / Boshqa:</span>
+                <span class="text-slate-400">Click/Payme:</span>
                 <span class="font-bold font-mono">{{ formatCurrency(shiftSummary?.otherSales || 0) }}</span>
               </div>
-              <div v-if="shiftSummary?.cashExpenses > 0" class="flex justify-between items-center text-rose-500 border-t border-slate-200/60 dark:border-slate-700/40 pt-2">
-                <span class="font-medium">- Kassadan xarajatlar:</span>
-                <span class="font-bold font-mono">-{{ formatCurrency(shiftSummary?.cashExpenses || 0) }}</span>
-              </div>
-            </div>
-
-            <!-- Expected Cash Highlight -->
-            <div class="p-3 rounded-xl bg-slate-900/5 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
-              <div>
-                <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
-                  Kassada Kutilayotgan Naqd Pul:
-                </span>
-                <span class="text-[10px] text-slate-400">Boshlang'ich + Naqd savdo - Xarajat</span>
-              </div>
-              <span class="font-black font-mono text-slate-900 dark:text-white text-base">
-                {{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}
-              </span>
             </div>
           </div>
 
           <!-- Actual Cash Counted Input -->
-          <form @submit.prevent="handleCloseShift" class="space-y-4">
+          <form @submit.prevent="handleCloseShift" class="space-y-3">
             <div>
-              <div class="flex justify-between items-center mb-1.5">
-                <label class="block font-bold text-slate-800 dark:text-slate-200">
-                  Kassada Haqiqatda Sanalgan Naqd Pul *
-                </label>
-              </div>
+              <label class="block font-bold text-slate-800 dark:text-slate-200 mb-1 text-[11px]">
+                Kassada Haqiqatda Sanalgan Naqd Pul *
+              </label>
               <CurrencyInput
                 v-model="actualCash"
                 placeholder="0"
                 suffix="so'm"
-                :inputClass="'font-black text-lg ' + (difference === 0 ? 'text-emerald-600 dark:text-emerald-400' : (difference < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'))"
+                :inputClass="'font-black text-base py-2 ' + (difference === 0 ? 'text-emerald-600 dark:text-emerald-400' : (difference < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'))"
               />
 
               <!-- Fast Amount Fill Buttons -->
-              <div class="flex flex-wrap gap-1.5 mt-2">
+              <div class="flex flex-wrap gap-1 mt-1.5">
                 <button
                   type="button"
                   @click="actualCash = Number(shiftSummary?.totalSales || 0)"
-                  class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] transition flex items-center gap-1"
+                  class="px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] transition inline-flex items-center gap-1"
                 >
-                  <span>💰 Jami Savdo:</span>
-                  <span class="font-mono">{{ formatCurrency(shiftSummary?.totalSales || 0) }}</span>
+                  <Coins class="w-3 h-3" />
+                  <span>Jami: {{ formatCurrency(shiftSummary?.totalSales || 0) }}</span>
                 </button>
                 <button
                   type="button"
                   @click="actualCash = Math.max(0, Number(shiftSummary?.expectedCash || 0))"
-                  class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px] transition flex items-center gap-1"
+                  class="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[10px] transition inline-flex items-center gap-1"
                 >
-                  <span>💵 Kutilayotgan Naqd:</span>
-                  <span class="font-mono">{{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}</span>
+                  <Banknote class="w-3 h-3" />
+                  <span>Naqd: {{ formatCurrency(Math.max(0, shiftSummary?.expectedCash || 0)) }}</span>
                 </button>
                 <button
                   type="button"
                   @click="actualCash = 0"
-                  class="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 font-bold text-[11px] transition"
+                  class="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 font-bold text-[10px] transition"
                 >
                   0 so'm
                 </button>
@@ -377,53 +361,58 @@
 
             <!-- Difference / Kamomad or Surplus Banner -->
             <div
-              class="p-3.5 rounded-xl border flex items-center justify-between text-xs transition"
+              class="p-2.5 rounded-xl border flex items-center justify-between text-xs transition"
               :class="[
                 difference === 0
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
                   : difference < 0
-                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300 animate-pulse'
+                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300'
                   : 'bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300'
               ]"
             >
               <div class="flex items-center gap-2">
-                <CheckCircle2 v-if="difference === 0" class="w-5 h-5 text-emerald-500 shrink-0" />
-                <AlertTriangle v-else-if="difference < 0" class="w-5 h-5 text-rose-500 shrink-0" />
-                <TrendingUp v-else class="w-5 h-5 text-blue-500 shrink-0" />
+                <CheckCircle2 v-if="difference === 0" class="w-4 h-4 text-emerald-500 shrink-0" />
+                <AlertTriangle v-else-if="difference < 0" class="w-4 h-4 text-rose-500 shrink-0" />
+                <TrendingUp v-else class="w-4 h-4 text-blue-500 shrink-0" />
                 <div>
-                  <span class="font-bold block">
+                  <span class="font-bold block text-[11px]">
                     {{ difference === 0 ? 'Kassa to\'liq to\'g\'ri (Ideal)' : (difference < 0 ? 'Kamomad aniqlandi!' : 'Ortiqcha pul aniqlandi') }}
                   </span>
-                  <span class="text-[10px] opacity-80">
-                    {{ difference === 0 ? 'Kutilayotgan summa sanalgan pul bilan 100% mos' : (difference < 0 ? 'Kassada yetishmayotgan summa' : 'Kassada belgilangandan ko\'p pul mavjud') }}
+                  <span class="text-[10px] opacity-80 block">
+                    {{ difference === 0 ? 'Kutilayotgan summa sanalgan pul bilan mos' : (difference < 0 ? 'Kassada yetishmayotgan summa' : 'Kassada belgilangandan ko\'p') }}
                   </span>
                 </div>
               </div>
 
-              <span class="font-black font-mono text-sm tracking-tight">
+              <span class="font-black font-mono text-xs tracking-tight">
                 {{ difference >= 0 ? '+' : '' }}{{ formatCurrency(difference) }}
               </span>
             </div>
 
             <!-- Closing Notes -->
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Smena Yopish Izohi</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-[11px]">Smena Yopish Izohi</label>
               <input
                 v-model="closeNotes"
                 placeholder="Masalan: Inkassatsiya qilindi, kamomad yo'q..."
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-rose-500"
+                class="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-rose-500 font-medium shadow-inner"
               />
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <AppButton variant="ghost" size="md" @click="$emit('close')">
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                @click="$emit('close')"
+                class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition"
+              >
                 Bekor qilish
-              </AppButton>
+              </button>
               <AppButton
                 variant="danger"
                 size="md"
                 type="submit"
+                class="px-5"
                 :loading="submitting"
               >
                 Smenani Yakunlash & Yopish
@@ -565,6 +554,8 @@ import {
   ShoppingCart,
   Clock,
   Flame,
+  Coins,
+  Banknote,
 } from 'lucide-vue-next';
 import AppButton from './AppButton.vue';
 import CurrencyInput from './CurrencyInput.vue';

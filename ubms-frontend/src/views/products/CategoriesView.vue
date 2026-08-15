@@ -149,10 +149,10 @@
               <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
                 <div class="flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700 overflow-hidden"
-                    :style="{ backgroundColor: (cat.color || '#10b981') + '18' }"
+                    class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700 overflow-hidden"
+                    :style="{ backgroundColor: (cat.color || '#10b981') + '18', color: cat.color || '#10b981' }"
                   >
-                    <span>{{ getCategoryIcon(cat.icon) }}</span>
+                    <CategoryIcon :icon="cat.icon" iconClass="w-5 h-5" />
                   </div>
                   <div class="min-w-0">
                     <span class="block text-slate-900 dark:text-white font-bold text-sm truncate">{{ cat.name }}</span>
@@ -229,10 +229,10 @@
           <div class="flex items-start justify-between gap-2 mb-3">
             <div class="flex items-center gap-2.5">
               <div
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700"
-                :style="{ backgroundColor: (cat.color || '#10b981') + '20' }"
+                class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700"
+                :style="{ backgroundColor: (cat.color || '#10b981') + '20', color: cat.color || '#10b981' }"
               >
-                <span>{{ getCategoryIcon(cat.icon) }}</span>
+                <CategoryIcon :icon="cat.icon" iconClass="w-5 h-5" />
               </div>
               <div>
                 <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1">
@@ -286,120 +286,158 @@
     <Teleport to="body">
       <div v-if="isFormOpen" @click.self="closeForm" class="modal-overlay">
         <div class="modal-container max-w-lg" @click.stop>
-          <div class="modal-header">
+          <!-- Modal Header -->
+          <div class="modal-header pb-2.5 border-b border-slate-100 dark:border-slate-800">
             <div class="flex items-center gap-2.5">
               <div
-                class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-sm"
-                :style="{ backgroundColor: (catForm.color || '#10b981') + '20' }"
+                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-inner transition transform hover:scale-105"
+                :style="{ backgroundColor: (catForm.color || '#10b981') + '20', color: catForm.color || '#10b981', border: `1.5px solid ${catForm.color || '#10b981'}40` }"
               >
-                <span>{{ catForm.icon || '📦' }}</span>
+                <CategoryIcon :icon="catForm.icon || 'Package'" iconClass="w-4.5 h-4.5" />
               </div>
               <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                <h3 class="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                   {{ editingCatId ? 'Kategoriyani Tahrirlash' : 'Yangi Kategoriya Yaratish' }}
                 </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Nomi, belgisi va rangini tanlang</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Nomi, belgisi va rangini tanlang</p>
               </div>
             </div>
-            <button @click="closeForm" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <button @click="closeForm" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
               <X class="w-5 h-5" />
             </button>
           </div>
 
-          <div class="modal-body space-y-4">
-            <!-- 1-Click Fast Category Presets -->
+          <!-- Modal Body (Compact & No Scroll) -->
+          <div class="modal-body p-4 space-y-3 text-xs">
+            
+            <!-- 1. Tezkor Shablonlar -->
             <div class="space-y-1.5">
-              <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                Tezkor variantlar (1 bosishda to'ldirish):
+              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                Tezkor Shablonlar:
               </span>
-              <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+              <div class="flex flex-wrap gap-1.5">
                 <button
                   type="button"
                   v-for="preset in fastCategoryPresets"
                   :key="preset.name"
                   @click="applyPreset(preset)"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-800 dark:text-slate-200 text-xs font-medium transition btn-interactive"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 border border-slate-200/80 dark:border-slate-700 hover:border-emerald-500/40 text-slate-700 dark:text-slate-200 text-[11px] font-semibold transition btn-interactive"
                 >
-                  <span>{{ preset.icon }}</span>
+                  <CategoryIcon :icon="preset.icon" iconClass="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   <span>{{ preset.name }}</span>
                 </button>
               </div>
             </div>
 
-            <form @submit.prevent="saveCategory" class="space-y-4 text-xs">
-              <!-- Name Input -->
+            <!-- Form Fields -->
+            <form @submit.prevent="saveCategory" class="space-y-3">
+              
+              <!-- 2. Kategoriya Nomi -->
               <div>
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kategoriya Nomi *</label>
+                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-[11px]">
+                  Kategoriya Nomi *
+                </label>
                 <input
                   v-model="catForm.name"
                   required
                   placeholder="Masalan: Pitsa & Fast Food, Ichimliklar, Shirinliklar..."
-                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                  class="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 font-bold shadow-inner"
                 />
               </div>
 
-              <!-- Emoji & Color Chooser in 2 Columns -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                <!-- Emoji Selector -->
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ikonka (Emoji)</label>
-                  <div class="flex items-center gap-2">
-                    <input
-                      v-model="catForm.icon"
-                      placeholder="🍕"
-                      class="w-11 text-center text-lg py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 shrink-0"
-                    />
-                    <div class="flex flex-wrap gap-1 flex-1">
-                      <button
-                        type="button"
-                        v-for="emoji in quickEmojis"
-                        :key="emoji"
-                        @click="catForm.icon = emoji"
-                        class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm transition"
-                      >
-                        {{ emoji }}
-                      </button>
-                    </div>
+              <!-- 3. Ikonka va Rang Bo'limi -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+                
+                <!-- SVG Ikonka Tanlash -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="font-bold text-slate-700 dark:text-slate-300 text-[11px]">SVG Ikonka</label>
+                    <span class="text-[10px] text-slate-400 font-mono">{{ catForm.icon || 'Package' }}</span>
+                  </div>
+                  <div class="grid grid-cols-4 gap-1">
+                    <button
+                      type="button"
+                      v-for="item in availableCategoryIcons"
+                      :key="item.name"
+                      @click="catForm.icon = item.name"
+                      :title="item.label"
+                      class="h-8 rounded-lg border transition flex items-center justify-center btn-interactive"
+                      :class="catForm.icon === item.name ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600'"
+                    >
+                      <component :is="item.component" class="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
-                <!-- Color Palette -->
-                <div>
-                  <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Rang Tusi (Badge)</label>
-                  <div class="flex items-center gap-2 flex-wrap">
+                <!-- Rang Tanlash -->
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="font-bold text-slate-700 dark:text-slate-300 text-[11px]">Rang Tusi</label>
+                    <span class="text-[10px] font-mono text-slate-400">{{ catForm.color || '#10b981' }}</span>
+                  </div>
+                  <div class="grid grid-cols-5 gap-1.5 pt-0.5">
                     <button
                       type="button"
                       v-for="color in quickColors"
                       :key="color"
                       @click="catForm.color = color"
-                      class="w-6 h-6 rounded-full border-2 transition transform hover:scale-110"
-                      :class="catForm.color === color ? 'border-slate-900 dark:border-white ring-2 ring-emerald-500/30' : 'border-transparent'"
+                      class="w-6 h-6 rounded-lg border-2 transition transform hover:scale-110 shadow-xs flex items-center justify-center"
+                      :class="catForm.color === color ? 'border-slate-900 dark:border-white ring-2 ring-emerald-500/40 scale-105' : 'border-transparent'"
                       :style="{ backgroundColor: color }"
-                    ></button>
-                    <input
-                      type="color"
-                      v-model="catForm.color"
-                      class="w-7 h-7 rounded-full cursor-pointer border border-slate-300 dark:border-slate-700 p-0 bg-transparent"
-                      title="Boshqa maxsus rang tanlash"
-                    />
+                    >
+                      <CheckCircle2 v-if="catForm.color === color" class="w-3 h-3 text-white drop-shadow" />
+                    </button>
+                    <label
+                      class="w-6 h-6 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition bg-white dark:bg-slate-900 text-[10px]"
+                      title="Maxsus rang"
+                    >
+                      <input
+                        type="color"
+                        v-model="catForm.color"
+                        class="w-0 h-0 opacity-0"
+                      />
+                      <span>🎨</span>
+                    </label>
                   </div>
                 </div>
               </div>
 
-              <!-- Form Buttons -->
-              <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <AppButton
+              <!-- 4. Kategoriya Prevyusi (Jonli Ko'rinishi) -->
+              <div class="p-2.5 rounded-xl border flex items-center justify-between transition" :style="{ backgroundColor: (catForm.color || '#10b981') + '10', borderColor: (catForm.color || '#10b981') + '30' }">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+                    :style="{ backgroundColor: (catForm.color || '#10b981') + '25', color: catForm.color || '#10b981' }"
+                  >
+                    <CategoryIcon :icon="catForm.icon || 'Package'" iconClass="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span class="font-black text-xs text-slate-900 dark:text-white block">{{ catForm.name || "Kategoriya Nomi" }}</span>
+                    <span class="text-[10px] text-slate-400">Katalog va POS kassada shu tarzda ko'rinadi</span>
+                  </div>
+                </div>
+                <span
+                  class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider"
+                  :style="{ backgroundColor: (catForm.color || '#10b981') + '20', color: catForm.color || '#10b981' }"
+                >
+                  Faol
+                </span>
+              </div>
+
+              <!-- 5. Tugmalar -->
+              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
                   type="button"
-                  variant="ghost"
-                  size="md"
                   @click="closeForm"
+                  class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition"
                 >
                   Bekor qilish
-                </AppButton>
+                </button>
                 <AppButton
                   type="submit"
                   variant="primary"
                   size="md"
+                  class="px-6"
                   :loading="saving"
                 >
                   {{ saving ? 'Saqlanmoqda...' : (editingCatId ? 'Kategoriyani Yangilash' : 'Kategoriyani Saqlash') }}
@@ -431,6 +469,7 @@ import { useAuthStore } from '../../stores/auth.store';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { getCategoryIcon } from '../../composables/useCategoryIcon';
+import CategoryIcon from '../../components/CategoryIcon.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppButton from '../../components/AppButton.vue';
 import AppStatCard from '../../components/AppStatCard.vue';
@@ -445,6 +484,21 @@ import {
   Trash2,
   X,
   Package,
+  Apple,
+  UtensilsCrossed,
+  CupSoda,
+  Coffee,
+  Milk,
+  Cookie,
+  Flame,
+  ShoppingBag,
+  Shirt,
+  Pill,
+  Sparkles,
+  Scissors,
+  BookOpen,
+  Laptop,
+  Wrench,
   CheckCircle2,
   ArrowLeft,
 } from 'lucide-vue-next';
@@ -481,11 +535,11 @@ const currentBusinessType = computed(() => {
 
 const defaultIcon = computed(() => {
   const t = currentBusinessType.value;
-  if (t === 'restaurant' || t === 'cafe') return '🍕';
-  if (t === 'pharmacy') return '💊';
-  if (t === 'barbershop' || t === 'service') return '✂️';
-  if (t === 'confectionery') return '🎂';
-  return '📦';
+  if (t === 'restaurant' || t === 'cafe') return 'UtensilsCrossed';
+  if (t === 'pharmacy') return 'Pill';
+  if (t === 'barbershop' || t === 'service') return 'Scissors';
+  if (t === 'confectionery') return 'Cookie';
+  return 'Package';
 });
 
 const catForm = ref({
@@ -494,69 +548,64 @@ const catForm = ref({
   color: '#10b981',
 });
 
-// Fast Presets by Business Type
+// SVG Icons List for Category Picker
+const availableCategoryIcons = [
+  { name: 'Package', label: 'Tovar / Paket', component: Package },
+  { name: 'Apple', label: 'Oziq-ovqat / Mevalar', component: Apple },
+  { name: 'UtensilsCrossed', label: 'Taom / Restoran', component: UtensilsCrossed },
+  { name: 'CupSoda', label: 'Ichimliklar / Suv', component: CupSoda },
+  { name: 'Coffee', label: 'Qahva / Choy', component: Coffee },
+  { name: 'Milk', label: 'Sut mahsulotlari', component: Milk },
+  { name: 'Cookie', label: 'Shirinliklar / Pishiriq', component: Cookie },
+  { name: 'Flame', label: 'Issiq ovqatlar', component: Flame },
+  { name: 'ShoppingBag', label: 'Do\'kon / Savdo', component: ShoppingBag },
+  { name: 'Shirt', label: 'Kiyim-kechak', component: Shirt },
+  { name: 'Pill', label: 'Dorixona / Meditsina', component: Pill },
+  { name: 'Sparkles', label: 'Parfyum / Go\'zallik', component: Sparkles },
+  { name: 'Scissors', label: 'Salon / Go\'zallik', component: Scissors },
+  { name: 'BookOpen', label: 'Kanselyariya / Kitob', component: BookOpen },
+  { name: 'Laptop', label: 'Elektronika / Texnika', component: Laptop },
+  { name: 'Wrench', label: 'Xizmatlar / Ustaxona', component: Wrench },
+];
+
+// Fast Presets with clean Lucide SVG icons
 const fastCategoryPresets = computed(() => {
   const t = currentBusinessType.value;
 
   if (t === 'restaurant' || t === 'cafe') {
     return [
-      { name: 'Issiq Taomlar', icon: '🍲', color: '#10b981' },
-      { name: 'Pitsa & Fast Food', icon: '🍕', color: '#f59e0b' },
-      { name: 'Salatlar & Gazaklar', icon: '🥗', color: '#14b8a6' },
-      { name: 'Ichimliklar & Choy', icon: '🥤', color: '#06b6d4' },
-      { name: 'Shashlik & Kaboblar', icon: '🍢', color: '#ef4444' },
-      { name: 'Desertlar', icon: '🍰', color: '#ec4899' },
+      { name: 'Issiq Taomlar', icon: 'Flame', color: '#10b981' },
+      { name: 'Pitsa & Fast Food', icon: 'UtensilsCrossed', color: '#f59e0b' },
+      { name: 'Salatlar & Gazaklar', icon: 'Apple', color: '#14b8a6' },
+      { name: 'Ichimliklar & Choy', icon: 'CupSoda', color: '#06b6d4' },
+      { name: 'Qahva & Kofe', icon: 'Coffee', color: '#8b5cf6' },
+      { name: 'Desertlar', icon: 'Cookie', color: '#ec4899' },
     ];
   }
 
   if (t === 'pharmacy') {
     return [
-      { name: 'Dori-Darmonlar', icon: '💊', color: '#10b981' },
-      { name: 'Vitaminlar & BAD', icon: '🌿', color: '#14b8a6' },
-      { name: 'Tibbiy vositalar', icon: '🩺', color: '#3b82f6' },
-      { name: 'Gigiyena & Parvarish', icon: '🧼', color: '#ec4899' },
-      { name: 'Bolalar uchun', icon: '🍼', color: '#f59e0b' },
+      { name: 'Dori-Darmonlar', icon: 'Pill', color: '#10b981' },
+      { name: 'Vitaminlar & BAD', icon: 'Apple', color: '#14b8a6' },
+      { name: 'Tibbiy vositalar', icon: 'Package', color: '#3b82f6' },
+      { name: 'Gigiyena & Parvarish', icon: 'Sparkles', color: '#ec4899' },
+      { name: 'Bolalar parvarishi', icon: 'Milk', color: '#f59e0b' },
     ];
   }
 
-  if (t === 'confectionery') {
-    return [
-      { name: 'Tortlar & Pirojnoe', icon: '🎂', color: '#ec4899' },
-      { name: 'Shokolad & Konfetlar', icon: '🍫', color: '#8b5cf6' },
-      { name: 'Non & Pishiriqlar', icon: '🥐', color: '#f59e0b' },
-      { name: 'Desertlar & Muzqaymoq', icon: '🍨', color: '#06b6d4' },
-    ];
-  }
-
-  // Default Retail / Shop
   return [
-    { name: 'Oziq-ovqat & Mevalar', icon: '🥦', color: '#10b981' },
-    { name: 'Sut & Sut Mahsulotlari', icon: '🥛', color: '#3b82f6' },
-    { name: 'Ichimliklar & Sharbatlar', icon: '🥤', color: '#06b6d4' },
-    { name: 'Uy-ro\'zg\'or buyumlari', icon: '🧼', color: '#8b5cf6' },
-    { name: 'Konditer & Shirinliklar', icon: '🍬', color: '#ec4899' },
-    { name: 'Kanselyariya & Maishiy', icon: '📦', color: '#f59e0b' },
+    { name: 'Oziq-ovqat & Mevalar', icon: 'Apple', color: '#10b981' },
+    { name: 'Sut Mahsulotlari', icon: 'Milk', color: '#06b6d4' },
+    { name: 'Ichimliklar & Sharbatlar', icon: 'CupSoda', color: '#3b82f6' },
+    { name: 'Konditer & Shirinliklar', icon: 'Cookie', color: '#ec4899' },
+    { name: 'Uy-ro\'zg\'or & Ximya', icon: 'Sparkles', color: '#8b5cf6' },
+    { name: 'Kanselyariya & Boshqa', icon: 'BookOpen', color: '#f59e0b' },
   ];
 });
 
-const quickEmojis = computed(() => {
-  const t = currentBusinessType.value;
-  if (t === 'restaurant' || t === 'cafe') {
-    return ['🍕', '🍲', '🥣', '☕', '🥗', '🍰', '🍔', '🍟', '🥤', '🥩', '🍢', '🍦'];
-  }
-  if (t === 'pharmacy') {
-    return ['💊', '🩺', '🧴', '🧼', '🍼', '🌿', '🧪', '🩹'];
-  }
-  if (t === 'barbershop' || t === 'service') {
-    return ['✂️', '🧔', '💆‍♂️', '💅', '🧖‍♂️', '💈', '🧼', '🧴'];
-  }
-  if (t === 'confectionery') {
-    return ['🎂', '🍫', '🥐', '🍨', '🍰', '🍬', '🍩', '🍪'];
-  }
-  return ['🥦', '🥛', '🥤', '🧼', '🍬', '📦', '🍎', '🥩', '🍞', '🍫', '🧴', '📱'];
-});
-
-const quickColors = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#64748b'];
+const quickColors = [
+  '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#64748b', '#14b8a6', '#059669'
+];
 
 const getProductCount = (catId: string) => {
   return productsList.value.filter(p => p.categoryId === catId || p.category?.id === catId).length;

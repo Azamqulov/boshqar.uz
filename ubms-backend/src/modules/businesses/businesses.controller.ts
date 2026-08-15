@@ -13,6 +13,12 @@ export class BusinessesController {
     return this.businessesService.getAvailableTypes();
   }
 
+  @Public()
+  @Get('plans')
+  getPublicPlans() {
+    return this.businessesService.getPublicPlans();
+  }
+
   @Post()
   create(@CurrentUser('userId') userId: string, @Body() dto: CreateBusinessDto) {
     return this.businessesService.create(userId, dto);

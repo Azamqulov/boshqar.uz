@@ -20,15 +20,29 @@
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <AppInput
-              v-model="stockForm.quantity"
-              label="Kirim Miqdori"
-              type="number"
-              placeholder="0"
-              :required="true"
-            />
             <div>
-              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kirim Narxi (Tannarx)</label>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Kirim Miqdori ({{ currentUnit }}) *
+              </label>
+              <div class="relative flex items-center">
+                <input
+                  type="number"
+                  v-model.number="stockForm.quantity"
+                  :step="isDecimal ? '0.001' : '1'"
+                  :min="isDecimal ? '0.001' : '1'"
+                  placeholder="0"
+                  required
+                  class="w-full px-3 py-2.5 pr-14 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500 transition shadow-inner"
+                />
+                <span class="absolute right-3 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 pointer-events-none uppercase">
+                  {{ currentUnit }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Kirim Narxi (1 {{ currentUnit }} uchun)
+              </label>
               <CurrencyInput
                 v-model="stockForm.purchasePrice"
                 placeholder="0"
@@ -60,13 +74,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { X } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
-import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean;
   stockForm: any;
   inventoryInOptions: any[];
@@ -77,4 +91,16 @@ defineEmits<{
   (e: 'close'): void;
   (e: 'submit'): void;
 }>();
+
+const selectedItem = computed(() => {
+  return props.inventoryInOptions.find((opt) => opt.value === props.stockForm.productId);
+});
+
+const currentUnit = computed(() => {
+  return selectedItem.value?.unit || 'dona';
+});
+
+const isDecimal = computed(() => {
+  return selectedItem.value?.allowDecimal === true || ['kg', 'l', 'g', 'm', 'ml'].includes(currentUnit.value.toLowerCase());
+});
 </script>

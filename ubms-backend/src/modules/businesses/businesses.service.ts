@@ -23,6 +23,12 @@ export class BusinessesService {
     return configs.filter((c) => c.isEnabled);
   }
 
+  async getPublicPlans() {
+    return this.prisma.plan.findMany({
+      orderBy: { priceMonthly: 'asc' },
+    });
+  }
+
   async create(userId: string, dto: CreateBusinessDto) {
     // 0. Verify Business Type is enabled by SuperAdmin
     const configs = getBusinessTypesConfig();

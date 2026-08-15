@@ -287,32 +287,40 @@
 
           <div class="modal-body space-y-4">
             <!-- Grid info -->
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold">Xodim:</span>
-                <span class="font-bold text-slate-900 dark:text-white mt-0.5 block">{{ selectedLog.user?.fullName || 'Tizim' }}</span>
-                <span class="text-[10px] text-slate-500 font-mono">{{ selectedLog.user?.phone || '-' }}</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Xodim:</span>
+                <span class="font-black text-slate-900 dark:text-white block">{{ selectedLog.user?.fullName || 'Tizim' }}</span>
+                <span class="text-[10px] text-slate-400 font-mono block">{{ selectedLog.user?.phone || '-' }}</span>
               </div>
 
-              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold">Sana & Vaqt:</span>
-                <span class="font-bold text-slate-900 dark:text-white mt-0.5 block font-mono">{{ formatDate(selectedLog.createdAt) }}</span>
-                <span class="text-[10px] text-slate-500 font-mono">IP: {{ formatIpAddress(selectedLog.ipAddress) }}</span>
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Sana & Vaqt:</span>
+                <span class="font-black text-slate-900 dark:text-white block font-mono">{{ formatDate(selectedLog.createdAt) }}</span>
+                <span class="text-[10px] text-slate-400 font-mono block">IP: {{ formatIpAddress(selectedLog.ipAddress) }}</span>
               </div>
 
-              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold">Harakat:</span>
-                <span class="font-black mt-0.5 block" :class="getActionBadgeClass(selectedLog.action)">
-                  {{ getActionLabel(selectedLog.action) }}
-                </span>
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
+                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Harakat:</span>
+                <div>
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border shadow-xs"
+                    :class="getActionBadgeClass(selectedLog.action)"
+                  >
+                    <component :is="getActionIcon(selectedLog.action)" class="w-3.5 h-3.5 shrink-0" />
+                    <span>{{ getActionLabel(selectedLog.action) }}</span>
+                  </span>
+                </div>
               </div>
 
-              <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold">Bo'lim:</span>
-                <span class="font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5">
-                  <component :is="getEntityIcon(selectedLog.entity)" class="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>{{ getEntityLabel(selectedLog.entity) }}</span>
-                </span>
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
+                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Bo'lim:</span>
+                <div>
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 shadow-xs">
+                    <component :is="getEntityIcon(selectedLog.entity)" class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>{{ getEntityLabel(selectedLog.entity) }}</span>
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -424,9 +432,9 @@ const filteredAuditLogs = computed(() => {
 
 const getActionLabel = (action: string) => {
   const a = (action || '').toLowerCase();
-  if (a.includes('post') || a.includes('create')) return "Yangi Yaratildi (Qo'shish)";
-  if (a.includes('put') || a.includes('patch') || a.includes('update')) return "Tahrirlandi (O'zgartirish)";
-  if (a.includes('delete') || a.includes('remove')) return "O'chirildi (Yo'qotish)";
+  if (a.includes('post') || a.includes('create')) return "Yangi Yaratildi";
+  if (a.includes('put') || a.includes('patch') || a.includes('update')) return "Tahrirlandi";
+  if (a.includes('delete') || a.includes('remove')) return "O'chirildi";
   if (a.includes('pay')) return "To'lov Kiritildi";
   if (a.includes('login')) return "Tizimga Kirish";
   return action.toUpperCase();

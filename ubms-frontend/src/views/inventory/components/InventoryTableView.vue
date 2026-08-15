@@ -25,7 +25,7 @@
               class="py-3 px-4 font-bold font-mono"
               :class="Number(inv.quantity) <= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'"
             >
-              {{ inv.quantity }} {{ inv.unit || inv.product?.unit?.shortName }}
+              {{ formatStock(inv.quantity, inv.unit || inv.product?.unit?.shortName || 'dona') }}
             </td>
             <td class="py-3 px-4">
               <span
@@ -95,4 +95,11 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+
+const formatStock = (qty: number | string, unitName = 'dona') => {
+  if (qty === undefined || qty === null) return `0 ${unitName}`;
+  const num = Number(qty);
+  const formatted = num % 1 === 0 ? num.toString() : num.toFixed(3).replace(/\.?0+$/, '');
+  return `${formatted} ${unitName}`;
+};
 </script>

@@ -7,123 +7,91 @@
           Har Qanday Byudjet Uchun Mos Tariflar
         </h2>
         <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-          Hech qanday yashirin to'lovlarsiz. 14 kun bepul sinab ko'ring va o'zingizga ma'qul tarifni tanlang.
+          Hech qanday yashirin to'lovlarsiz. 14 kun bepul sinab ko'ring va biznesingiz uchun mos tarifni tanlang.
         </p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-        <!-- Plan 1: Start -->
+        <!-- Dynamic Plans from Backend / SuperAdmin -->
         <div
+          v-for="(plan, index) in displayPlans"
+          :key="plan.name"
           data-aos="fade-up"
-          data-aos-delay="100"
-          class="p-8 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-6 shadow-xs hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
+          :data-aos-delay="(index + 1) * 100"
+          class="p-8 rounded-3xl flex flex-col justify-between space-y-6 transition-all duration-300 relative"
+          :class="plan.isPopular 
+            ? 'bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/40 dark:via-slate-950 dark:to-slate-950 border-2 border-emerald-500 shadow-2xl shadow-emerald-500/20 hover:-translate-y-2.5 hover:shadow-emerald-500/30'
+            : 'bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xs hover:-translate-y-2 hover:shadow-xl'"
         >
-          <div class="space-y-4">
-            <div class="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
-              Kichik Savdo Nuqtasi
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 dark:text-white">START</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Qishloq oziq-ovqat do'koni, kiyim do'koni va sartaroshxonalar uchun.</p>
-            
-            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-              <span class="text-4xl font-black text-slate-900 dark:text-white font-mono">79 000</span>
-              <span class="text-xs text-slate-500 font-bold"> so'm / oyiga</span>
-              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Kuniga atigi ~2 600 so'm</p>
-            </div>
-
-            <ul class="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 font-medium">
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> 1 ta Kassa va 1 ta Xodim</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Tovarlar katalogi va shtrix-kod</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Chek chiqarish (58mm / 80mm)</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Boshqar AI qo'llanmasi</li>
-            </ul>
-          </div>
-
-          <button
-            type="button"
-            @click="$emit('openDemo')"
-            class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white font-bold text-center text-xs border border-slate-300 dark:border-slate-700 transition cursor-pointer hover:scale-102 active:scale-98"
+          <!-- Popular Badge for Pro -->
+          <div
+            v-if="plan.isPopular"
+            class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5"
           >
-            Start Bilan Sinash
-          </button>
-        </div>
-
-        <!-- Plan 2: Standart (Most Popular) -->
-        <div
-          data-aos="fade-up"
-          data-aos-delay="200"
-          class="p-8 rounded-3xl bg-gradient-to-b from-emerald-50 via-white to-white dark:from-emerald-950/40 dark:via-slate-950 dark:to-slate-950 border-2 border-emerald-500 shadow-2xl shadow-emerald-500/20 flex flex-col justify-between space-y-6 relative hover:-translate-y-2.5 hover:shadow-emerald-500/30 transition-all duration-300"
-        >
-          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5">
             <Star class="w-3.5 h-3.5 fill-current" />
             <span>Eng Ommabop</span>
           </div>
 
           <div class="space-y-4">
-            <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-              Supermarket & Do'konlar
+            <div
+              class="inline-block px-3 py-1 rounded-full text-xs font-bold"
+              :class="plan.isPopular ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'"
+            >
+              {{ plan.tagline }}
             </div>
-            <h3 class="text-2xl font-black text-slate-900 dark:text-white">STANDART</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">O'rtacha magazinlar, aptekalar, kiyim va qurilish mollari savdosi.</p>
             
+            <h3 class="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              {{ plan.name }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{{ plan.description }}</p>
+            
+            <!-- Price Display -->
             <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-              <span class="text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono">149 000</span>
-              <span class="text-xs text-slate-500 font-bold"> so'm / oyiga</span>
-              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Kuniga atigi ~5 000 so'm (1 yillik: 2 oy tekin)</p>
+              <div v-if="plan.priceNumeric === 0">
+                <span class="text-4xl font-black text-slate-900 dark:text-white font-mono">Bepul</span>
+                <span class="text-xs text-slate-500 font-bold"> / doimiy</span>
+                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Sinov va boshlang'ich start uchun</p>
+              </div>
+              <div v-else>
+                <span
+                  class="text-4xl font-black font-mono"
+                  :class="plan.isPopular ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'"
+                >
+                  {{ plan.priceFormatted }}
+                </span>
+                <span class="text-xs text-slate-500 font-bold"> so'm / oyiga</span>
+                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                  {{ plan.dailyNote }}
+                </p>
+              </div>
             </div>
 
+            <!-- Features list -->
             <ul class="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 font-medium">
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500 font-bold" /> <strong>Cheksiz tovarlar va cheklar</strong></li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500 font-bold" /> <strong>To'liq Nasiya Daftari (CRM)</strong></li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> 3 tagacha xodim va alohida rollar</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Telegram Bot bildirishnomalari</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Moliya va Sof Foyda hisoboti</li>
+              <li class="flex items-center gap-2">
+                <Check class="w-4 h-4 text-emerald-500 shrink-0 font-bold" />
+                <span>Maksimal filiallar: <strong>{{ plan.branchesLabel }}</strong></span>
+              </li>
+              <li class="flex items-center gap-2">
+                <Check class="w-4 h-4 text-emerald-500 shrink-0 font-bold" />
+                <span>Maksimal xodimlar: <strong>{{ plan.usersLabel }}</strong></span>
+              </li>
+              <li v-for="(feat, fIdx) in plan.features" :key="fIdx" class="flex items-center gap-2">
+                <Check class="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>{{ feat }}</span>
+              </li>
             </ul>
           </div>
 
           <button
             type="button"
             @click="$emit('openDemo')"
-            class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-center text-sm shadow-md hover:scale-[1.02] active:scale-98 transition cursor-pointer"
+            class="w-full py-3 rounded-xl font-bold text-center text-xs transition cursor-pointer active:scale-98"
+            :class="plan.isPopular
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:scale-[1.02]'
+              : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 hover:scale-102'"
           >
-            14 Kun Bepul Sinash
-          </button>
-        </div>
-
-        <!-- Plan 3: Pro / Restoran -->
-        <div
-          data-aos="fade-up"
-          data-aos-delay="300"
-          class="p-8 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-6 shadow-xs hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
-        >
-          <div class="space-y-4">
-            <div class="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
-              Restoran & Katta Tarmoq
-            </div>
-            <h3 class="text-2xl font-black text-slate-900 dark:text-white">PRO / BIZNES</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Restoran, choyxona, kafe, salon va bir nechta filialli savdo tarmoqlari.</p>
-            
-            <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
-              <span class="text-4xl font-black text-slate-900 dark:text-white font-mono">249 000</span>
-              <span class="text-xs text-slate-500 font-bold"> so'm / oyiga</span>
-              <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Kuniga ~8 000 so'm</p>
-            </div>
-
-            <ul class="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 font-medium">
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> <strong>Stollar xaritasi & Ofitsiant ekrani</strong></li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> <strong>Oshxona (KDS) ekrani</strong></li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Ustalar bandlovi & Jadval</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> Cheksiz xodimlar va filiallar</li>
-              <li class="flex items-center gap-2"><Check class="w-4 h-4 text-emerald-500" /> To'liq Audit va Xavfsizlik jurnali</li>
-            </ul>
-          </div>
-
-          <button
-            type="button"
-            @click="$emit('openDemo')"
-            class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white font-bold text-center text-xs border border-slate-300 dark:border-slate-700 transition cursor-pointer hover:scale-102 active:scale-98"
-          >
-            Pro Bilan Sinash
+            {{ plan.buttonText }}
           </button>
         </div>
       </div>
@@ -132,9 +100,129 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
 import { Check, Star } from 'lucide-vue-next';
+import api from '../../../services/api';
 
 defineEmits<{
   (e: 'openDemo'): void;
 }>();
+
+const backendPlans = ref<any[]>([]);
+
+const defaultPlans = [
+  {
+    name: 'Free',
+    priceMonthly: 0,
+    maxBranches: 1,
+    maxUsers: 2,
+    tagline: 'Kichik Savdo Nuqtasi',
+    description: 'Qishloq do\'koni, yakka tartibdagi tadbirkor va startaplar uchun.',
+    features: ['Tovarlar katalogi va shtrix-kod', 'Chek chiqarish (58mm / 80mm)', 'Boshqar AI qo\'llanmasi'],
+    buttonText: 'Bepul Boshlash',
+    isPopular: false,
+    dailyNote: 'Boshlash uchun mutlaqo bepul',
+  },
+  {
+    name: 'Pro',
+    priceMonthly: 199000,
+    maxBranches: 3,
+    maxUsers: 10,
+    tagline: 'Supermarket & Do\'konlar',
+    description: "O'rtacha magazinlar, aptekalar, kiyim va qurilish mollari savdosi.",
+    features: ['Cheksiz tovarlar va cheklar', 'Nasiya Daftari (CRM)', 'Telegram Bot bildirishnomalari', 'Moliya va Sof Foyda hisoboti'],
+    buttonText: '14 Kun Bepul Sinash',
+    isPopular: true,
+    dailyNote: 'Kuniga atigi ~6 500 so\'m',
+  },
+  {
+    name: 'Business',
+    priceMonthly: 499000,
+    maxBranches: null,
+    maxUsers: null,
+    tagline: 'Restoran & Katta Tarmoq',
+    description: 'Restoran, kafe, salon va bir nechta filialli yirik savdo tarmoqlari.',
+    features: ['Stollar xaritasi & Ofitsiant ekrani', 'Oshxona (KDS) ekrani', 'Ustalar bandlik jadvali', 'To\'liq Audit va Xavfsizlik jurnali'],
+    buttonText: 'Business Bilan Sinash',
+    isPopular: false,
+    dailyNote: 'Cheksiz filial va xodimlar bilan',
+  },
+];
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/businesses/plans');
+    if (Array.isArray(data) && data.length > 0) {
+      backendPlans.value = data;
+    }
+  } catch (err) {
+    // Fallback to static presets if offline
+  }
+});
+
+const formatPrice = (val: number | string) => {
+  const num = Number(val) || 0;
+  return new Intl.NumberFormat('uz-UZ').format(num).replace(/,/g, ' ');
+};
+
+const displayPlans = computed(() => {
+  if (backendPlans.value.length > 0) {
+    return backendPlans.value.map((bp) => {
+      const pName = bp.name || '';
+      const priceNum = Number(bp.priceMonthly) || 0;
+      const isPro = pName.toLowerCase() === 'pro';
+      const isBusiness = pName.toLowerCase() === 'business';
+      const isFree = priceNum === 0 || pName.toLowerCase() === 'free';
+
+      let tagline = "Kichik Savdo Nuqtasi";
+      let desc = "Boshlang'ich kassa va tovarlar hisobi uchun.";
+      let features = ['Tovarlar katalogi va shtrix-kod', 'Chek chiqarish (58mm / 80mm)', 'Boshqar AI qo\'llanmasi'];
+      let btnText = "Bepul Boshlash";
+      let daily = "Boshlash uchun mutlaqo bepul";
+
+      if (isPro) {
+        tagline = "Supermarket & Do'konlar";
+        desc = "O'rtacha magazinlar, aptekalar, kiyim va servis do'konlari uchun.";
+        features = ['Cheksiz tovarlar va cheklar', 'Nasiya Daftari (CRM)', 'Telegram Bot bildirishnomalari', 'Moliya va Sof Foyda hisoboti'];
+        btnText = "14 Kun Bepul Sinash";
+        daily = `Kuniga atigi ~${Math.round(priceNum / 30).toLocaleString()} so'm`;
+      } else if (isBusiness) {
+        tagline = "Restoran & Katta Tarmoq";
+        desc = "Restoran, kafe, salon va bir nechta filialli yirik savdo tarmoqlari.";
+        features = ['Stollar xaritasi & Ofitsiant ekrani', 'Oshxona (KDS) ekrani', 'Ustalar bandlik jadvali', 'To\'liq Audit va Xavfsizlik jurnali'];
+        btnText = "Business Bilan Sinash";
+        daily = "Cheksiz filial va barcha modullar bilan";
+      }
+
+      return {
+        id: bp.id,
+        name: pName,
+        priceNumeric: priceNum,
+        priceFormatted: formatPrice(priceNum),
+        branchesLabel: bp.maxBranches ? `${bp.maxBranches} ta` : 'Cheksiz',
+        usersLabel: bp.maxUsers ? `${bp.maxUsers} ta` : 'Cheksiz',
+        tagline,
+        description: desc,
+        features,
+        buttonText: btnText,
+        isPopular: isPro,
+        dailyNote: daily,
+      };
+    });
+  }
+
+  return defaultPlans.map((dp) => ({
+    name: dp.name,
+    priceNumeric: dp.priceMonthly,
+    priceFormatted: formatPrice(dp.priceMonthly),
+    branchesLabel: dp.maxBranches ? `${dp.maxBranches} ta` : 'Cheksiz',
+    usersLabel: dp.maxUsers ? `${dp.maxUsers} ta` : 'Cheksiz',
+    tagline: dp.tagline,
+    description: dp.description,
+    features: dp.features,
+    buttonText: dp.buttonText,
+    isPopular: dp.isPopular,
+    dailyNote: dp.dailyNote,
+  }));
+});
 </script>

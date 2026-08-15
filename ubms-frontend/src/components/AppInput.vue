@@ -4,6 +4,9 @@ interface Props {
   label?: string;
   placeholder?: string;
   type?: string;
+  step?: string | number;
+  min?: string | number;
+  max?: string | number;
   error?: string;
   hint?: string;
   required?: boolean;
@@ -13,6 +16,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   type: 'text',
+  step: 'any',
   required: false,
   disabled: false,
 });
@@ -36,6 +40,9 @@ defineEmits<{
       <input
         :value="modelValue"
         :type="type"
+        :step="step"
+        :min="min"
+        :max="max"
         :placeholder="placeholder"
         :disabled="disabled"
         class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white placeholder-slate-400 text-xs px-3.5 py-2.5 outline-none transition duration-200 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"

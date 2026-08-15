@@ -2,21 +2,36 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import api from '../services/api';
 
+const loadFromStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const saved = localStorage.getItem(`ubms_cache_${key}`);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch (e) {
+    return defaultValue;
+  }
+};
+
+const saveToStorage = (key: string, data: any) => {
+  try {
+    localStorage.setItem(`ubms_cache_${key}`, JSON.stringify(data));
+  } catch (e) {}
+};
+
 export const useDataStore = defineStore('ubms_data', () => {
-  const products = ref<any[]>([]);
-  const categories = ref<any[]>([]);
-  const tables = ref<any[]>([]);
-  const customers = ref<any[]>([]);
-  const suppliers = ref<any[]>([]);
+  const products = ref<any[]>(loadFromStorage('products', []));
+  const categories = ref<any[]>(loadFromStorage('categories', []));
+  const tables = ref<any[]>(loadFromStorage('tables', []));
+  const customers = ref<any[]>(loadFromStorage('customers', []));
+  const suppliers = ref<any[]>(loadFromStorage('suppliers', []));
   
-  const dashboardSummary = ref<any>(null);
-  const dashboardCharts = ref<any>(null);
-  const inventory = ref<any[]>([]);
-  const inventoryTotal = ref<number>(0);
-  const inventoryMeta = ref<any>({ page: 1, limit: 100, total: 0, totalPages: 1 });
-  const financeSummary = ref<any>(null);
-  const financeExpenses = ref<any[]>([]);
-  const appointments = ref<any[]>([]);
+  const dashboardSummary = ref<any>(loadFromStorage('dashboardSummary', null));
+  const dashboardCharts = ref<any>(loadFromStorage('dashboardCharts', null));
+  const inventory = ref<any[]>(loadFromStorage('inventory', []));
+  const inventoryTotal = ref<number>(loadFromStorage('inventoryTotal', 0));
+  const inventoryMeta = ref<any>(loadFromStorage('inventoryMeta', { page: 1, limit: 100, total: 0, totalPages: 1 }));
+  const financeSummary = ref<any>(loadFromStorage('financeSummary', null));
+  const financeExpenses = ref<any[]>(loadFromStorage('financeExpenses', []));
+  const appointments = ref<any[]>(loadFromStorage('appointments', []));
 
   const loading = ref({
     products: false,
@@ -47,12 +62,16 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['products']) {
       return inFlightPromises['products'];
     }
-    loading.value.products = true;
+    // Only show full loading spinner if local cache is completely empty
+    if (products.value.length === 0) {
+      loading.value.products = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/products/lite?limit=1000');
         const items = Array.isArray(data) ? data : (data?.items || []);
         products.value = items;
+        saveToStorage('products', items);
         lastFetched.value['products'] = Date.now();
       } catch (e) {
         // Fallback to standard /products if /products/lite not reachable
@@ -60,6 +79,7 @@ export const useDataStore = defineStore('ubms_data', () => {
           const { data } = await api.get('/products?limit=100');
           const items = Array.isArray(data) ? data : (data?.items || []);
           products.value = items;
+          saveToStorage('products', items);
           lastFetched.value['products'] = Date.now();
         } catch (fallbackErr) {
           console.error('Fetch products failed:', fallbackErr);
@@ -82,12 +102,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['categories']) {
       return inFlightPromises['categories'];
     }
-    loading.value.categories = true;
+    if (categories.value.length === 0) {
+      loading.value.categories = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/categories');
         const items = Array.isArray(data) ? data : (data?.items || []);
         categories.value = items;
+        saveToStorage('categories', items);
         lastFetched.value['categories'] = Date.now();
       } catch (e) {
         console.error('Fetch categories failed:', e);
@@ -106,7 +129,9 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (!force && dashboardSummary.value && isCacheValid('dashboard', 30000)) {
       return { summary: dashboardSummary.value, charts: dashboardCharts.value };
     }
-    loading.value.dashboard = true;
+    if (!dashboardSummary.value) {
+      loading.value.dashboard = true;
+    }
     try {
       const [sumRes, chartRes] = await Promise.all([
         api.get('/dashboard/summary'),
@@ -114,6 +139,8 @@ export const useDataStore = defineStore('ubms_data', () => {
       ]);
       dashboardSummary.value = sumRes.data;
       dashboardCharts.value = chartRes.data;
+      saveToStorage('dashboardSummary', sumRes.data);
+      saveToStorage('dashboardCharts', chartRes.data);
       lastFetched.value['dashboard'] = Date.now();
     } catch (e) {
       console.error('Fetch dashboard failed:', e);
@@ -128,6 +155,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     try {
       const { data } = await api.get(`/dashboard/charts?days=${days}`);
       dashboardCharts.value = data;
+      saveToStorage('dashboardCharts', data);
       return data;
     } catch (e) {
       console.error('Fetch chart data failed:', e);
@@ -144,12 +172,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises[cacheKey]) {
       return inFlightPromises[cacheKey];
     }
-    loading.value.inventory = true;
+    if (inventory.value.length === 0) {
+      loading.value.inventory = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get(`/inventory?page=${page}&limit=${limit}`);
         const items = Array.isArray(data) ? data : (data?.items || []);
         inventory.value = items;
+        saveToStorage('inventory', items);
         if (data?.total !== undefined || data?.totalPages !== undefined) {
           inventoryMeta.value = {
             page: data.page || page,
@@ -158,8 +189,11 @@ export const useDataStore = defineStore('ubms_data', () => {
             totalPages: data.totalPages || Math.ceil((data.total || items.length) / limit),
           };
           inventoryTotal.value = data.total || items.length;
+          saveToStorage('inventoryMeta', inventoryMeta.value);
+          saveToStorage('inventoryTotal', inventoryTotal.value);
         } else {
           inventoryTotal.value = items.length;
+          saveToStorage('inventoryTotal', items.length);
         }
         lastFetched.value[cacheKey] = Date.now();
       } catch (e) {
@@ -182,7 +216,9 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['finance']) {
       return inFlightPromises['finance'];
     }
-    loading.value.finance = true;
+    if (!financeSummary.value) {
+      loading.value.finance = true;
+    }
     const p = (async () => {
       try {
         const [sumRes, expRes] = await Promise.all([
@@ -191,6 +227,8 @@ export const useDataStore = defineStore('ubms_data', () => {
         ]);
         financeSummary.value = sumRes.data;
         financeExpenses.value = Array.isArray(expRes.data) ? expRes.data : (expRes.data?.items || []);
+        saveToStorage('financeSummary', financeSummary.value);
+        saveToStorage('financeExpenses', financeExpenses.value);
         lastFetched.value['finance'] = Date.now();
       } catch (e) {
         console.error('Fetch finance failed:', e);
@@ -212,12 +250,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['customers']) {
       return inFlightPromises['customers'];
     }
-    loading.value.customers = true;
+    if (customers.value.length === 0) {
+      loading.value.customers = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/customers?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         customers.value = items;
+        saveToStorage('customers', items);
         lastFetched.value['customers'] = Date.now();
       } catch (e) {
         console.error('Fetch customers failed:', e);
@@ -239,12 +280,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['suppliers']) {
       return inFlightPromises['suppliers'];
     }
-    loading.value.suppliers = true;
+    if (suppliers.value.length === 0) {
+      loading.value.suppliers = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/suppliers?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         suppliers.value = items;
+        saveToStorage('suppliers', items);
         lastFetched.value['suppliers'] = Date.now();
       } catch (e) {
         console.error('Fetch suppliers failed:', e);

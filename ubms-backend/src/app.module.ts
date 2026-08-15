@@ -23,6 +23,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
@@ -66,6 +67,7 @@ import { HealthController } from './health.controller';
     AuditLogsModule,
     SuperAdminModule,
     ShiftsModule,
+    TelegramModule,
   ],
   controllers: [HealthController],
   providers: [

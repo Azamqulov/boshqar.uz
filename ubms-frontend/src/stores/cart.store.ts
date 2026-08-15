@@ -12,6 +12,7 @@ export interface CartItem {
   discount: number;
   availableStock?: number;
   unit?: string;
+  allowDecimal?: boolean;
 }
 
 export type DiscountType = 'percent' | 'fixed';
@@ -29,7 +30,8 @@ export const useCartStore = defineStore('cart', {
     orderType: 'pos' as 'pos' | 'restaurant' | 'service',
   }),
   getters: {
-    itemCount: (state) => state.items.reduce((sum, item) => sum + item.quantity, 0),
+    itemCount: (state) => state.items.length,
+    totalQuantity: (state) => state.items.reduce((sum, item) => sum + item.quantity, 0),
     
     // Asl jami summa (chegirmasiz)
     rawSubtotal: (state) =>
@@ -78,12 +80,20 @@ export const useCartStore = defineStore('cart', {
     },
   },
   actions: {
-    addItem(productOrService: any, isService = false) {
+    addItem(productOrService: any, isService = false, initialQty?: number) {
       const id = productOrService.id;
       const existing = this.items.find((item) => item.id === id);
 
+      const unitName = productOrService.unit?.shortName || productOrService.unit || 'dona';
+      const isDecimal = productOrService.unit?.allowDecimal === true || 
+        ['kg', 'l', 'g', 'm', 'ml', 'kv.m'].includes(String(unitName).toLowerCase());
+
+      const qtyToAdd = initialQty !== undefined && initialQty > 0 
+        ? initialQty 
+        : (isDecimal ? 1 : 1);
+
       if (existing) {
-        existing.quantity += 1;
+        existing.quantity = Math.round((existing.quantity + qtyToAdd) * 1000) / 1000;
       } else {
         this.items.push({
           id,
@@ -93,10 +103,11 @@ export const useCartStore = defineStore('cart', {
           sku: productOrService.sku,
           barcode: productOrService.barcode,
           price: Number(productOrService.salePrice || productOrService.price || 0),
-          quantity: 1,
+          quantity: qtyToAdd,
           discount: 0,
           availableStock: productOrService.availableQty ?? productOrService.stockQty,
-          unit: productOrService.unit?.shortName || productOrService.unit,
+          unit: unitName,
+          allowDecimal: isDecimal,
         });
       }
     },

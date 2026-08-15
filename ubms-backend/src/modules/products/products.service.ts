@@ -259,51 +259,38 @@ export class ProductsService {
   }
 
   async create(businessId: string, branchId: string | undefined, userId: string, data: CreateProductDto) {
-    // Generate SKU if not provided — use random suffix to avoid race conditions
+    // Optimize all pre-checks concurrently to minimize round-trip latency
+    const [existingSku, existingBarcode, defaultBranch] = await Promise.all([
+      data.sku?.trim()
+        ? this.prisma.product.findFirst({ where: { businessId, sku: data.sku.trim() } })
+        : null,
+      data.barcode?.trim()
+        ? this.prisma.product.findFirst({ where: { businessId, barcode: data.barcode.trim() } })
+        : null,
+      !data.branchId && !branchId
+        ? this.prisma.branch.findFirst({ where: { businessId, isMain: true } })
+        : null,
+    ]);
+
+    if (existingSku) {
+      throw new ConflictException({ code: 'SKU_EXISTS', message: 'Bunday SKU mavjud' });
+    }
+
+    if (existingBarcode) {
+      throw new ConflictException({ code: 'BARCODE_EXISTS', message: 'Bunday shtrix-kod mavjud' });
+    }
+
     let sku = data.sku?.trim() || null;
     if (!sku) {
       const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const count = await this.prisma.product.count({ where: { businessId } });
-      sku = `PRD-${String(count + 1).padStart(6, '0')}-${randomSuffix}`;
-    } else {
-      const existingSku = await this.prisma.product.findFirst({
-        where: { businessId, sku },
-      });
-      if (existingSku) {
-        throw new ConflictException({ code: 'SKU_EXISTS', message: 'Bunday SKU mavjud' });
-      }
+      sku = `PRD-${Date.now().toString().slice(-6)}-${randomSuffix}`;
     }
 
-    // Check Barcode uniqueness if provided
-    if (data.barcode) {
-      const existingBarcode = await this.prisma.product.findFirst({
-        where: { businessId, barcode: data.barcode },
-      });
-      if (existingBarcode) {
-        throw new ConflictException({ code: 'BARCODE_EXISTS', message: 'Bunday shtrix-kod mavjud' });
-      }
-    }
-
-    // Default unit if not supplied
-    let unitId = data.unitId;
-    if (!unitId) {
-      const defaultUnit = await this.prisma.unit.findFirst({ where: { shortName: 'dona' } });
-      unitId = defaultUnit?.id || '00000000-0000-0000-0000-000000000020';
-    }
-
+    // Default unit fallback ID
+    const unitId = data.unitId || '00000000-0000-0000-0000-000000000020';
     const effectiveBrand = data.productType || data.brand || (data.isKitchenItem ? 'dish' : 'goods');
     const effectiveImage = data.imageUrl || data.image || null;
-
-    // Resolve target branch for stock tracking
-    let targetBranchId = data.branchId || branchId;
-    if (!targetBranchId) {
-      const defaultBranch = await this.prisma.branch.findFirst({
-        where: { businessId, isMain: true },
-      }) || await this.prisma.branch.findFirst({
-        where: { businessId },
-      });
-      targetBranchId = defaultBranch?.id;
-    }
+    const targetBranchId = data.branchId || branchId || defaultBranch?.id;
 
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({

@@ -99,7 +99,7 @@
                 class="inline-block font-bold px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap"
                 :class="prod.stockQty <= 0 ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30' : prod.stockQty <= prod.minStock ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
               >
-                {{ prod.stockQty <= 0 ? 'Tugagan (0)' : `${prod.stockQty} ${prod.unit?.shortName || 'dona'}` }}
+                {{ prod.stockQty <= 0 ? 'Tugagan (0)' : formatStock(prod.stockQty, prod.unit?.shortName || 'dona') }}
               </span>
             </td>
             <!-- Status / Stop-list Switch Button -->
@@ -159,4 +159,11 @@ defineEmits<{
 
 const { formatCurrency } = useFormat();
 const { canEdit, canDelete } = usePermissions();
+
+const formatStock = (qty: number, unitName = 'dona') => {
+  if (qty === undefined || qty === null) return `0 ${unitName}`;
+  const num = Number(qty);
+  const formatted = num % 1 === 0 ? num.toString() : num.toFixed(3).replace(/\.?0+$/, '');
+  return `${formatted} ${unitName}`;
+};
 </script>

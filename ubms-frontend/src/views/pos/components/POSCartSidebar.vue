@@ -154,24 +154,58 @@
         <div class="flex items-center justify-between pt-1">
           <div class="flex items-center space-x-1.5">
             <button
-              @click="cartStore.updateQuantity(item.id, item.quantity - 1)"
-              class="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 flex items-center justify-center text-xs text-slate-800 dark:text-white"
+              @click="decreaseQty(item)"
+              class="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 flex items-center justify-center text-xs text-slate-800 dark:text-white font-bold transition select-none"
+              title="Kamaytirish"
             >
               -
             </button>
-            <input
-              type="number"
-              v-model.number="item.quantity"
-              class="w-12 text-center py-0.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white font-bold"
-            />
+            <div class="relative flex items-center">
+              <input
+                type="number"
+                :step="item.allowDecimal ? '0.001' : '1'"
+                :min="item.allowDecimal ? '0.001' : '1'"
+                v-model.number="item.quantity"
+                @change="sanitizeQty(item)"
+                class="text-center py-0.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white font-bold focus:ring-1 focus:ring-emerald-500"
+                :class="item.allowDecimal ? 'w-16' : 'w-12'"
+              />
+            </div>
             <button
-              @click="cartStore.updateQuantity(item.id, item.quantity + 1)"
-              class="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 flex items-center justify-center text-xs text-slate-800 dark:text-white"
+              @click="increaseQty(item)"
+              class="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 flex items-center justify-center text-xs text-slate-800 dark:text-white font-bold transition select-none"
+              title="Ko'paytirish"
             >
               +
             </button>
           </div>
-          <span class="text-xs font-black text-slate-900 dark:text-white">{{ formatCurrency(item.price * item.quantity - item.discount) }}</span>
+          <span class="text-xs font-black text-slate-900 dark:text-white font-mono">{{ formatCurrency(item.price * item.quantity - item.discount) }}</span>
+        </div>
+
+        <!-- Quick Weight buttons for Decimal Items (e.g. kg / litr / metr) -->
+        <div v-if="item.allowDecimal" class="flex items-center gap-1 pt-0.5 border-t border-slate-200/50 dark:border-slate-700/50">
+          <span class="text-[9px] text-slate-400 font-semibold mr-0.5">Tezkor:</span>
+          <button
+            type="button"
+            @click="addQuickWeight(item, 0.1)"
+            class="px-1.5 py-0.2 rounded bg-white dark:bg-slate-700 hover:bg-emerald-50 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 border border-slate-200 dark:border-slate-600 transition"
+          >
+            +0.1 {{ item.unit }}
+          </button>
+          <button
+            type="button"
+            @click="addQuickWeight(item, 0.5)"
+            class="px-1.5 py-0.2 rounded bg-white dark:bg-slate-700 hover:bg-emerald-50 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 border border-slate-200 dark:border-slate-600 transition"
+          >
+            +0.5 {{ item.unit }}
+          </button>
+          <button
+            type="button"
+            @click="addQuickWeight(item, 1)"
+            class="px-1.5 py-0.2 rounded bg-white dark:bg-slate-700 hover:bg-emerald-50 text-[9px] font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 border border-slate-200 dark:border-slate-600 transition"
+          >
+            +1 {{ item.unit }}
+          </button>
         </div>
       </div>
     </div>
@@ -257,7 +291,7 @@ import {
 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     mobileViewTab: 'catalog' | 'cart';
     cartStore: any;
@@ -287,4 +321,34 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+
+const increaseQty = (item: any) => {
+  const step = item.allowDecimal ? 0.5 : 1;
+  const newQty = Math.round((item.quantity + step) * 1000) / 1000;
+  item.quantity = newQty;
+};
+
+const decreaseQty = (item: any) => {
+  const step = item.allowDecimal ? 0.5 : 1;
+  const newQty = Math.round((item.quantity - step) * 1000) / 1000;
+  if (newQty <= 0) {
+    props.cartStore.removeItem(item.id);
+  } else {
+    item.quantity = newQty;
+  }
+};
+
+const addQuickWeight = (item: any, amount: number) => {
+  const newQty = Math.round((item.quantity + amount) * 1000) / 1000;
+  item.quantity = newQty;
+};
+
+const sanitizeQty = (item: any) => {
+  let val = Number(item.quantity);
+  if (isNaN(val) || val <= 0) {
+    props.cartStore.removeItem(item.id);
+    return;
+  }
+  item.quantity = Math.round(val * 1000) / 1000;
+};
 </script>
