@@ -35,6 +35,18 @@ export class ProductsController {
     return this.productsService.findAll(businessId, branchId, query);
   }
 
+  @Get('lite')
+  @RequirePermission('products.view')
+  findAllLite(
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.productsService.findAllLite(businessId, branchId, { search, categoryId, limit });
+  }
+
   @Get('barcode/:barcode')
   @RequirePermission('products.view')
   findByBarcode(

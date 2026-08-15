@@ -12,9 +12,23 @@ export const useDataStore = defineStore('ubms_data', () => {
   const dashboardSummary = ref<any>(null);
   const dashboardCharts = ref<any>(null);
   const inventory = ref<any[]>([]);
+  const inventoryTotal = ref<number>(0);
+  const inventoryMeta = ref<any>({ page: 1, limit: 100, total: 0, totalPages: 1 });
   const financeSummary = ref<any>(null);
   const financeExpenses = ref<any[]>([]);
   const appointments = ref<any[]>([]);
+
+  const loading = ref({
+    products: false,
+    categories: false,
+    inventory: false,
+    customers: false,
+    suppliers: false,
+    finance: false,
+    dashboard: false,
+    tables: false,
+    appointments: false,
+  });
 
   const lastFetched = ref<Record<string, number>>({});
   const inFlightPromises: Record<string, Promise<any> | null> = {};
@@ -33,16 +47,26 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['products']) {
       return inFlightPromises['products'];
     }
+    loading.value.products = true;
     const p = (async () => {
       try {
-        const { data } = await api.get('/products?limit=1000');
+        const { data } = await api.get('/products/lite?limit=1000');
         const items = Array.isArray(data) ? data : (data?.items || []);
         products.value = items;
         lastFetched.value['products'] = Date.now();
       } catch (e) {
-        console.error('Fetch products failed:', e);
+        // Fallback to standard /products if /products/lite not reachable
+        try {
+          const { data } = await api.get('/products?limit=100');
+          const items = Array.isArray(data) ? data : (data?.items || []);
+          products.value = items;
+          lastFetched.value['products'] = Date.now();
+        } catch (fallbackErr) {
+          console.error('Fetch products failed:', fallbackErr);
+        }
       } finally {
         inFlightPromises['products'] = null;
+        loading.value.products = false;
       }
       return products.value;
     })();
@@ -58,6 +82,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['categories']) {
       return inFlightPromises['categories'];
     }
+    loading.value.categories = true;
     const p = (async () => {
       try {
         const { data } = await api.get('/categories');
@@ -68,6 +93,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch categories failed:', e);
       } finally {
         inFlightPromises['categories'] = null;
+        loading.value.categories = false;
       }
       return categories.value;
     })();
@@ -80,6 +106,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (!force && dashboardSummary.value && isCacheValid('dashboard', 30000)) {
       return { summary: dashboardSummary.value, charts: dashboardCharts.value };
     }
+    loading.value.dashboard = true;
     try {
       const [sumRes, chartRes] = await Promise.all([
         api.get('/dashboard/summary'),
@@ -90,6 +117,8 @@ export const useDataStore = defineStore('ubms_data', () => {
       lastFetched.value['dashboard'] = Date.now();
     } catch (e) {
       console.error('Fetch dashboard failed:', e);
+    } finally {
+      loading.value.dashboard = false;
     }
     return { summary: dashboardSummary.value, charts: dashboardCharts.value };
   };
@@ -106,28 +135,42 @@ export const useDataStore = defineStore('ubms_data', () => {
     }
   };
 
-  // 4. Fetch Inventory
-  const fetchInventory = async (force = false) => {
-    if (!force && inventory.value.length > 0 && isCacheValid('inventory', 60000)) {
+  // 4. Fetch Inventory with pagination support
+  const fetchInventory = async (force = false, page = 1, limit = 100) => {
+    const cacheKey = `inventory_${page}_${limit}`;
+    if (!force && inventory.value.length > 0 && isCacheValid(cacheKey, 60000)) {
       return inventory.value;
     }
-    if (inFlightPromises['inventory']) {
-      return inFlightPromises['inventory'];
+    if (inFlightPromises[cacheKey]) {
+      return inFlightPromises[cacheKey];
     }
+    loading.value.inventory = true;
     const p = (async () => {
       try {
-        const { data } = await api.get('/inventory');
+        const { data } = await api.get(`/inventory?page=${page}&limit=${limit}`);
         const items = Array.isArray(data) ? data : (data?.items || []);
         inventory.value = items;
-        lastFetched.value['inventory'] = Date.now();
+        if (data?.total !== undefined || data?.totalPages !== undefined) {
+          inventoryMeta.value = {
+            page: data.page || page,
+            limit: data.limit || limit,
+            total: data.total || items.length,
+            totalPages: data.totalPages || Math.ceil((data.total || items.length) / limit),
+          };
+          inventoryTotal.value = data.total || items.length;
+        } else {
+          inventoryTotal.value = items.length;
+        }
+        lastFetched.value[cacheKey] = Date.now();
       } catch (e) {
         console.error('Fetch inventory failed:', e);
       } finally {
-        inFlightPromises['inventory'] = null;
+        inFlightPromises[cacheKey] = null;
+        loading.value.inventory = false;
       }
       return inventory.value;
     })();
-    inFlightPromises['inventory'] = p;
+    inFlightPromises[cacheKey] = p;
     return p;
   };
 
@@ -139,6 +182,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['finance']) {
       return inFlightPromises['finance'];
     }
+    loading.value.finance = true;
     const p = (async () => {
       try {
         const [sumRes, expRes] = await Promise.all([
@@ -152,6 +196,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch finance failed:', e);
       } finally {
         inFlightPromises['finance'] = null;
+        loading.value.finance = false;
       }
       return { summary: financeSummary.value, expenses: financeExpenses.value };
     })();
@@ -167,9 +212,10 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['customers']) {
       return inFlightPromises['customers'];
     }
+    loading.value.customers = true;
     const p = (async () => {
       try {
-        const { data } = await api.get('/customers?limit=1000');
+        const { data } = await api.get('/customers?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         customers.value = items;
         lastFetched.value['customers'] = Date.now();
@@ -177,6 +223,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch customers failed:', e);
       } finally {
         inFlightPromises['customers'] = null;
+        loading.value.customers = false;
       }
       return customers.value;
     })();
@@ -192,9 +239,10 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['suppliers']) {
       return inFlightPromises['suppliers'];
     }
+    loading.value.suppliers = true;
     const p = (async () => {
       try {
-        const { data } = await api.get('/suppliers?limit=1000');
+        const { data } = await api.get('/suppliers?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         suppliers.value = items;
         lastFetched.value['suppliers'] = Date.now();
@@ -202,6 +250,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch suppliers failed:', e);
       } finally {
         inFlightPromises['suppliers'] = null;
+        loading.value.suppliers = false;
       }
       return suppliers.value;
     })();
@@ -217,9 +266,10 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['appointments']) {
       return inFlightPromises['appointments'];
     }
+    loading.value.appointments = true;
     const p = (async () => {
       try {
-        const { data } = await api.get('/appointments?limit=1000');
+        const { data } = await api.get('/appointments?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         appointments.value = items;
         lastFetched.value['appointments'] = Date.now();
@@ -227,6 +277,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch appointments failed:', e);
       } finally {
         inFlightPromises['appointments'] = null;
+        loading.value.appointments = false;
       }
       return appointments.value;
     })();
@@ -242,6 +293,7 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['tables']) {
       return inFlightPromises['tables'];
     }
+    loading.value.tables = true;
     const p = (async () => {
       try {
         const { data } = await api.get('/restaurant/tables');
@@ -252,6 +304,7 @@ export const useDataStore = defineStore('ubms_data', () => {
         console.error('Fetch tables failed:', e);
       } finally {
         inFlightPromises['tables'] = null;
+        loading.value.tables = false;
       }
       return tables.value;
     })();
@@ -264,28 +317,37 @@ export const useDataStore = defineStore('ubms_data', () => {
     delete lastFetched.value[key];
   };
 
-  // 10. Smart Background Prefetcher (Instant Loading across entire app)
+  // 10. Smart Background Prefetcher (Critical first, background non-blocking)
   const prefetchAll = async (businessType = 'shop') => {
-    const promises: Promise<any>[] = [
-      fetchCategories(),
-      fetchProducts(),
-      fetchCustomers(),
-      fetchSuppliers(),
-      fetchInventory(),
-      fetchFinance(),
-    ];
-
-    if (businessType === 'restaurant' || businessType === 'cafe') {
-      promises.push(fetchTables());
-    } else if (businessType === 'barbershop' || businessType === 'service') {
-      promises.push(fetchAppointments());
-    }
-
+    // 1. Critical requests: needed immediately for landing navigation and initial render
     try {
-      await Promise.allSettled(promises);
+      await Promise.allSettled([
+        fetchCategories(),
+        fetchProducts(),
+      ]);
     } catch (err) {
-      console.warn('Prefetch warning:', err);
+      console.warn('Critical prefetch warning:', err);
     }
+
+    // 2. Background requests: fire-and-forget in background without blocking UI
+    setTimeout(() => {
+      const bgPromises: Promise<any>[] = [
+        fetchCustomers(),
+        fetchSuppliers(),
+        fetchInventory(false, 1, 100),
+        fetchFinance(),
+      ];
+
+      if (businessType === 'restaurant' || businessType === 'cafe') {
+        bgPromises.push(fetchTables());
+      } else if (businessType === 'barbershop' || businessType === 'service') {
+        bgPromises.push(fetchAppointments());
+      }
+
+      Promise.allSettled(bgPromises).catch((err) => {
+        console.warn('Background prefetch warning:', err);
+      });
+    }, 60);
   };
 
   // 11. Clear all on logout

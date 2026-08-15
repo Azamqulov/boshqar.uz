@@ -1,11 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async getSummary(businessId: string, branchId?: string) {
+    const cacheKey = `dashboard:summary:${businessId}:${branchId || 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -49,7 +60,7 @@ export class DashboardService {
         }),
         this.prisma.inventory.findMany({
           where: {
-            product: { businessId },
+            businessId,
             ...(branchId ? { branchId } : {}),
           },
           select: {
@@ -94,7 +105,7 @@ export class DashboardService {
     const totalCustomerDebt = customers.reduce((sum, c) => sum + Number(c.debt), 0);
     const totalSupplierDebt = suppliers.reduce((sum, s) => sum + Number(s.balance), 0);
 
-    return {
+    const result = {
       todaySales,
       todayExpenses: todayExpenseSum,
       todayProfit,
@@ -105,9 +116,18 @@ export class DashboardService {
       totalCustomerDebt,
       totalSupplierDebt,
     };
+
+    await this.cacheManager.set(cacheKey, result, 30000);
+    return result;
   }
 
   async getChartData(businessId: string, branchId?: string, days = 14) {
+    const cacheKey = `dashboard:charts:${businessId}:${branchId || 'all'}:${days}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
@@ -254,7 +274,7 @@ export class DashboardService {
     }
 
     // Finalize profits and format categories as array
-    return Array.from(dailyMap.values()).map((entry) => {
+    const chartResult = Array.from(dailyMap.values()).map((entry) => {
       const grossProfit = entry.sales - entry.cogs;
       const netProfit = Math.max(0, grossProfit - entry.expenses);
       return {
@@ -271,5 +291,8 @@ export class DashboardService {
         categories: Object.values(entry.categories).sort((a, b) => b.amount - a.amount),
       };
     });
+
+    await this.cacheManager.set(cacheKey, chartResult, 60000);
+    return chartResult;
   }
 }

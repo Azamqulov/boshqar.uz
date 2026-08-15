@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { WebSocketsModule } from './modules/websockets/websockets.module';
@@ -32,6 +33,11 @@ import { HealthController } from './health.controller';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 30000, // 30s default
+      max: 500,   // Maximum 500 cached entries in memory
+    }),
     ThrottlerModule.forRoot([
       {
         name: 'default',

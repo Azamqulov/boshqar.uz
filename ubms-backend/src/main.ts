@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { validateEnv } from './config/env.validation';
 
@@ -13,7 +14,15 @@ async function bootstrap() {
   validateEnv();
   const app = await NestFactory.create(AppModule);
 
-  // 1. Security Headers via Helmet
+  // 1. High-Performance HTTP Response Compression (Gzip / Deflate)
+  app.use(
+    compression({
+      threshold: 512,
+      level: 6,
+    }),
+  );
+
+  // 2. Security Headers via Helmet
   app.use(
     helmet({
       crossOriginEmbedderPolicy: false,

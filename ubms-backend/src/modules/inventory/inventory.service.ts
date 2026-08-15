@@ -4,6 +4,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 export interface FindInventoryQueryDto {
   lowStockOnly?: boolean;
   search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface StockInDto {
@@ -29,9 +31,13 @@ export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
   async getInventory(businessId: string, branchId?: string, query?: FindInventoryQueryDto) {
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(Math.max(1, Number(query?.limit) || 100), 500);
+    const skip = (page - 1) * limit;
+
     const where: any = {
+      businessId,
       product: {
-        businessId,
         status: { not: 'archived' },
       },
     };
@@ -48,18 +54,23 @@ export class InventoryService {
       ];
     }
 
-    const items = await this.prisma.inventory.findMany({
-      where,
-      include: {
-        product: {
-          include: { category: true, unit: true },
+    const [items, total] = await Promise.all([
+      this.prisma.inventory.findMany({
+        where,
+        include: {
+          product: {
+            include: { category: true, unit: true },
+          },
+          branch: true,
         },
-        branch: true,
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.inventory.count({ where }),
+    ]);
 
-    const result = items.map((inv) => {
+    const formattedItems = items.map((inv) => {
       const qty = Number(inv.quantity);
       const reserved = Number(inv.reservedQty);
       const minStock = Number(inv.product.minStock);
@@ -67,6 +78,7 @@ export class InventoryService {
 
       return {
         id: inv.id,
+        businessId: inv.businessId,
         branchId: inv.branchId,
         branchName: inv.branch.name,
         productId: inv.productId,
@@ -74,23 +86,29 @@ export class InventoryService {
         sku: inv.product.sku,
         barcode: inv.product.barcode,
         category: inv.product.category?.name,
-        unit: inv.product.unit.shortName,
+        unit: inv.product.unit?.shortName || '',
         purchasePrice: Number(inv.product.purchasePrice),
         salePrice: Number(inv.product.salePrice),
         quantity: qty,
         reservedQty: reserved,
-        availableQty: qty - reserved,
+        availableQty: Math.max(0, qty - reserved),
         minStock,
         isLowStock,
         totalValue: qty * Number(inv.product.purchasePrice),
       };
     });
 
-    if (query?.lowStockOnly) {
-      return result.filter((item) => item.isLowStock);
-    }
+    const finalItems = query?.lowStockOnly
+      ? formattedItems.filter((item) => item.isLowStock)
+      : formattedItems;
 
-    return result;
+    return {
+      items: finalItems,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async stockIn(
@@ -124,6 +142,7 @@ export class InventoryService {
       } else {
         await tx.inventory.create({
           data: {
+            businessId,
             branchId,
             productId: data.productId,
             quantity: qtyAfter,

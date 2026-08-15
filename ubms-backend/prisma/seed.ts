@@ -403,6 +403,7 @@ async function main() {
       },
       update: { quantity: p.stock },
       create: {
+        businessId: business.id,
         branchId: mainBranch.id,
         productId: prod.id,
         quantity: p.stock,

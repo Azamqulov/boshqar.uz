@@ -303,6 +303,7 @@ model Business {
   subscriptions Subscription[]
   employees     Employee[]
   posShifts     PosShift[]
+  inventories   Inventory[]
 
   @@map("businesses")
 }
@@ -487,16 +488,20 @@ model Product {
 
 model Inventory {
   id          String   @id @default(uuid()) @db.Uuid
+  businessId  String   @map("business_id") @db.Uuid
   branchId    String   @map("branch_id") @db.Uuid
   productId   String   @map("product_id") @db.Uuid
   quantity    Decimal  @default(0) @db.Decimal(14, 3)
   reservedQty Decimal  @default(0) @map("reserved_qty") @db.Decimal(14, 3)
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  branch  Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([branchId, productId])
+  @@index([businessId])
+  @@index([businessId, branchId])
   @@map("inventory")
 }
 
@@ -565,6 +570,7 @@ model Supplier {
   business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   payments SupplierPayment[]
 
+  @@index([businessId, balance])
   @@map("suppliers")
 }
 
@@ -608,6 +614,8 @@ model Customer {
   appointments Appointment[]
 
   @@unique([businessId, phone])
+  @@index([businessId, debt])
+  @@index([businessId, createdAt])
   @@map("customers")
 }
 
@@ -643,7 +651,9 @@ model Order {
   restaurantOrder RestaurantOrder?
   appointments    Appointment[]
 
+  @@index([businessId, status, completedAt])
   @@index([businessId, branchId, createdAt])
+  @@index([businessId, customerId])
   @@map("orders")
 }
 
@@ -664,6 +674,8 @@ model OrderItem {
   kitchenOrder KitchenOrder?
   refundItems  RefundItem[]
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -756,6 +768,8 @@ model Expense {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   branch   Branch   @relation(fields: [branchId], references: [id])
 
+  @@index([businessId, recordedAt])
+  @@index([businessId, branchId, recordedAt])
   @@map("expenses")
 }
 

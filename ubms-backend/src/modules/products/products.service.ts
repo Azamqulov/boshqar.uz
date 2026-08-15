@@ -52,9 +52,105 @@ export interface CreateUnitDto {
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
+  async findAllLite(businessId: string, branchId?: string, query?: { search?: string; categoryId?: string; limit?: number }) {
+    const limit = Math.min(Number(query?.limit) || 1000, 2000);
+    const where: any = {
+      businessId,
+      status: { not: 'archived' },
+    };
+
+    if (query?.categoryId) {
+      where.categoryId = query.categoryId;
+    }
+
+    if (query?.search) {
+      where.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { sku: { contains: query.search, mode: 'insensitive' } },
+        { barcode: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const items = await this.prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        businessId: true,
+        branchId: true,
+        name: true,
+        sku: true,
+        barcode: true,
+        categoryId: true,
+        brand: true,
+        unitId: true,
+        purchasePrice: true,
+        salePrice: true,
+        taxRate: true,
+        minStock: true,
+        imageUrl: true,
+        status: true,
+        category: { select: { id: true, name: true, color: true } },
+        unit: { select: { id: true, name: true, shortName: true } },
+        inventory: {
+          select: {
+            branchId: true,
+            quantity: true,
+            reservedQty: true,
+          },
+        },
+      },
+      take: limit,
+      orderBy: { name: 'asc' },
+    });
+
+    return items.map((prod) => {
+      const isMadeToOrder =
+        prod.brand === 'dish' ||
+        prod.brand === 'kitchen' ||
+        prod.brand === 'service' ||
+        prod.unit?.shortName === 'por' ||
+        prod.unitId === '00000000-0000-0000-0000-000000000024';
+
+      const branchInventories = branchId ? prod.inventory.filter((inv) => inv.branchId === branchId) : prod.inventory;
+      const targetInventories = branchInventories.length > 0 ? branchInventories : prod.inventory;
+
+      const stockQty = targetInventories.reduce((acc, curr) => acc + Number(curr.quantity), 0);
+      const reservedQty = targetInventories.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
+
+      const effectiveStockQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : stockQty;
+      const effectiveAvailableQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
+
+      return {
+        id: prod.id,
+        businessId: prod.businessId,
+        branchId: prod.branchId,
+        name: prod.name,
+        sku: prod.sku,
+        barcode: prod.barcode,
+        categoryId: prod.categoryId,
+        category: prod.category,
+        brand: prod.brand,
+        unitId: prod.unitId,
+        unit: prod.unit,
+        purchasePrice: Number(prod.purchasePrice),
+        salePrice: Number(prod.salePrice),
+        taxRate: Number(prod.taxRate),
+        minStock: Number(prod.minStock),
+        imageUrl: prod.imageUrl,
+        status: prod.status,
+        isMadeToOrder,
+        isAvailable: prod.status === 'active',
+        stockQty: effectiveStockQty,
+        reservedQty,
+        availableQty: effectiveAvailableQty,
+        isLowStock: !isMadeToOrder && effectiveStockQty <= Number(prod.minStock),
+      };
+    });
+  }
+
   async findAll(businessId: string, branchId?: string, query?: FindProductsQueryDto) {
     const page = Number(query?.page) || 1;
-    const limit = Number(query?.limit) || 1000;
+    const limit = Number(query?.limit) || 50;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -245,6 +341,7 @@ export class ProductsService {
             quantity: initialQty,
           },
           create: {
+            businessId,
             branchId: targetBranchId,
             productId: product.id,
             quantity: initialQty,
@@ -343,6 +440,7 @@ export class ProductsService {
             },
             update: { quantity: newQty },
             create: {
+              businessId,
               branchId: targetBranchId,
               productId: id,
               quantity: newQty,

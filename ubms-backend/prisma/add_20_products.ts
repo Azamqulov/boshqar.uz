@@ -429,6 +429,7 @@ async function addDemoProducts() {
         quantity: item.stock,
       },
       create: {
+        businessId: business.id,
         branchId: branch.id,
         productId: product.id,
         quantity: item.stock,
