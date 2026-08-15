@@ -52,7 +52,11 @@ export class ProductsController {
     @Query('period') period?: string,
   ) {
     const limitNum = limit ? Number(limit) : 10;
-    const periodDays = period === '30d' ? 30 : 30;
+    const periodDays =
+      period === '7d' ? 7 :
+      period === '14d' ? 14 :
+      period === '90d' ? 90 :
+      30; // default 30d
     return this.productsService.getBestsellers(businessId, limitNum, periodDays);
   }
 

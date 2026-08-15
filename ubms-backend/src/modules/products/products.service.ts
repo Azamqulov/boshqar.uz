@@ -491,8 +491,8 @@ export class ProductsService {
           ...p,
           stockQty,
           availableQty: stockQty - reservedQty,
-          soldCount30d: 0,
-          salesTotal30d: 0,
+          soldCount: 0,
+          salesTotal: 0,
         };
       });
     }
@@ -518,8 +518,8 @@ export class ProductsService {
           ...prod,
           stockQty,
           availableQty: stockQty - reservedQty,
-          soldCount30d: Number(item._sum.quantity || 0),
-          salesTotal30d: Number(item._sum.total || 0),
+          soldCount: Number(item._sum.quantity || 0),
+          salesTotal: Number(item._sum.total || 0),
         };
       })
       .filter(Boolean);

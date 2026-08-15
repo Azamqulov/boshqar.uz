@@ -48,28 +48,37 @@
               <button
                 type="button"
                 @click="$emit('update:paymentSource', 'cash')"
-                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer"
                 :class="paymentSource === 'cash' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
               >
-                <span>💵 Naqd pul</span>
+                <div class="flex items-center gap-1">
+                  <Banknote class="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Naqd pul</span>
+                </div>
                 <span class="text-[10px] text-slate-400 font-normal">Kassadan</span>
               </button>
               <button
                 type="button"
                 @click="$emit('update:paymentSource', 'card')"
-                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer"
                 :class="paymentSource === 'card' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
               >
-                <span>💳 Karta</span>
+                <div class="flex items-center gap-1">
+                  <CreditCard class="w-3.5 h-3.5 text-blue-500" />
+                  <span>Karta</span>
+                </div>
                 <span class="text-[10px] text-slate-400 font-normal">Korp. karta</span>
               </button>
               <button
                 type="button"
                 @click="$emit('update:paymentSource', 'bank')"
-                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1"
+                class="p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer"
                 :class="paymentSource === 'bank' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
               >
-                <span>🏦 Bank Hisobi</span>
+                <div class="flex items-center gap-1">
+                  <Building2 class="w-3.5 h-3.5 text-amber-500" />
+                  <span>Bank Hisobi</span>
+                </div>
                 <span class="text-[10px] text-slate-400 font-normal">Perechislenie</span>
               </button>
             </div>
@@ -160,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { CreditCard, X, ShieldCheck } from 'lucide-vue-next';
+import { CreditCard, X, ShieldCheck, Banknote, Building2 } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import { useFormat } from '../../../composables/useFormat';

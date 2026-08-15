@@ -29,9 +29,9 @@
       <AppStatCard
         title="Sof Foyda (Net Profit)"
         :value="formatCurrency(summary.netProfit || 0)"
-        :subtitle="`Marja: ${summary.profitMargin || 0}%`"
+        :subtitle="(summary.netProfit || 0) < 0 ? 'Xarajat tushumdan yuqori (Zarar)' : `Rentabellik (Marja): ${summary.profitMargin || 0}%`"
         :variant="(summary.netProfit || 0) >= 0 ? 'emerald' : 'rose'"
-        :icon="TrendingUp"
+        :icon="(summary.netProfit || 0) >= 0 ? TrendingUp : TrendingDown"
       />
     </div>
 

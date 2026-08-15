@@ -439,7 +439,7 @@ const createExpense = async () => {
     expenseForm.value = { category: 'rent', amount: 0, description: '' };
     dataStore.invalidate('finance');
     dataStore.invalidate('dashboard');
-    loadFinance(true);
+    dataStore.fetchFinance(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Xarajatni saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {

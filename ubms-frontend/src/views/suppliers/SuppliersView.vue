@@ -298,20 +298,28 @@ const saveSupplier = async () => {
   submitting.value = true;
   try {
     if (editingSupplier.value) {
-      await api.put(`/suppliers/${editingSupplier.value.id}`, {
+      const { data: updated } = await api.put(`/suppliers/${editingSupplier.value.id}`, {
         name: formData.value.name,
         companyName: formData.value.companyName,
         phone: formData.value.phone,
         address: formData.value.address,
         notes: formData.value.notes,
       });
+      const idx = dataStore.suppliers.findIndex((s: any) => s.id === editingSupplier.value.id);
+      if (idx !== -1) {
+        dataStore.suppliers[idx] = { ...dataStore.suppliers[idx], ...formData.value, ...(updated || {}) };
+      }
       toast.success('Ta\'minotchi ma\'lumotlari yangilandi!', 'Ta\'minotchi');
     } else {
-      await api.post('/suppliers', formData.value);
+      const { data: created } = await api.post('/suppliers', formData.value);
+      if (created) {
+        dataStore.suppliers.unshift(created);
+      }
       toast.success('Yangi ta\'minotchi saqlandi!', 'Ta\'minotchi');
     }
     isCreateModalOpen.value = false;
-    await dataStore.fetchSuppliers(true);
+    dataStore.invalidate('suppliers');
+    dataStore.fetchSuppliers(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Ta\'minotchini saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {
@@ -358,20 +366,31 @@ const openHistoryModal = async (s: any) => {
 
 const submitPay = async () => {
   if (!activeSupplier.value || !payAmount.value || payAmount.value <= 0) return;
-  submitting.value = true;
+  const sId = activeSupplier.value.id;
+  const amt = Number(payAmount.value);
+
+  // Optimistic update supplier balance
+  activeSupplier.value.balance = Math.max(0, (Number(activeSupplier.value.balance) || 0) - amt);
+  const targetSup = dataStore.suppliers.find((s: any) => s.id === sId);
+  if (targetSup) {
+    targetSup.balance = Math.max(0, (Number(targetSup.balance) || 0) - amt);
+  }
+
+  isPayModalOpen.value = false;
+  toast.success('To\'lov muvaffaqiyatli bajarildi va qayd etildi!', 'To\'lov');
+
   try {
-    await api.post(`/suppliers/${activeSupplier.value.id}/pay`, {
-      amount: payAmount.value,
+    await api.post(`/suppliers/${sId}/pay`, {
+      amount: amt,
       paymentSource: paymentSource.value,
       description: paymentDescription.value,
     });
-    toast.success('To\'lov muvaffaqiyatli bajarildi va audit jurnaliga qayd etildi!', 'To\'lov');
-    isPayModalOpen.value = false;
-    await dataStore.fetchSuppliers(true);
+    dataStore.invalidate('suppliers');
+    dataStore.invalidate('finance');
+    dataStore.fetchSuppliers(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'To\'lovni amalga oshirishda xatolik'), 'Xatolik');
-  } finally {
-    submitting.value = false;
+    fetchSuppliers(true);
   }
 };
 
@@ -393,12 +412,17 @@ const confirmDeleteSupplier = (s: any) => {
 
 const deleteSupplier = async (id: string) => {
   confirmModal.value.open = false;
+  // Optimistic removal
+  dataStore.suppliers = dataStore.suppliers.filter((s: any) => s.id !== id);
+  toast.success('Ta\'minotchi muvaffaqiyatli o\'chirildi!', 'O\'chirish');
+
   try {
     await api.delete(`/suppliers/${id}`);
-    toast.success('Ta\'minotchi muvaffaqiyatli o\'chirildi!', 'O\'chirish');
-    await dataStore.fetchSuppliers(true);
+    dataStore.invalidate('suppliers');
+    dataStore.fetchSuppliers(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Ta\'minotchini o\'chirishda xatolik'), 'Xatolik');
+    fetchSuppliers(true);
   }
 };
 

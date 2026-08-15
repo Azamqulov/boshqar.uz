@@ -37,7 +37,10 @@
             </button>
           </div>
 
-          <span class="text-[10px] text-slate-400 hidden sm:inline">30 kunlik</span>
+          <!-- Period label -->
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+            {{ periodLabel }}
+          </span>
         </div>
       </div>
 
@@ -75,8 +78,8 @@
           </div>
 
           <div class="text-right flex-shrink-0 pl-2">
-            <span class="font-black text-emerald-600 dark:text-emerald-400 block">{{ item.soldCount30d || 0 }} ta</span>
-            <span class="text-[9px] text-slate-400">{{ formatCurrency(item.salesTotal30d || 0) }}</span>
+            <span class="font-black text-emerald-600 dark:text-emerald-400 block">{{ soldCount(item) }} ta</span>
+            <span class="text-[9px] text-slate-400">{{ formatCurrency(salesTotal(item)) }}</span>
           </div>
         </div>
       </div>
@@ -190,9 +193,26 @@ import { useFormat } from '../../../composables/useFormat';
 
 const props = defineProps<{
   topBestsellers: any[];
+  periodDays?: number;
 }>();
 
 const { formatCurrency } = useFormat();
+
+const periodLabel = computed(() => {
+  const d = props.periodDays || 30;
+  if (d <= 7) return '7 kunlik';
+  if (d <= 14) return '14 kunlik';
+  if (d <= 30) return '30 kunlik';
+  return '3 oylik';
+});
+
+const soldCount = (item: any) => {
+  return Number(item.soldCount ?? item.soldCount30d ?? 0);
+};
+
+const salesTotal = (item: any) => {
+  return Number(item.salesTotal ?? item.salesTotal30d ?? 0);
+};
 
 const viewMode = ref<'list' | 'chart'>('list');
 const hoveredIndex = ref<number | null>(null);
@@ -200,7 +220,7 @@ const hoveredIndex = ref<number | null>(null);
 const colors = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4'];
 
 const totalSoldQuantity = computed(() => {
-  return props.topBestsellers.reduce((sum, item) => sum + (Number(item.soldCount30d) || 0), 0);
+  return props.topBestsellers.reduce((sum, item) => sum + (Number(soldCount(item)) || 0), 0);
 });
 
 const calculatedChartSegments = computed(() => {
@@ -210,7 +230,7 @@ const calculatedChartSegments = computed(() => {
   let accumulatedPercent = 0;
 
   return props.topBestsellers.map((item, index) => {
-    const count = Number(item.soldCount30d) || 0;
+    const count = Number(soldCount(item)) || 0;
     const rawPercent = (count / total) * 100;
     const percentage = Math.round(rawPercent);
     const color = colors[index % colors.length];

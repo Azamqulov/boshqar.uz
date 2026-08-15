@@ -14,31 +14,40 @@
             </div>
           </div>
 
-          <div class="space-y-1.5">
-            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {{ authStore.user?.fullName || 'Foydalanuvchi' }}
-              </h2>
-              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] uppercase border border-emerald-500/30">
+          <div class="space-y-1">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {{ authStore.user?.fullName || 'Foydalanuvchi' }}
+            </h2>
+
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-0.5">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] uppercase border border-emerald-500/30 shadow-2xs">
+                <ShieldCheck v-if="authStore.user?.isSuperAdmin" class="w-3.5 h-3.5" />
                 {{ authStore.user?.isSuperAdmin ? 'SuperAdmin' : (authStore.activeBusiness?.role || 'Owner') }}
               </span>
-            </div>
 
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center sm:justify-start gap-3">
-              <span class="flex items-center gap-1 font-mono">
+              <span class="flex items-center gap-1 font-mono text-xs text-slate-500 dark:text-slate-400 font-semibold">
                 <Phone class="w-3.5 h-3.5 text-emerald-500" />
                 {{ authStore.user?.phone }}
               </span>
-            </p>
+            </div>
           </div>
         </div>
 
-        <!-- Right Side: Business Badge & Interactive Currency Selector -->
+        <!-- Right Side: Business Badge, Language & Currency Selector -->
         <div class="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
           <span class="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-1.5 shadow-sm">
             <Building2 class="w-4 h-4 text-emerald-500" />
             <span>{{ authStore.activeBusiness?.name || 'Biznes' }}</span>
           </span>
+
+          <!-- Til (Yozuv) Tanlash -->
+          <div class="w-44" data-no-transliterate>
+            <AppSelect
+              :model-value="langStore.scriptMode"
+              @update:model-value="langStore.setScript($event)"
+              :options="scriptOptions"
+            />
+          </div>
 
           <div class="w-44">
             <AppSelect
@@ -168,6 +177,7 @@
 </template>
 
 <script setup lang="ts">
+import { reactive } from 'vue';
 import {
   CheckCircle2,
   Phone,
@@ -175,10 +185,22 @@ import {
   UserCircle,
   Key,
   Save,
+  Languages,
+  ShieldCheck,
 } from 'lucide-vue-next';
 import { useAuthStore } from '../../../stores/auth.store';
 import AppSelect from '../../../components/AppSelect.vue';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import { useLanguage } from '../../../composables/useLanguage';
+
+// reactive() bilan o'rashimiz kerak — aks holda langStore.scriptMode template da
+// Ref object sifatida uzatiladi va AppSelect 'Tanlang...' ko'rsatadi
+const langStore = reactive(useLanguage());
+
+const scriptOptions = [
+  { value: 'latin', label: "O'zbek Lotin (Aa)", icon: Languages },
+  { value: 'cyrillic', label: "O'zbek Kirill (Аа)", icon: Languages },
+];
 
 defineProps<{
   profileForm: {

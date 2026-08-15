@@ -550,7 +550,7 @@ const filteredProducts = computed(() => {
   let list = [...products.value];
 
   // Merge bestsellers sales stats into products list
-  const bestsellersMap = new Map(bestsellers.value.map((b) => [b.id, b.soldCount30d || 0]));
+  const bestsellersMap = new Map(bestsellers.value.map((b) => [b.id, b.soldCount ?? b.soldCount30d ?? 0]));
   list = list.map((p) => ({
     ...p,
     soldCount30d: bestsellersMap.get(p.id) || 0,

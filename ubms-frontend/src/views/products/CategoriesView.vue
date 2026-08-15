@@ -646,23 +646,37 @@ const saveCategory = async () => {
     };
 
     if (editingCatId.value) {
+      let updatedRes: any = null;
       try {
-        await api.patch(`/categories/${editingCatId.value}`, payload);
+        const { data } = await api.patch(`/categories/${editingCatId.value}`, payload);
+        updatedRes = data;
       } catch {
-        await api.patch(`/products/categories/${editingCatId.value}`, payload);
+        const { data } = await api.patch(`/products/categories/${editingCatId.value}`, payload);
+        updatedRes = data;
+      }
+      const idx = dataStore.categories.findIndex((c: any) => c.id === editingCatId.value);
+      if (idx !== -1) {
+        dataStore.categories[idx] = { ...dataStore.categories[idx], ...payload, ...(updatedRes || {}) };
       }
       toast.success(`"${name}" kategoriyasi muvaffaqiyatli yangilandi!`);
     } else {
+      let createdRes: any = null;
       try {
-        await api.post('/categories', payload);
+        const { data } = await api.post('/categories', payload);
+        createdRes = data;
       } catch {
-        await api.post('/products/categories', payload);
+        const { data } = await api.post('/products/categories', payload);
+        createdRes = data;
+      }
+      if (createdRes) {
+        dataStore.categories.unshift(createdRes);
       }
       toast.success(`"${name}" kategoriyasi muvaffaqiyatli yaratildi!`);
     }
 
     closeForm();
-    await dataStore.fetchCategories(true);
+    dataStore.invalidate('categories');
+    dataStore.fetchCategories(true).catch(console.error);
   } catch (err: any) {
     console.error('Failed to save category:', err);
     toast.error(getErrorMessage(err, 'Kategoriyani saqlashda xatolik yuz berdi.'));
@@ -692,6 +706,9 @@ const confirmDeleteCategory = (cat: Category) => {
 
 const deleteCategory = async (cat: Category) => {
   confirmModal.value.open = false;
+  // Immediate optimistic removal from Pinia store
+  dataStore.categories = dataStore.categories.filter((c: any) => c.id !== cat.id);
+
   try {
     try {
       await api.delete(`/categories/${cat.id}`);
@@ -699,10 +716,12 @@ const deleteCategory = async (cat: Category) => {
       await api.delete(`/products/categories/${cat.id}`);
     }
     toast.success(`"${cat.name}" kategoriyasi o'chirildi!`);
-    await dataStore.fetchCategories(true);
+    dataStore.invalidate('categories');
+    dataStore.fetchCategories(true).catch(console.error);
   } catch (err: any) {
     console.error('Failed to delete category:', err);
     toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik yuz berdi.'));
+    dataStore.fetchCategories(true);
   }
 };
 

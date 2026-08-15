@@ -11,6 +11,8 @@ export interface PosSettings {
   autoShowReceipt: boolean;
   allowZeroStockSale: boolean;
   enableHotkeys: boolean;
+  // Qarz limiti: 0 = cheksiz, >0 = maksimal qarz summa
+  maxDebtLimit: number;
   // Receipt & Printer Settings
   enableReceiptPrinting: boolean;
   autoPrintReceipt: boolean;
@@ -34,6 +36,7 @@ export const defaultPosSettings: PosSettings = {
   autoShowReceipt: true,
   allowZeroStockSale: true,
   enableHotkeys: true,
+  maxDebtLimit: 0, // 0 = cheksiz
   // Receipt & Printer defaults
   enableReceiptPrinting: true,
   autoPrintReceipt: false,

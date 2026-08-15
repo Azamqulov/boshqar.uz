@@ -33,7 +33,7 @@
         @change-period="changeChartPeriod"
       />
 
-      <DashboardBestsellers :top-bestsellers="topBestsellers" />
+      <DashboardBestsellers :top-bestsellers="topBestsellers" :period-days="selectedChartPeriod" />
     </div>
 
     <!-- Bottom Alerts Section -->
@@ -130,12 +130,28 @@ const isToday = (dateStr: string) => {
   return dateStr === today;
 };
 
+const bestsellersLoading = ref(false);
+
+const fetchBestsellers = async (days: number) => {
+  bestsellersLoading.value = true;
+  try {
+    const period = days <= 7 ? '7d' : days <= 14 ? '14d' : days <= 30 ? '30d' : '90d';
+    const res = await api.get(`/products/bestsellers?limit=5&period=${period}`).catch(() => ({ data: [] }));
+    topBestsellers.value = res.data || [];
+  } finally {
+    bestsellersLoading.value = false;
+  }
+};
+
 const changeChartPeriod = async (days: number) => {
   selectedChartPeriod.value = days;
   localStorage.setItem('dashboard_sales_period', String(days));
   chartLoading.value = true;
   try {
-    await dataStore.fetchChartData(days);
+    await Promise.all([
+      dataStore.fetchChartData(days),
+      fetchBestsellers(days),
+    ]);
   } finally {
     chartLoading.value = false;
   }
@@ -146,11 +162,11 @@ const loadDashboard = async (force = false) => {
     loading.value = true;
   }
   try {
-    const [dashRes, bestRes] = await Promise.all([
+    const period = selectedChartPeriod.value <= 7 ? '7d' : selectedChartPeriod.value <= 14 ? '14d' : selectedChartPeriod.value <= 30 ? '30d' : '90d';
+    await Promise.all([
       dataStore.fetchDashboard(force, selectedChartPeriod.value),
-      api.get('/products/bestsellers?limit=5&period=30d').catch(() => ({ data: [] })),
+      fetchBestsellers(selectedChartPeriod.value),
     ]);
-    topBestsellers.value = bestRes.data || [];
   } catch (err) {
     console.error('Failed to load dashboard data', err);
   } finally {

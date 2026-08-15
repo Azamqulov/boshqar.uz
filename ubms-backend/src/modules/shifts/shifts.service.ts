@@ -7,6 +7,7 @@ export class ShiftsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Helper to ensure today's unlinked orders get assigned to an open shift
+  // Helper to ensure today's unlinked orders get assigned to an open shift if one is currently active
   private async autoLinkOrphanOrders(businessId: string, branchId?: string) {
     try {
       let resolvedBranchId = branchId;
@@ -17,7 +18,7 @@ export class ShiftsService {
       if (!resolvedBranchId) return null;
 
       // Find active open shift
-      let activeShift = await this.prisma.posShift.findFirst({
+      const activeShift = await this.prisma.posShift.findFirst({
         where: {
           businessId,
           branchId: resolvedBranchId,
@@ -25,52 +26,26 @@ export class ShiftsService {
         },
       });
 
-      // Find completed orders without a shift
-      const unlinkedOrders = await this.prisma.order.findMany({
-        where: {
-          businessId,
-          shiftId: null,
-          status: 'completed',
-        },
-        orderBy: { createdAt: 'asc' },
-      });
+      // Only link orders if an active shift is ALREADY open
+      if (activeShift) {
+        const unlinkedOrders = await this.prisma.order.findMany({
+          where: {
+            businessId,
+            shiftId: null,
+            status: 'completed',
+          },
+        });
 
-      if (unlinkedOrders.length > 0) {
-        if (!activeShift) {
-          const defaultUser = await this.prisma.user.findFirst({
+        if (unlinkedOrders.length > 0) {
+          await this.prisma.order.updateMany({
             where: {
-              OR: [
-                { businessUsers: { some: { businessId } } },
-                { ownedBusinesses: { some: { id: businessId } } },
-              ],
+              id: { in: unlinkedOrders.map((o) => o.id) },
             },
-          });
-          if (!defaultUser) return null;
-
-          const earliestDate = unlinkedOrders[0].createdAt || new Date();
-          activeShift = await this.prisma.posShift.create({
             data: {
-              businessId,
-              branchId: resolvedBranchId,
-              userId: defaultUser.id,
-              openedAt: earliestDate,
-              startingCash: 0,
-              expectedCash: 0,
-              status: 'open',
-              notes: 'Bugungi savdo smenasi (Avtomatik)',
+              shiftId: activeShift.id,
             },
           });
         }
-
-        // Link orders to active shift
-        await this.prisma.order.updateMany({
-          where: {
-            id: { in: unlinkedOrders.map((o) => o.id) },
-          },
-          data: {
-            shiftId: activeShift.id,
-          },
-        });
       }
 
       return activeShift;

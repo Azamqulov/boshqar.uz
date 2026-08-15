@@ -5,6 +5,7 @@
       <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Shaxsiy profil, biznes parametrlari, interfeys mavzusi, xodimlar va ruxsatlar boshqaruvi</p>
     </div>
 
+
     <!-- Tabs -->
     <div class="flex space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs overflow-x-auto">
       <button
@@ -80,6 +81,7 @@
       v-else-if="activeTab === 'appearance'"
       :pos-settings="posSettings"
       @toggle-pos-setting="togglePosSetting"
+      @set-debt-limit="handleSetDebtLimit"
     />
 
     <!-- Tab 2: Xodimlar va Ruxsatlar -->
@@ -113,6 +115,7 @@
     <SettingsAuditTab
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
+      :loading="loadingAudit"
     />
 
     <!-- Tab 5: Xavfli Hudud -->
@@ -199,6 +202,7 @@ import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import ReceiptModal from '../../components/ReceiptModal.vue';
 import { usePosSettings, type PosSettings } from '../../composables/usePosSettings';
 import { usePersistentTab } from '../../composables/usePersistentTab';
+import { useLanguage } from '../../composables/useLanguage';
 
 import SettingsProfileTab from './components/SettingsProfileTab.vue';
 import SettingsAppearanceTab from './components/SettingsAppearanceTab.vue';
@@ -236,6 +240,7 @@ const currencyOptions = [
 const router = useRouter();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+const langStore = useLanguage();
 const toast = useToast();
 const { formatDate } = useFormat();
 const { posSettings, saveSettings } = usePosSettings();
@@ -306,6 +311,16 @@ const togglePosSetting = (key: keyof PosSettings) => {
   saveSettings();
   const info = posSettingInfo[key];
   toast.success(`"${info?.label || 'Funksiya'}" faollashtirildi!`, 'Kassa sozlamalari');
+};
+
+const handleSetDebtLimit = (val: number) => {
+  const limit = Math.max(0, val || 0);
+  saveSettings({ maxDebtLimit: limit });
+  if (limit > 0) {
+    toast.success(`Qarz limiti ${limit.toLocaleString('uz-UZ')} so'mga o'rnatildi!`, 'Qarz Limiti');
+  } else {
+    toast.info('Qarz limiti olib tashlandi (cheksiz)', 'Qarz Limiti');
+  }
 };
 
 const validTabs = ['my-profile', 'appearance', 'employees', 'receipt', 'audit', 'danger'] as const;
@@ -468,6 +483,7 @@ const handleChangePassword = async () => {
 
 const employees = ref<any[]>([]);
 const auditLogs = ref<any[]>([]);
+const loadingAudit = ref(false);
 
 const showEmployeeModal = ref(false);
 const showConfirmModal = ref(false);
@@ -633,14 +649,14 @@ const deleteEmployee = (emp: any) => {
 };
 
 const loadAudit = async () => {
-  loading.value = true;
+  loadingAudit.value = true;
   try {
     const { data } = await api.get('/audit-logs');
     auditLogs.value = data || [];
   } catch (err) {
     console.error(err);
   } finally {
-    loading.value = false;
+    loadingAudit.value = false;
   }
 };
 

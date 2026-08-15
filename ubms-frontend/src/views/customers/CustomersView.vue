@@ -112,6 +112,7 @@
       :is-add-debt-open="isAddDebtModalOpen"
       :is-pay-debt-open="isPayDebtModalOpen"
       :active-customer="activeCustomer"
+      :max-debt-limit="posSettings.maxDebtLimit"
       v-model:debt-add-amount="debtAddAmount"
       v-model:debt-add-notes="debtAddNotes"
       v-model:debt-pay-amount="debtPayAmount"
@@ -165,6 +166,7 @@ import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
+import { usePosSettings } from '../../composables/usePosSettings';
 
 import CustomerStatsCards from './components/CustomerStatsCards.vue';
 import CustomerTableView from './components/CustomerTableView.vue';
@@ -177,6 +179,7 @@ const toast = useToast();
 const dataStore = useDataStore();
 const { formatCurrency, formatDate } = useFormat();
 const { canCreate } = usePermissions();
+const { posSettings } = usePosSettings();
 
 const viewMode = usePersistentViewMode('customers', 'table');
 const loading = ref(false);
@@ -286,19 +289,26 @@ const saveCustomer = async () => {
   try {
     const cleanPhone = customerForm.value.phone ? cleanUzbekPhone(customerForm.value.phone) : undefined;
     if (editingCustomerId.value) {
-      await api.put(`/customers/${editingCustomerId.value}`, {
+      const { data: updated } = await api.put(`/customers/${editingCustomerId.value}`, {
         fullName: customerForm.value.fullName.trim(),
         phone: cleanPhone,
         notes: customerForm.value.notes,
       });
+      const idx = dataStore.customers.findIndex((c: any) => c.id === editingCustomerId.value);
+      if (idx !== -1) {
+        dataStore.customers[idx] = { ...dataStore.customers[idx], fullName: customerForm.value.fullName.trim(), phone: cleanPhone, notes: customerForm.value.notes, ...(updated || {}) };
+      }
       toast.success('Mijoz ma\'lumotlari yangilandi!', 'CRM');
     } else {
-      await api.post('/customers', {
+      const { data: created } = await api.post('/customers', {
         fullName: customerForm.value.fullName.trim(),
         phone: cleanPhone,
         notes: customerForm.value.notes,
         debt: Number(customerForm.value.debt) || 0,
       });
+      if (created) {
+        dataStore.customers.unshift(created);
+      }
       toast.success(`"${customerForm.value.fullName}" mijozlar bazasiga qo'shildi!`, 'CRM');
     }
     isCustomerModalOpen.value = false;
@@ -313,6 +323,15 @@ const saveCustomer = async () => {
 
 // 2. Add Debt handlers
 const openAddDebtModal = (c: any) => {
+  // Qarz limiti tekshiruvi
+  const limit = posSettings.value.maxDebtLimit;
+  if (limit > 0 && Number(c.debt || 0) >= limit) {
+    toast.error(
+      `"${c.fullName}" mijozining qarzi ${formatCurrency(limit)} limitiga yetgan! Avval qarzni to'lang.`,
+      'Qarz Limiti'
+    );
+    return;
+  }
   activeCustomer.value = c;
   debtAddAmount.value = 0;
   debtAddNotes.value = '';
@@ -326,23 +345,44 @@ const submitAddDebt = async () => {
     return;
   }
 
-  submitting.value = true;
+  // Limit tekshiruvi
+  const limit = posSettings.value.maxDebtLimit;
+  const currentDebt = Number(activeCustomer.value.debt || 0);
+  const newTotal = currentDebt + Number(debtAddAmount.value);
+  if (limit > 0 && newTotal > limit) {
+    const remaining = Math.max(0, limit - currentDebt);
+    toast.error(
+      remaining > 0
+        ? `Qarz limiti: ${formatCurrency(limit)}. Faqat ${formatCurrency(remaining)} qo'shish mumkin!`
+        : `Qarz limiti (${formatCurrency(limit)}) to'lgan! Yangi qarz yozib bo'lmaydi.`,
+      'Qarz Limiti'
+    );
+    return;
+  }
+
+  const custId = activeCustomer.value.id;
+  const custName = activeCustomer.value.fullName;
+  const amt = Number(debtAddAmount.value);
+
+  // Optimistic update
+  activeCustomer.value.debt = (Number(activeCustomer.value.debt) || 0) + amt;
+  const targetCust = dataStore.customers.find((c: any) => c.id === custId);
+  if (targetCust) {
+    targetCust.debt = (Number(targetCust.debt) || 0) + amt;
+  }
+
+  isAddDebtModalOpen.value = false;
+  toast.success(`"${custName}" hisobiga ${formatCurrency(amt)} qarz kiritildi!`, 'Nasiya Daftari');
+
   try {
-    await api.post(`/customers/${activeCustomer.value.id}/add-debt`, {
-      amount: Number(debtAddAmount.value),
+    await api.post(`/customers/${custId}/add-debt`, {
+      amount: amt,
       notes: debtAddNotes.value || undefined,
     });
-    toast.success(
-      `"${activeCustomer.value.fullName}" hisobiga ${formatCurrency(debtAddAmount.value)} qarz kiritildi!`,
-      'Nasiya Daftari'
-    );
-    isAddDebtModalOpen.value = false;
     dataStore.invalidate('customers');
-    loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Qarz kiritishda xatolik yuz berdi', 'Xatolik');
-  } finally {
-    submitting.value = false;
+    loadCustomers(true);
   }
 };
 
@@ -361,25 +401,31 @@ const submitPayDebt = async () => {
     return;
   }
 
-  submitting.value = true;
+  const custId = activeCustomer.value.id;
+  const custName = activeCustomer.value.fullName;
+  const amt = Number(debtPayAmount.value);
+
+  // Optimistic update
+  activeCustomer.value.debt = Math.max(0, (Number(activeCustomer.value.debt) || 0) - amt);
+  const targetCust = dataStore.customers.find((c: any) => c.id === custId);
+  if (targetCust) {
+    targetCust.debt = Math.max(0, (Number(targetCust.debt) || 0) - amt);
+  }
+
+  isPayDebtModalOpen.value = false;
+  toast.success(`"${custName}" uchun ${formatCurrency(amt)} qarz to'lovi qabul qilindi!`, 'Qarz Daftari');
+
   try {
-    await api.post(`/customers/${activeCustomer.value.id}/pay-debt`, {
-      amount: Number(debtPayAmount.value),
+    await api.post(`/customers/${custId}/pay-debt`, {
+      amount: amt,
       notes: debtPayNotes.value || undefined,
     });
-    toast.success(
-      `"${activeCustomer.value.fullName}" uchun ${formatCurrency(debtPayAmount.value)} qarz to'lovi qabul qilindi!`,
-      'Qarz Daftari'
-    );
-    isPayDebtModalOpen.value = false;
     dataStore.invalidate('customers');
     dataStore.invalidate('finance');
     dataStore.invalidate('dashboard');
-    loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
-  } finally {
-    submitting.value = false;
+    loadCustomers(true);
   }
 };
 
@@ -414,13 +460,17 @@ const executeDeleteCustomer = async () => {
   if (!customerToDelete.value) return;
   const c = customerToDelete.value;
   isDeleteDialogOpen.value = false;
+
+  // Immediate optimistic removal
+  dataStore.customers = dataStore.customers.filter((cust: any) => cust.id !== c.id);
+  toast.success('Mijoz muvaffaqiyatli o\'chirildi', 'CRM');
+
   try {
     await api.delete(`/customers/${c.id}`);
-    toast.success('Mijoz muvaffaqiyatli o\'chirildi', 'CRM');
     dataStore.invalidate('customers');
-    loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Mijozni o\'chirishda xatolik yuz berdi', 'Xatolik');
+    loadCustomers(true);
   } finally {
     customerToDelete.value = null;
   }

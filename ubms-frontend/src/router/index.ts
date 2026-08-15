@@ -19,10 +19,24 @@ const CustomersView = () => import('../views/customers/CustomersView.vue');
 const SuppliersView = () => import('../views/suppliers/SuppliersView.vue');
 const FinanceView = () => import('../views/finance/FinanceView.vue');
 const SettingsView = () => import('../views/settings/SettingsView.vue');
+const GuideView = () => import('../views/guide/GuideView.vue');
 const SuperAdminView = () => import('../views/superadmin/SuperAdminView.vue');
+const LandingView = () => import('../views/landing/LandingView.vue');
 const NotFoundView = () => import('../views/errors/NotFoundView.vue');
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    component: LandingView,
+  },
+  {
+    path: '/about',
+    component: LandingView,
+  },
+  {
+    path: '/landing',
+    component: LandingView,
+  },
   {
     path: '/auth',
     component: AuthLayout,
@@ -45,7 +59,6 @@ const routes: RouteRecordRaw[] = [
     component: DefaultLayout,
     meta: { requiresAuth: true },
     children: [
-      { path: '', redirect: '/dashboard' },
       { path: 'dashboard', component: DashboardView },
       { path: 'pos', component: POSView },
       { path: 'products', component: ProductsView },
@@ -60,6 +73,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'customers', component: CustomersView },
       { path: 'suppliers', component: SuppliersView },
       { path: 'finance', component: FinanceView },
+      { path: 'guide', component: GuideView },
+      { path: 'help', redirect: '/guide' },
       { path: 'settings', component: SettingsView },
       { path: 'superadmin', component: SuperAdminView },
     ],
@@ -73,6 +88,12 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
+  // Check invalid section hash on landing page (e.g. #faqasdsadfgsdfg -> 404)
+  const validLandingHashes = ['', '#about', '#features', '#pricing', '#faq', '#demo'];
+  if (to.path === '/' && to.hash && !validLandingHashes.includes(to.hash)) {
+    return next('/404');
+  }
+
   const token = localStorage.getItem('ubms_access_token');
   const userStr = localStorage.getItem('ubms_user');
   const activeBizStr = localStorage.getItem('ubms_active_business');
@@ -96,7 +117,7 @@ router.beforeEach((to, _from, next) => {
     }
   } else if (to.meta.requiresAuth && !activeBiz && !user?.isSuperAdmin && to.path !== '/onboarding') {
     next('/onboarding');
-  } else if (to.path === '/' || (to.path === '/dashboard' && activeBiz)) {
+  } else if (to.path === '/dashboard' && activeBiz) {
     const role = (activeBiz?.role || '').toLowerCase();
     const isWorker = !user?.isSuperAdmin && role !== 'owner' && role !== 'admin';
     const allowed = activeBiz?.allowedModules || [];

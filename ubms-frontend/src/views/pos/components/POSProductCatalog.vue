@@ -164,12 +164,12 @@
 
             <!-- Bestseller Flame Badge if in top selling -->
             <span
-              v-if="prod.soldCount30d && prod.soldCount30d > 0"
+              v-if="(prod.soldCount || prod.soldCount30d) && (prod.soldCount || prod.soldCount30d) > 0"
               class="absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950 flex items-center gap-0.5 shadow-sm"
-              title="Oxirgi 30 kunda ko'p sotilgan"
+              title="Ko'p sotilgan mahsulot"
             >
               <Flame class="w-2.5 h-2.5 fill-slate-950" />
-              <span>{{ prod.soldCount30d }}</span>
+              <span>{{ prod.soldCount || prod.soldCount30d }}</span>
             </span>
           </div>
 

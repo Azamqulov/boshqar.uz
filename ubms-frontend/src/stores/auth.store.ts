@@ -138,9 +138,37 @@ export const useAuthStore = defineStore('auth', {
           }
         }
         return data;
-      } catch (err) {
-        console.error('Failed to fetch user businesses:', err);
+      } catch (e) {
+        console.error('Fetch businesses failed:', e);
       }
+    },
+    startDemoWorkspace(companyName: string, phone: string, businessType: string) {
+      const demoUser: UserProfile = {
+        id: 'demo-user-id',
+        fullName: companyName || 'Demo Tadbirkor',
+        phone: phone || '+998 90 123-45-67',
+        isSuperAdmin: false,
+      };
+
+      const demoBiz: BusinessItem = {
+        id: 'demo-business-id',
+        name: companyName || 'Boshqar.uz Demo Korxona',
+        businessType: businessType || 'shop',
+        currency: 'UZS',
+        role: 'owner',
+        allowedModules: ['all'],
+      };
+
+      this.user = demoUser;
+      this.token = 'demo-session-token-' + Date.now();
+      this.businesses = [demoBiz];
+      this.activeBusiness = demoBiz;
+
+      localStorage.setItem('ubms_access_token', this.token);
+      localStorage.setItem('ubms_user', JSON.stringify(demoUser));
+      localStorage.setItem('ubms_businesses', JSON.stringify([demoBiz]));
+      localStorage.setItem('ubms_active_business', JSON.stringify(demoBiz));
+      localStorage.setItem('ubms_active_business_id', demoBiz.id);
     },
     async fetchProfile() {
       try {

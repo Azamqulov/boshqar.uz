@@ -89,11 +89,50 @@
             </div>
 
             <!-- Resulting total preview -->
-            <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex justify-between items-center text-xs">
-              <span class="text-rose-700 dark:text-rose-300 font-medium">Yangi umumiy qarz bo'ladi:</span>
-              <span class="font-black font-mono text-rose-600 dark:text-rose-400 text-sm">
+            <div
+              class="p-3 rounded-xl flex justify-between items-center text-xs border"
+              :class="isOverLimit
+                ? 'bg-red-500/10 border-red-500/30'
+                : 'bg-rose-500/10 border-rose-500/20'"
+            >
+              <span
+                class="font-medium"
+                :class="isOverLimit ? 'text-red-700 dark:text-red-300' : 'text-rose-700 dark:text-rose-300'"
+              >Yangi umumiy qarz bo'ladi:</span>
+              <span
+                class="font-black font-mono text-sm"
+                :class="isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-rose-600 dark:text-rose-400'"
+              >
                 {{ formatCurrency(Number(activeCustomer?.debt || 0) + Number(debtAddAmount || 0)) }}
               </span>
+            </div>
+
+            <!-- Limit ogohlantirishi -->
+            <div
+              v-if="maxDebtLimit > 0"
+              class="p-3 rounded-xl border flex items-start gap-2.5 text-xs"
+              :class="isOverLimit
+                ? 'bg-red-500/10 border-red-500/30'
+                : 'bg-amber-500/8 border-amber-500/20'"
+            >
+              <AlertTriangle
+                class="w-4 h-4 shrink-0 mt-0.5"
+                :class="isOverLimit ? 'text-red-500' : 'text-amber-500'"
+              />
+              <div>
+                <p
+                  class="font-bold"
+                  :class="isOverLimit ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'"
+                >
+                  {{ isOverLimit ? 'Qarz limiti oshib ketdi!' : 'Qarz limiti belgilangan' }}
+                </p>
+                <p class="text-slate-500 dark:text-slate-400 mt-0.5">
+                  Maksimal ruxsat etilgan qarz: <strong class="font-mono">{{ formatCurrency(maxDebtLimit) }}</strong>
+                  <template v-if="!isOverLimit">
+                    &nbsp;• Qolgan joy: <strong class="font-mono text-emerald-600 dark:text-emerald-400">{{ formatCurrency(Math.max(0, maxDebtLimit - Number(activeCustomer?.debt || 0))) }}</strong>
+                  </template>
+                </p>
+              </div>
             </div>
 
             <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -108,10 +147,10 @@
                 variant="danger"
                 size="md"
                 :loading="submitting"
-                :disabled="!debtAddAmount || debtAddAmount <= 0"
+                :disabled="!debtAddAmount || debtAddAmount <= 0 || isOverLimit"
                 @click="$emit('submitAddDebt')"
               >
-                Qarzni Kiritish
+                {{ isOverLimit ? 'Limit oshdi — Mumkin emas' : 'Qarzni Kiritish' }}
               </AppButton>
             </div>
           </div>
@@ -236,21 +275,32 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingDown, CreditCard, X } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { TrendingDown, CreditCard, X, AlertTriangle } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
+const props = defineProps<{
   isAddDebtOpen: boolean;
   isPayDebtOpen: boolean;
   activeCustomer: any;
+  maxDebtLimit: number;
   debtAddAmount: number;
   debtAddNotes: string;
   debtPayAmount: number;
   debtPayNotes: string;
   submitting: boolean;
 }>();
+
+const { formatCurrency } = useFormat();
+
+// Yangi jami qarz limitdan oshganligini tekshirish
+const isOverLimit = computed(() => {
+  if (!props.maxDebtLimit || props.maxDebtLimit <= 0) return false;
+  const newTotal = Number(props.activeCustomer?.debt || 0) + Number(props.debtAddAmount || 0);
+  return newTotal > props.maxDebtLimit;
+});
 
 defineEmits<{
   (e: 'closeAddDebt'): void;
@@ -262,6 +312,4 @@ defineEmits<{
   (e: 'submitAddDebt'): void;
   (e: 'submitPayDebt'): void;
 }>();
-
-const { formatCurrency } = useFormat();
 </script>

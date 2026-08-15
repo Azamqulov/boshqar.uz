@@ -124,7 +124,9 @@ export class FinanceService {
     }
 
     const netProfit = totalRevenue - cogs - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? Number(((netProfit / totalRevenue) * 100).toFixed(1)) : 0;
+    const profitMargin = totalRevenue > 0
+      ? Number(Math.max(-100, Math.min(100, (netProfit / totalRevenue) * 100)).toFixed(1))
+      : 0;
     const salesCount = orders.length;
     const averageTicket = salesCount > 0 ? Math.round(totalRevenue / salesCount) : 0;
 

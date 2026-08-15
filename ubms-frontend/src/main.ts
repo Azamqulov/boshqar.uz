@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import router from './router';
 import App from './App.vue';
 import './index.css';
+import 'aos/dist/aos.css';
 import { useThemeStore } from './stores/theme.store';
 import { initSentry } from './plugins/sentry';
 

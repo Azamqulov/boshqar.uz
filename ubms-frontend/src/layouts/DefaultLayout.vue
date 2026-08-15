@@ -35,6 +35,13 @@
         <!-- Theme Toggle -->
         <ThemeToggle />
 
+        <!-- Quick Guide button for workers -->
+        <router-link to="/guide"
+          class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+          title="Qo'llanma & AI">
+          <BookOpen class="w-4 h-4" />
+        </router-link>
+
         <div class="hidden sm:block text-right text-xs">
           <p class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">{{ authStore.user?.fullName }}
           </p>
@@ -134,77 +141,7 @@
 
             <!-- Group Items -->
             <div v-for="item in group.items" :key="item.name" class="space-y-1">
-              <!-- Case A: Item with Submenu Children (e.g. SuperAdmin) -->
-              <div v-if="item.children && item.children.length > 0" class="relative group/menu">
-                <!-- Parent Row -->
-                <div
-                  @click="toggleDropdown(item.name)"
-                  class="flex items-center justify-between rounded-xl text-sm font-medium transition-all cursor-pointer select-none"
-                  :class="[
-                    isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
-                    $route.path === item.to || $route.path.startsWith(item.to + '/')
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                  ]"
-                  :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
-                >
-                  <div class="flex items-center min-w-0">
-                    <component
-                      :is="item.icon"
-                      class="w-5 h-5 transition-colors shrink-0"
-                      :class="[
-                        isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
-                        $route.path === item.to || $route.path.startsWith(item.to + '/')
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-slate-400 group-hover/menu:text-slate-600 dark:group-hover/menu:text-slate-200'
-                      ]"
-                    />
-                    <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">
-                      {{ item.label }}
-                    </span>
-                  </div>
-
-                  <!-- Dropdown Chevron -->
-                  <div v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="shrink-0 ml-1">
-                    <ChevronDown
-                      class="w-4 h-4 text-slate-400 transition-transform duration-200"
-                      :class="{ 'rotate-180 text-emerald-500': isDropdownOpen(item.name) }"
-                    />
-                  </div>
-                </div>
-
-                <!-- Submenu Items (Expanded in Sidebar) -->
-                <transition name="dropdown">
-                  <div
-                    v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && isDropdownOpen(item.name)"
-                    class="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-emerald-500/30 ml-5 my-1"
-                  >
-                    <router-link
-                      v-for="child in item.children"
-                      :key="child.name"
-                      :to="child.to"
-                      @click="isMobileSidebarOpen = false"
-                      class="flex items-center px-2.5 py-1.5 rounded-lg text-xs transition-all font-medium"
-                      :class="[
-                        isChildActive(child)
-                          ? 'bg-emerald-500 text-white shadow-xs font-bold'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50'
-                      ]"
-                    >
-                      <component
-                        :is="child.icon"
-                        class="w-3.5 h-3.5 mr-2 shrink-0"
-                        :class="isChildActive(child) ? 'text-white' : 'text-slate-400'"
-                      />
-                      <span class="truncate text-[11px]">{{ child.label }}</span>
-                    </router-link>
-                  </div>
-                </transition>
-              </div>
-
-              <!-- Case B: Standard Single Item -->
               <router-link
-                v-else
                 :to="item.to"
                 @click="isMobileSidebarOpen = false"
                 class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
@@ -216,20 +153,54 @@
                 ]"
                 :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
               >
-                <component
-                  :is="item.icon"
-                  class="w-5 h-5 transition-colors shrink-0"
-                  :class="[
-                    isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
-                    $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
-                  ]"
-                />
+                <div class="relative shrink-0 flex items-center">
+                  <component
+                    :is="item.icon"
+                    class="w-5 h-5 transition-colors shrink-0"
+                    :class="[
+                      isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
+                      $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
+                    ]"
+                  />
+                  <!-- Collapsed mode dot indicator: Red if out of stock, Amber if low stock -->
+                  <span
+                    v-if="item.name === 'inventory' && (outOfStockCount > 0 || lowStockCount > 0) && isSidebarCollapsed && !isMobileSidebarOpen"
+                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 animate-ping"
+                    :class="outOfStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'"
+                  />
+                  <span
+                    v-if="item.name === 'inventory' && (outOfStockCount > 0 || lowStockCount > 0) && isSidebarCollapsed && !isMobileSidebarOpen"
+                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900"
+                    :class="outOfStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'"
+                  />
+                </div>
+
                 <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">{{ item.label }}</span>
+
+                <!-- 1. Out of stock (Tugagan) -> RED exact circle badge -->
                 <span
-                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
-                  class="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && outOfStockCount > 0"
+                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse shadow-2xs"
+                  :title="`Omborda ${outOfStockCount} ta mahsulot butunlay tugagan!`"
+                >
+                  {{ outOfStockCount }}
+                </span>
+
+                <!-- 2. Low stock (Kam qolgan) -> AMBER exact circle badge -->
+                <span
+                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && lowStockCount > 0"
+                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse shadow-2xs"
+                  :title="`Omborda ${lowStockCount} ta mahsulot kam qolgan!`"
+                >
+                  {{ lowStockCount }}
+                </span>
+
+                <!-- 3. Standard badge (AI on Qo'llanma) -> GREEN exact circle badge -->
+                <span
+                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
+                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs"
                 >
                   {{ item.badge }}
                 </span>
@@ -263,6 +234,19 @@
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- DEMO WORKSPACE WATERMARK BANNER -->
+        <div v-if="authStore.user?.id === 'demo-user-id'" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white px-4 py-2 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-md shrink-0 z-20">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-md bg-white text-emerald-800 text-[10px] font-black uppercase">Demo Rejim</span>
+            <span>Siz <strong>{{ authStore.activeBusiness?.name }}</strong> demo hisobidasiz. 15 ta mahsulot va barcha funksiyalar to'liq ishlaydi!</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <router-link to="/auth/register" class="px-3 py-1 rounded-xl bg-slate-950 text-emerald-300 hover:text-white hover:bg-slate-900 text-[11px] font-extrabold shadow-sm transition">
+              Haqiqiy Hisob Ochish (14 Kun Bepul) →
+            </router-link>
+          </div>
+        </div>
+
         <!-- Top Header -->
         <header
           class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3.5 sm:px-6 z-10 shrink-0">
@@ -302,6 +286,14 @@
 
             <!-- Theme Toggle Switcher -->
             <ThemeToggle />
+
+            <!-- Guide & AI Center shortcut -->
+            <router-link to="/guide"
+              class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
+              :class="{ 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40': $route.path === '/guide' }"
+              title="Qo'llanma & Boshqar AI">
+              <BookOpen class="w-5 h-5" />
+            </router-link>
 
             <router-link to="/settings"
               class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -351,6 +343,9 @@ import { useAuthStore } from '../stores/auth.store';
 import { useDataStore } from '../stores/data.store';
 import ThemeToggle from '../components/ThemeToggle.vue';
 import AppLogo from '../components/AppLogo.vue';
+import { useLanguage } from '../composables/useLanguage';
+
+const langStore = useLanguage();
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -378,6 +373,10 @@ import {
   CreditCard,
   Sliders,
   X,
+  BookOpen,
+  Sparkles,
+  AlertTriangle,
+  AlertCircle,
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -387,35 +386,8 @@ const route = useRoute();
 const isMobileSidebarOpen = ref(false);
 const isSidebarCollapsed = ref(false);
 
-const openDropdowns = ref<Record<string, boolean>>({
-  superadmin: true,
-});
-
-const toggleDropdown = (name: string) => {
-  if (isSidebarCollapsed.value && !isMobileSidebarOpen.value) {
-    isSidebarCollapsed.value = false;
-    openDropdowns.value[name] = true;
-    return;
-  }
-  openDropdowns.value[name] = !openDropdowns.value[name];
-};
-
-const isDropdownOpen = (name: string) => {
-  return !!openDropdowns.value[name];
-};
-
-const isChildActive = (child: NavSubItem) => {
-  if (child.tab) {
-    return route.path === '/superadmin' && (route.query.tab === child.tab || (!route.query.tab && child.tab === 'owners'));
-  }
-  return route.fullPath === child.to;
-};
-
-watch(() => route.path, (newPath) => {
+watch(() => route.path, () => {
   isMobileSidebarOpen.value = false;
-  if (newPath.startsWith('/superadmin')) {
-    openDropdowns.value.superadmin = true;
-  }
 });
 
 const businessType = computed(() => authStore.businessType);
@@ -426,6 +398,37 @@ const isWorker = computed(() => {
   const isSuper = authStore.user?.isSuperAdmin;
   if (isSuper) return false;
   return role !== 'owner' && role !== 'admin';
+});
+
+// Compute out of stock items count (quantity <= 0) -> RED
+const outOfStockCount = computed(() => {
+  const prods = dataStore.products || [];
+  return prods.filter((p: any) => {
+    if (p.brand === 'service' || p.brand === 'dish' || p.brand === 'kitchen' || p.isMadeToOrder) {
+      return false;
+    }
+    const qty = Number(p.stockQty ?? 0);
+    return qty <= 0;
+  }).length;
+});
+
+// Compute low stock items count (0 < quantity <= minStock) -> AMBER
+const lowStockCount = computed(() => {
+  const prods = dataStore.products || [];
+  return prods.filter((p: any) => {
+    if (p.brand === 'service' || p.brand === 'dish' || p.brand === 'kitchen' || p.isMadeToOrder) {
+      return false;
+    }
+    const qty = Number(p.stockQty ?? 0);
+    const min = Number(p.minStock ?? 5);
+    return qty > 0 && qty <= min;
+  }).length;
+});
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    dataStore.fetchProducts();
+  }
 });
 
 interface NavSubItem {
@@ -504,22 +507,10 @@ const allNavGroups: NavGroup[] = [
     id: 'sozlamalar',
     title: 'SOZLAMALAR',
     items: [
+      { name: 'guide', label: 'Qo\'llanma & AI', to: '/guide', icon: BookOpen, types: ['all'], badge: 'AI' },
+      { name: 'about', label: 'Tizim Haqida', to: '/about', icon: Sparkles, types: ['all'] },
       { name: 'settings', label: 'Sozlamalar', to: '/settings', icon: Settings, types: ['all'] },
-      {
-        name: 'superadmin',
-        label: 'SuperAdmin',
-        to: '/superadmin',
-        icon: ShieldCheck,
-        types: ['superadmin'],
-        children: [
-          { name: 'sa-owners', label: 'Firma Egalari (Owners)', to: '/superadmin?tab=owners', tab: 'owners', icon: Crown },
-          { name: 'sa-businesses', label: 'Barcha Bizneslar', to: '/superadmin?tab=businesses', tab: 'businesses', icon: Building2 },
-          { name: 'sa-users', label: 'Foydalanuvchilar', to: '/superadmin?tab=users', tab: 'users', icon: Users },
-          { name: 'sa-plans', label: 'Tarif Rejalari (SaaS)', to: '/superadmin?tab=plans', tab: 'plans', icon: CreditCard },
-          { name: 'sa-audit', label: 'Global Audit Tarixi', to: '/superadmin?tab=audit', tab: 'audit', icon: ShieldCheck },
-          { name: 'sa-biztypes', label: 'Biznes Turlari', to: '/superadmin?tab=businessTypes', tab: 'businessTypes', icon: Sliders },
-        ],
-      },
+      { name: 'superadmin', label: 'SuperAdmin', to: '/superadmin', icon: ShieldCheck, types: ['superadmin'] },
     ],
   },
 ];
@@ -540,7 +531,12 @@ const visibleNavGroups = computed(() => {
       return true;
     }
 
-    // 2. If Worker
+    // 2. Universal items accessible to ALL users (Guide & AI, About)
+    if (item.name === 'guide' || item.to === '/guide' || item.name === 'about' || item.to === '/about') {
+      return true;
+    }
+
+    // 3. If Worker
     if (item.name === 'pos') {
       return (
         allowed.includes('pos') ||
@@ -597,6 +593,10 @@ const handleLogout = () => {
 };
 
 onMounted(async () => {
+  if (authStore.user?.id === 'demo-user-id') {
+    dataStore.loadDemoData(businessType.value || 'shop');
+    return;
+  }
   await authStore.fetchBusinesses();
   // Background prefetching for 0ms instant navigation
   dataStore.prefetchAll(businessType.value || 'shop');

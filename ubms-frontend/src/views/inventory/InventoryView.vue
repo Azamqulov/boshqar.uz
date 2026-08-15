@@ -394,7 +394,7 @@ const saveEditProduct = async () => {
     dataStore.invalidate('products');
     dataStore.invalidate('inventory');
     dataStore.invalidate('dashboard');
-    await loadInventory(true);
+    dataStore.fetchInventory(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Mahsulotni saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {
@@ -412,21 +412,22 @@ const confirmDeleteProduct = (inv: any) => {
     message: `Rostdan ham "${name}" mahsulotini ombordan va katalogdan o'chirmoqchimisiz? Ushbu amalni ortga qaytarib bo'lmaydi.`,
     onConfirm: async () => {
       confirmModal.value.open = false;
+      // Optimistic remove from local list & store immediately
+      dataStore.inventory = dataStore.inventory.filter((i: any) => (i.productId || i.product?.id || i.id) !== productId);
+      dataStore.products = dataStore.products.filter((p: any) => p.id !== productId);
+      toast.success(`"${name}" muvaffaqiyatli o'chirildi`, 'Omborxona');
+
       try {
         if (productId) {
           await api.delete(`/products/${productId}`);
         }
-        toast.success(`"${name}" muvaffaqiyatli o'chirildi`, 'Omborxona');
-        // Optimistic remove from local list & store
-        dataStore.inventory = dataStore.inventory.filter((i: any) => (i.productId || i.product?.id || i.id) !== productId);
-        dataStore.products = dataStore.products.filter((p: any) => p.id !== productId);
-
         dataStore.invalidate('products');
         dataStore.invalidate('inventory');
         dataStore.invalidate('dashboard');
-        await loadInventory(true);
+        dataStore.fetchInventory(true).catch(console.error);
       } catch (err: any) {
         toast.error(getErrorMessage(err, 'Mahsulotni o\'chirishda xatolik yuz berdi'), 'Xatolik');
+        loadInventory(true);
       }
     },
   };

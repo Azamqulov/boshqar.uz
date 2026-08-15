@@ -5,9 +5,9 @@
   >
     <!-- Fixed +998 Prefix Badge (Static, non-deletable) -->
     <div
-      class="pl-3.5 pr-2.5 py-2.5 flex items-center gap-1.5 select-none pointer-events-none text-slate-600 dark:text-slate-400 font-mono font-bold text-xs sm:text-sm border-r border-slate-200 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-900/30"
+      class="pl-3 pr-2.5 py-2.5 flex items-center gap-1.5 select-none pointer-events-none text-slate-600 dark:text-slate-400 font-mono font-bold text-xs sm:text-sm border-r border-slate-200 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-900/30"
     >
-      <span class="text-xs">🇺🇿</span>
+      <Phone class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
       <span>+998</span>
     </div>
 
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { Phone } from 'lucide-vue-next';
 
 const props = defineProps<{
   modelValue?: string;

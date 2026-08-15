@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-flex items-center gap-2 select-none transition-transform duration-200 hover:scale-[1.02]">
+  <router-link to="/dashboard" class="inline-flex items-center gap-2 select-none transition-transform duration-200 hover:scale-[1.02] cursor-pointer">
     <!-- Green Brand Icon -->
     <img
       src="/favicon.png"
@@ -13,7 +13,7 @@
       <span class="text-slate-900 dark:text-white font-black">Boshqar</span>
       <span class="text-emerald-500 dark:text-emerald-400 font-black">.uz</span>
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script setup lang="ts">

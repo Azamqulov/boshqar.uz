@@ -29,16 +29,19 @@
             </td>
             <td class="py-3 px-4">
               <span
-                class="font-bold px-2 py-0.5 rounded text-[10px]"
+                class="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg text-[11px]"
                 :class="[
                   Number(inv.quantity) <= 0
-                    ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                    ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
                     : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5))
-                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                    : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                    : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                 ]"
               >
-                {{ Number(inv.quantity) <= 0 ? 'Tugadi 🚫' : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5)) ? 'Kam Qoldi ⚠️' : 'Yetarli ✓' }}
+                <AlertCircle v-if="Number(inv.quantity) <= 0" class="w-3.5 h-3.5 shrink-0" />
+                <AlertTriangle v-else-if="inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5))" class="w-3.5 h-3.5 shrink-0" />
+                <CheckCircle2 v-else class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ Number(inv.quantity) <= 0 ? 'Tugagan' : inv.isLowStock || (Number(inv.quantity) <= (inv.product?.minStock || 5)) ? 'Kam Qoldi' : 'Yetarli' }}</span>
               </span>
             </td>
             <td
@@ -77,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { Edit2, Trash2 } from 'lucide-vue-next';
+import { Edit2, Trash2, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
 defineProps<{
