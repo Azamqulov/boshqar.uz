@@ -2,54 +2,18 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { randomBytes } from 'crypto';
 import * as https from 'https';
+import {
+  TelegramAccount,
+  TelegramSettings,
+  TelegramOrderNotification,
+  TelegramLowStockProduct,
+  TelegramShiftCloseData,
+  TelegramDailyDispatchResult,
+  TelegramDailyDispatchDetail,
+  formatTelegramMoney as formatMoney,
+} from './telegram.types';
 
-export interface TelegramAccount {
-  chatId: string;
-  userId?: string;
-  role?: string;
-  roleLabel?: string;
-  username?: string;
-  firstName?: string;
-  phone?: string;
-  connectedAt: string;
-}
-
-export interface TelegramSettings {
-  isConnected: boolean;
-  chatId?: string;
-  username?: string;
-  connectedAt?: string;
-  accounts?: TelegramAccount[];
-  accountsCount?: number;
-  notifyOnOrder: boolean;
-  notifyOnLowStock: boolean;
-  notifyDailySummary: boolean;
-  dailySummaryTime?: string;
-  notifyOnShiftClose: boolean;
-  allowDebtsInBot?: boolean;
-  allowExpenseInBot?: boolean;
-  allowProductSearch?: boolean;
-  allowCashierControl?: boolean;
-  currency?: string;
-}
-
-export function formatMoney(amount: number | string = 0, currency: string = 'UZS'): string {
-  const num = Number(amount || 0);
-  const cur = (currency || 'UZS').toUpperCase();
-  if (cur === 'USD') {
-    return `$${num.toLocaleString('en-US', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
-  }
-  if (cur === 'RUB') {
-    return `${num.toLocaleString('ru-RU')} ₽`;
-  }
-  if (cur === 'EUR') {
-    return `€${num.toLocaleString('de-DE', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
-  }
-  if (cur === 'KZT') {
-    return `${num.toLocaleString('ru-RU')} ₸`;
-  }
-  return `${num.toLocaleString('uz-UZ')} so'm`;
-}
+export { TelegramAccount, TelegramSettings };
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -63,14 +27,14 @@ export class TelegramService implements OnModuleInit {
 
   constructor(private prisma: PrismaService) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     if (this.botToken) {
       try {
         const res = await fetch(`https://api.telegram.org/bot${this.botToken}/getMe`, {
           signal: AbortSignal.timeout(3000),
         });
         if (res.ok) {
-          const data: any = await res.json();
+          const data = (await res.json()) as { ok: boolean; result?: { username?: string; first_name?: string } };
           if (data?.result?.username) {
             this.botUsername = data.result.username;
             this.logger.log(`Telegram Bot verified: @${this.botUsername} (${data.result.first_name})`);
@@ -85,8 +49,8 @@ export class TelegramService implements OnModuleInit {
   /**
    * Helper to parse and standardize all linked accounts from posSettings
    */
-  private getBusinessAccounts(posSettings: any): TelegramAccount[] {
-    const tg = posSettings?.telegram || {};
+  private getBusinessAccounts(posSettings: Record<string, unknown> | null | undefined): TelegramAccount[] {
+    const tg = ((posSettings as Record<string, unknown>)?.telegram as Record<string, any>) || {};
     const accounts: TelegramAccount[] = [];
     const seenChatIds = new Set<string>();
 
@@ -663,7 +627,7 @@ export class TelegramService implements OnModuleInit {
   /**
    * Notify on new order created/completed (broadcast to all linked accounts)
    */
-  async sendOrderNotification(businessId: string, order: any): Promise<void> {
+  async sendOrderNotification(businessId: string, order: TelegramOrderNotification): Promise<void> {
     try {
       const status = await this.getStatus(businessId);
       if (!status.isConnected || !status.notifyOnOrder) return;
@@ -680,7 +644,7 @@ export class TelegramService implements OnModuleInit {
 
       const itemsList = (order.items || [])
         .slice(0, 5)
-        .map((i: any) => `  • ${i.product?.name || i.name || 'Tovar'} × ${i.quantity} = ${formatMoney(Number(i.unitPrice * i.quantity), cur)}`)
+        .map((i) => `  • ${i.product?.name || i.name || 'Tovar'} × ${i.quantity} = ${formatMoney(Number(i.unitPrice * i.quantity), cur)}`)
         .join('\n');
 
       const extraItems = (order.items || []).length > 5 ? `\n  <i>...va yana ${(order.items || []).length - 5} ta tovar</i>` : '';
@@ -692,13 +656,13 @@ export class TelegramService implements OnModuleInit {
         transfer: '🏦 O\'tkazma',
       };
 
-      const payType = paymentMethodNames[order.paymentMethod || 'cash'] || '💵 Naqd';
+      const payType = paymentMethodNames[(order as any).paymentMethod || 'cash'] || '💵 Naqd';
 
       const msg = `💰 <b>Yangi Savdo! Chek: #${order.orderNumber || order.id?.slice(-4)}</b>\n\n` +
-        `💵 <b>Summa:</b> <b>${formatMoney(Number(order.totalAmount || order.total || 0), cur)}</b>\n` +
+        `💵 <b>Summa:</b> <b>${formatMoney(Number((order as any).totalAmount || order.total || 0), cur)}</b>\n` +
         `💳 <b>To'lov:</b> ${payType}\n` +
-        (order.customer ? `👤 <b>Mijoz:</b> ${order.customer.fullName || order.customer.name}\n` : '') +
-        (order.tableName ? `🍽 <b>Stol:</b> ${order.tableName}\n` : '') +
+        (order.customer ? `👤 <b>Mijoz:</b> ${order.customer.fullName || (order.customer as any).name}\n` : '') +
+        ((order as any).tableName ? `🍽 <b>Stol:</b> ${(order as any).tableName}\n` : '') +
         `\n📦 <b>Tarkibi:</b>\n${itemsList}${extraItems}\n\n` +
         `⏰ <code>${new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}</code>`;
 
@@ -711,7 +675,7 @@ export class TelegramService implements OnModuleInit {
   /**
    * Notify when a product hits low stock (broadcast to all linked accounts)
    */
-  async sendLowStockNotification(businessId: string, product: any, currentQty: number): Promise<void> {
+  async sendLowStockNotification(businessId: string, product: TelegramLowStockProduct, currentQty: number): Promise<void> {
     try {
       const status = await this.getStatus(businessId);
       if (!status.isConnected || !status.notifyOnLowStock) return;
@@ -724,7 +688,7 @@ export class TelegramService implements OnModuleInit {
 
       if (chatIds.length === 0) return;
 
-      const unitName = product.unit?.shortName || 'dona';
+      const unitName = (product as any).unit?.shortName || 'dona';
       const msg = `⚠️ <b>DIQQAT: Mahsulot kam qoldi!</b>\n\n` +
         `📦 <b>Nomi:</b> ${product.name}\n` +
         `📉 <b>Joriy qoldiq:</b> <b>${currentQty} ${unitName}</b>\n` +
@@ -740,7 +704,7 @@ export class TelegramService implements OnModuleInit {
   /**
    * Notify when a cashier / manager closes a POS shift (broadcast to all linked accounts)
    */
-  async sendShiftCloseNotification(businessId: string, shift: any): Promise<void> {
+  async sendShiftCloseNotification(businessId: string, shift: TelegramShiftCloseData): Promise<void> {
     try {
       const status = await this.getStatus(businessId);
       if (!status.isConnected || !status.notifyOnShiftClose) return;
@@ -754,8 +718,8 @@ export class TelegramService implements OnModuleInit {
       if (chatIds.length === 0) return;
 
       const cur = status.currency || 'UZS';
-      const cashierName = shift.user?.fullName || shift.user?.phone || 'Kassir';
-      const branchName = shift.branch?.name || 'Asosiy filial';
+      const cashierName = shift.user?.fullName || (shift.user as any)?.phone || 'Kassir';
+      const branchName = (shift as any).branch?.name || 'Asosiy filial';
       const openTime = shift.openedAt ? new Date(shift.openedAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : '--:--';
       const closeTime = shift.closedAt ? new Date(shift.closedAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
       
@@ -771,13 +735,13 @@ export class TelegramService implements OnModuleInit {
         `👤 <b>Kassir:</b> ${cashierName}\n` +
         `⏱ <b>Smena:</b> ${openTime} — ${closeTime}\n\n` +
         `💰 <b>Jami Savdo:</b> <b>${formatMoney(Number(shift.totalSales || 0), cur)}</b>\n` +
-        `🧾 <b>Cheklar soni:</b> ${shift.ordersCount || 0} ta\n` +
+        `🧾 <b>Cheklar soni:</b> ${(shift as any).ordersCount || 0} ta\n` +
         `💵 <b>Naqd savdo:</b> ${formatMoney(Number(shift.cashSales || 0), cur)}\n` +
         `💳 <b>Karta / Terminal:</b> ${formatMoney(Number(shift.cardSales || 0), cur)}\n` +
         `💸 <b>Kassadan chiqim:</b> ${formatMoney(Number(shift.cashExpenses || 0), cur)}\n` +
         `🪙 <b>Haqiqiy naqd qoldiq:</b> ${formatMoney(Number(shift.actualCash || 0), cur)}\n` +
         `⚖️ <b>Kassa farqi:</b> ${diffText}\n` +
-        (shift.notes ? `\n📝 <b>Izoh:</b> <i>${shift.notes}</i>\n` : '') +
+        ((shift as any).notes ? `\n📝 <b>Izoh:</b> <i>${(shift as any).notes}</i>\n` : '') +
         `\n⏰ <code>${new Date().toLocaleDateString('uz-UZ')} ${closeTime}</code>`;
 
       await Promise.allSettled(chatIds.map(cid => this.sendMessage(cid, msg)));
@@ -789,7 +753,7 @@ export class TelegramService implements OnModuleInit {
   /**
    * Dispatch scheduled daily summary to all configured businesses based on their chosen time (broadcast to all linked accounts)
    */
-  async dispatchScheduledDailySummaries(): Promise<{ dispatched: number; details: any[] }> {
+  async dispatchScheduledDailySummaries(): Promise<TelegramDailyDispatchResult> {
     const now = new Date();
     const tashkentTime = new Intl.DateTimeFormat('uz-UZ', {
       timeZone: 'Asia/Tashkent',
@@ -811,7 +775,7 @@ export class TelegramService implements OnModuleInit {
     });
 
     let count = 0;
-    const details: any[] = [];
+    const details: TelegramDailyDispatchDetail[] = [];
 
     for (const b of businesses) {
       const pos = (b.posSettings as Record<string, any>) || {};

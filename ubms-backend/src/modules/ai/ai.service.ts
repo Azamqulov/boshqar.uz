@@ -12,7 +12,21 @@ export interface AiResponse {
   actionRoute?: string;
   actionText?: string;
   suggestedFollowUps?: string[];
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
+}
+
+export interface BusinessAiContext {
+  businessName: string;
+  currency: string;
+  todaySales: number;
+  todayOrdersCount: number;
+  todayExpenseSum: number;
+  todayProfit: number;
+  lowStockItems: { name: string; qty: number; min: number }[];
+  debtors: { name: string; debt: number; phone?: string | null }[];
+  totalDebt: number;
+  openShifts: string[];
+  productsCount: number;
 }
 
 @Injectable()
@@ -30,7 +44,7 @@ export class AiService {
     const bId = dto.businessId || currentBusinessId;
 
     // Fetch live business context if businessId exists
-    let businessContext: any = null;
+    let businessContext: BusinessAiContext | null = null;
     if (bId) {
       businessContext = await this.getLiveBusinessContext(bId, currentUserId);
     }
@@ -158,7 +172,7 @@ export class AiService {
   /**
    * Answer live business metrics questions
    */
-  private handleBusinessMetricsQuery(q: string, ctx: any): AiResponse | null {
+  private handleBusinessMetricsQuery(q: string, ctx: BusinessAiContext | null): AiResponse | null {
     if (!ctx) return null;
 
     const cur = ctx.currency || 'UZS';
@@ -229,7 +243,7 @@ export class AiService {
       }
 
       const list = ctx.lowStockItems
-        .map((item: any, i: number) => `  ${i + 1}. **${item.name}** — qoldiq: **${item.qty} dona** (chegara: ${item.min})`)
+        .map((item, i: number) => `  ${i + 1}. **${item.name}** — qoldiq: **${item.qty} dona** (chegara: ${item.min})`)
         .join('\n');
 
       return {
@@ -262,7 +276,7 @@ export class AiService {
       }
 
       const debtorsList = ctx.debtors
-        .map((d: any, i: number) => `  ${i + 1}. **${d.name}** (${d.phone || 'Tel yo\'q'}): **${this.formatMoney(d.debt, cur)}**`)
+        .map((d, i: number) => `  ${i + 1}. **${d.name}** (${d.phone || 'Tel yo\'q'}): **${this.formatMoney(d.debt, cur)}**`)
         .join('\n');
 
       return {
@@ -301,7 +315,7 @@ export class AiService {
   /**
    * Answer system usage and procedural how-to questions
    */
-  private handleSystemHowToQuery(q: string, ctx: any): AiResponse | null {
+  private handleSystemHowToQuery(q: string, ctx: BusinessAiContext | null): AiResponse | null {
     // 1. Add Product / Mahsulot qo'shish
     if (
       q.includes('tovar qo\'sh') ||
@@ -423,7 +437,7 @@ export class AiService {
   /**
    * Conversational fallback
    */
-  private handleConversationalQuery(q: string, ctx: any): AiResponse {
+  private handleConversationalQuery(q: string, ctx: BusinessAiContext | null): AiResponse {
     if (q.includes('salom') || q.includes('assalom') || q.includes('privet') || q.includes('qalesan') || q.includes('kimsan')) {
       return {
         answer:
