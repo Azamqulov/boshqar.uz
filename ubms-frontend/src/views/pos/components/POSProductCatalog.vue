@@ -111,12 +111,12 @@
         <span>Mahsulot topilmadi</span>
       </div>
 
-      <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3 sm:gap-3.5">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
         <div
           v-for="prod in filteredProducts"
           :key="prod.id"
           @click="$emit('productClick', prod)"
-          class="p-3 rounded-2xl border transition-all flex flex-col justify-between group relative select-none"
+          class="p-2.5 sm:p-3 rounded-2xl border transition-all flex flex-col justify-between group relative select-none"
           :class="[
             !isItemAvailable(prod)
               ? 'bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 opacity-60 cursor-not-allowed'
@@ -134,7 +134,7 @@
           </div>
 
           <!-- Product Image -->
-          <div class="w-full h-28 sm:h-32 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden mb-2.5 flex items-center justify-center relative">
+          <div class="w-full h-24 sm:h-28 md:h-32 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden mb-2 sm:mb-2.5 flex items-center justify-center relative">
             <img
               v-if="prod.imageUrl"
               :src="prod.imageUrl"

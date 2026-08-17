@@ -42,3 +42,11 @@ lerna-debug.log*
 sessions.json
 */sessions.json
 **/sessions.json
+
+# Backups & Database dumps
+backups/
+*/backups/
+**/backups/
+*.dump
+*.sql
+*.snapshot.json

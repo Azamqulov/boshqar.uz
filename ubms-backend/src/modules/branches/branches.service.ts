@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -23,6 +23,27 @@ export class BranchesService {
   }
 
   async create(businessId: string, data: { name: string; address?: string; phone?: string; isMain?: boolean }) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      include: {
+        plan: true,
+        branches: { select: { id: true } },
+      },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Biznes topilmadi');
+    }
+
+    if (business.plan && business.plan.maxBranches !== null && business.branches.length >= business.plan.maxBranches) {
+      throw new ForbiddenException({
+        code: 'PLAN_LIMIT_BRANCHES',
+        message: `Tarifingiz bo'yicha maksimal ${business.plan.maxBranches} ta filial ochish mumkin. Ko'proq filial ochish uchun tarifni yangilang.`,
+        maxBranches: business.plan.maxBranches,
+        currentBranchesCount: business.branches.length,
+      });
+    }
+
     return this.prisma.branch.create({
       data: {
         businessId,

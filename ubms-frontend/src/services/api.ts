@@ -65,6 +65,20 @@ api.interceptors.response.use(
         }
       }
     }
+
+    // Handle 403 Subscription Expired
+    if (
+      error.response?.status === 403 &&
+      (error.response?.data?.code === 'SUBSCRIPTION_EXPIRED' ||
+        error.response?.data?.error?.code === 'SUBSCRIPTION_EXPIRED')
+    ) {
+      window.dispatchEvent(
+        new CustomEvent('ubms:subscription-expired', {
+          detail: error.response?.data?.error || error.response?.data,
+        }),
+      );
+    }
+
     return Promise.reject(error);
   },
 );

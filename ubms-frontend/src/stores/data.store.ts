@@ -125,8 +125,9 @@ export const useDataStore = defineStore('ubms_data', () => {
   };
 
   // 3. Fetch Dashboard Summary & Charts
-  const fetchDashboard = async (force = false, days = 14) => {
-    if (!force && dashboardSummary.value && isCacheValid('dashboard', 30000)) {
+  const fetchDashboard = async (force = false, days = 7) => {
+    const cacheKey = `dashboard_${days}`;
+    if (!force && dashboardSummary.value && isCacheValid(cacheKey, 30000)) {
       return { summary: dashboardSummary.value, charts: dashboardCharts.value };
     }
     if (!dashboardSummary.value) {
@@ -141,7 +142,7 @@ export const useDataStore = defineStore('ubms_data', () => {
       dashboardCharts.value = chartRes.data;
       saveToStorage('dashboardSummary', sumRes.data);
       saveToStorage('dashboardCharts', chartRes.data);
-      lastFetched.value['dashboard'] = Date.now();
+      lastFetched.value[cacheKey] = Date.now();
     } catch (e) {
       console.error('Fetch dashboard failed:', e);
     } finally {
@@ -156,6 +157,7 @@ export const useDataStore = defineStore('ubms_data', () => {
       const { data } = await api.get(`/dashboard/charts?days=${days}`);
       dashboardCharts.value = data;
       saveToStorage('dashboardCharts', data);
+      lastFetched.value[`dashboard_${days}`] = Date.now();
       return data;
     } catch (e) {
       console.error('Fetch chart data failed:', e);

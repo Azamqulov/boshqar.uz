@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[calc(100vh-5.5rem)] flex flex-col gap-2.5 overflow-hidden">
+  <div class="h-[calc(100dvh-8.5rem)] md:h-[calc(100vh-5.5rem)] flex flex-col gap-2 sm:gap-2.5 overflow-hidden">
     <!-- Top Shift Status Bar -->
     <POSShiftBar
       :current-shift="currentShift"

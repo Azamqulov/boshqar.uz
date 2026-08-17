@@ -12,33 +12,33 @@
         </p>
       </div>
 
-      <!-- Segmented Mode Switcher (Active button is Green) -->
-      <div class="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200/80 dark:border-slate-700/80 shrink-0 shadow-2xs">
+      <!-- Segmented Mode Switcher with Smooth Sliding Animation -->
+      <div class="relative inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200/80 dark:border-slate-700/80 shrink-0 shadow-2xs">
+        <!-- Animated Sliding Background Pill -->
+        <div
+          class="absolute top-1 bottom-1 rounded-full bg-emerald-600 shadow-md shadow-emerald-600/30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+          :style="pillStyle"
+        ></div>
+
         <button
+          ref="guidesBtnRef"
           type="button"
           @click="switchToCatalog"
-          :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all duration-200',
-            viewMode === 'guides'
-              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/25'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          ]"
+          class="relative z-10 flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-colors duration-300"
+          :class="viewMode === 'guides' ? 'text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          <BookOpen :class="['w-4 h-4', viewMode === 'guides' ? 'text-white' : 'text-slate-500 dark:text-slate-400']" />
+          <BookOpen :class="['w-4 h-4 transition-colors duration-300', viewMode === 'guides' ? 'text-white' : 'text-slate-500 dark:text-slate-400']" />
           <span>Qo‘llanmalar Katalogi</span>
         </button>
 
         <button
+          ref="aiBtnRef"
           type="button"
           @click="viewMode = 'ai'"
-          :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all duration-200',
-            viewMode === 'ai'
-              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/25'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          ]"
+          class="relative z-10 flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-colors duration-300"
+          :class="viewMode === 'ai' ? 'text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          <Sparkles :class="['w-4 h-4', viewMode === 'ai' ? 'text-white' : 'text-slate-500 dark:text-slate-400']" />
+          <Sparkles :class="['w-4 h-4 transition-colors duration-300', viewMode === 'ai' ? 'text-white' : 'text-slate-500 dark:text-slate-400']" />
           <span>Boshqar AI bilan so‘rash</span>
         </button>
       </div>
@@ -137,11 +137,13 @@
             :key="fIdx"
             class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 space-y-1.5 shadow-xs"
           >
-            <h5 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <span class="w-4.5 h-4.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-black flex items-center justify-center shrink-0">?</span>
-              <span>{{ f.q }}</span>
+            <h5 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <HelpCircle class="w-3.5 h-3.5" />
+              </span>
+              <span class="leading-snug">{{ f.q }}</span>
             </h5>
-            <p class="text-xs text-slate-500 dark:text-slate-400 pl-6.5 leading-relaxed">{{ f.a }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 pl-7.5 leading-relaxed">{{ f.a }}</p>
           </div>
         </div>
       </div>
@@ -289,7 +291,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   Search,
   BookOpen,
@@ -314,6 +316,27 @@ import BoshqarAIAssistant from '../../components/BoshqarAIAssistant.vue';
 const searchQuery = ref('');
 const viewMode = ref<'guides' | 'ai'>('guides');
 const selectedTopic = ref<any>(null);
+
+const guidesBtnRef = ref<HTMLElement | null>(null);
+const aiBtnRef = ref<HTMLElement | null>(null);
+const isMounted = ref(false);
+
+onMounted(() => {
+  isMounted.value = true;
+});
+
+const pillStyle = computed(() => {
+  const target = viewMode.value === 'guides' ? guidesBtnRef.value : aiBtnRef.value;
+  if (!target || !isMounted.value) {
+    return viewMode.value === 'guides'
+      ? { left: '4px', width: '185px' }
+      : { left: '193px', width: '215px' };
+  }
+  return {
+    left: `${target.offsetLeft}px`,
+    width: `${target.offsetWidth}px`,
+  };
+});
 
 const guideTopics = [
   {

@@ -179,9 +179,9 @@
     </div>
 
     <!-- Dual Bar Chart -->
-    <div v-else class="h-60 flex items-end gap-1 pt-8 px-2 relative overflow-visible">
+    <div v-else class="h-60 flex items-end gap-1.5 sm:gap-2 pt-8 px-2 relative overflow-visible">
       <div
-        v-for="(item, idx) in chartData"
+        v-for="(item, idx) in displayChartData"
         :key="idx"
         @click="toggleDaySelection(item)"
         class="flex-1 flex flex-col items-center group relative h-full justify-end cursor-pointer p-0.5 rounded-xl transition-all duration-200"
@@ -195,7 +195,7 @@
         <div
           class="absolute -top-14 hidden group-hover:flex flex-col bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-700/80 text-[10px] p-2 rounded-xl text-white shadow-2xl z-30 whitespace-nowrap gap-0.5 pointer-events-none transition-all"
           :class="[
-            idx >= chartData.length - 2
+            idx >= displayChartData.length - 2
               ? 'right-0 items-end'
               : idx <= 1
               ? 'left-0 items-start'
@@ -211,21 +211,27 @@
         <div class="w-full flex items-end justify-center gap-[3px] h-full pb-1">
           <!-- Sales Bar -->
           <div
-            class="flex-1 max-w-[14px] bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
-            :class="{ 'brightness-125 ring-1 ring-emerald-400': selectedDay?.date === item.date }"
+            class="flex-1 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
+            :class="[
+              { 'brightness-125 ring-1 ring-emerald-400': selectedDay?.date === item.date },
+              barMaxWidthClass
+            ]"
             :style="{ height: `${Math.max(4, (item.sales / maxChartSalesValue) * 100)}%` }"
           ></div>
           <!-- Profit Bar -->
           <div
-            class="flex-1 max-w-[14px] bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
-            :class="{ 'brightness-125 ring-1 ring-blue-400': selectedDay?.date === item.date }"
+            class="flex-1 bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
+            :class="[
+              { 'brightness-125 ring-1 ring-blue-400': selectedDay?.date === item.date },
+              barMaxWidthClass
+            ]"
             :style="{ height: `${Math.max(4, ((item.profit || 0) / maxChartSalesValue) * 100)}%` }"
           ></div>
         </div>
 
         <!-- Date Labels -->
         <span
-          class="text-[9px] mt-1 truncate transition-colors font-medium"
+          class="text-[9px] mt-1 truncate transition-colors font-medium text-center"
           :class="[
             selectedDay?.date === item.date
               ? 'font-black text-emerald-600 dark:text-emerald-400 scale-105'
@@ -233,7 +239,7 @@
               ? 'font-black text-emerald-600 dark:text-emerald-400'
               : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
           ]"
-          :style="{ transform: chartData.length > 20 ? 'rotate(45deg)' : 'none', transformOrigin: 'left top' }"
+          :style="{ transform: displayChartData.length > 20 ? 'rotate(45deg)' : 'none', transformOrigin: 'left top' }"
         >
           {{ formatChartDateShort(item.date) }}
         </span>
@@ -280,22 +286,39 @@ const chartPeriodLabel = computed(() => {
   return found ? found.label : `${props.selectedChartPeriod} kun`;
 });
 
+// Strictly slice chart data to match the selected period
+const displayChartData = computed(() => {
+  const data = props.chartData || [];
+  if (data.length <= props.selectedChartPeriod) {
+    return data;
+  }
+  return data.slice(-props.selectedChartPeriod);
+});
+
+const barMaxWidthClass = computed(() => {
+  const len = displayChartData.value.length;
+  if (len <= 7) return 'max-w-[24px]';
+  if (len <= 14) return 'max-w-[16px]';
+  if (len <= 30) return 'max-w-[10px]';
+  return 'max-w-[6px]';
+});
+
 const maxChartSalesValue = computed(() => {
-  if (props.chartData.length === 0) return 1;
-  const max = Math.max(...props.chartData.map((c: any) => Math.max(Number(c.sales) || 0, Number(c.profit) || 0)));
+  if (displayChartData.value.length === 0) return 1;
+  const max = Math.max(...displayChartData.value.map((c: any) => Math.max(Number(c.sales) || 0, Number(c.profit) || 0)));
   return max === 0 ? 100000 : max;
 });
 
 const chartTotalSales = computed(() => {
-  return props.chartData.reduce((sum: number, c: any) => sum + (Number(c.sales) || 0), 0);
+  return displayChartData.value.reduce((sum: number, c: any) => sum + (Number(c.sales) || 0), 0);
 });
 
 const chartTotalProfit = computed(() => {
-  return props.chartData.reduce((sum: number, c: any) => sum + (Number(c.profit) || 0), 0);
+  return displayChartData.value.reduce((sum: number, c: any) => sum + (Number(c.profit) || 0), 0);
 });
 
 const chartTotalOrders = computed(() => {
-  return props.chartData.reduce((sum: number, c: any) => sum + (Number(c.count) || 0), 0);
+  return displayChartData.value.reduce((sum: number, c: any) => sum + (Number(c.count) || 0), 0);
 });
 
 // Profit percentage and SVG Donut length (circumference = 2 * PI * 38 ≈ 238.76)

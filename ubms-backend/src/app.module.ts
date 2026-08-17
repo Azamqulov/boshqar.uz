@@ -27,9 +27,12 @@ import { TelegramModule } from './modules/telegram/telegram.module';
 import { CurrenciesModule } from './modules/currencies/currencies.module';
 import { AiModule } from './modules/ai/ai.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { BillingModule } from './modules/billing/billing.module';
+import { BackupModule } from './modules/backup/backup.module';
 
 import { createKeyv } from '@keyv/redis';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { SubscriptionGuard } from './common/guards/subscription.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -100,6 +103,8 @@ import { HealthController } from './health.controller';
     CurrenciesModule,
     AiModule,
     AnalyticsModule,
+    BillingModule,
+    BackupModule,
   ],
   controllers: [HealthController],
   providers: [
@@ -110,6 +115,10 @@ import { HealthController } from './health.controller';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: SubscriptionGuard,
     },
     {
       provide: APP_GUARD,

@@ -48,8 +48,9 @@ export class SuperAdminController {
   updateOwnerPlan(
     @Param('id') id: string,
     @Body('planId') planId: string,
+    @Body('durationDays') durationDays?: number,
   ) {
-    return this.superAdminService.updateOwnerPlan(id, planId);
+    return this.superAdminService.updateOwnerPlan(id, planId, durationDays ? Number(durationDays) : 30);
   }
 
   @Get('businesses')
@@ -75,8 +76,9 @@ export class SuperAdminController {
   updateBusinessPlan(
     @Param('id') id: string,
     @Body('planId') planId: string,
+    @Body('durationDays') durationDays?: number,
   ) {
-    return this.superAdminService.updateBusinessPlan(id, planId);
+    return this.superAdminService.updateBusinessPlan(id, planId, durationDays ? Number(durationDays) : 30);
   }
 
   @Get('users')

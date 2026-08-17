@@ -2,7 +2,7 @@
   <div
     :class="[
       isFloating
-        ? 'fixed bottom-5 right-5 z-40 flex flex-col items-end'
+        ? 'fixed bottom-20 md:bottom-5 right-3 sm:right-5 z-40 flex flex-col items-end'
         : 'w-full flex flex-col lg:grid lg:grid-cols-12 gap-5 items-start'
     ]"
   >
@@ -10,11 +10,11 @@
     <button
       v-if="isFloating && !isOpen"
       @click="openAssistant"
-      class="group relative flex items-center gap-3 px-4 sm:px-5 py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white rounded-full shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 focus:outline-hidden ring-4 ring-emerald-500/20"
+      class="group relative flex items-center gap-2.5 sm:gap-3 px-3.5 sm:px-5 py-3 sm:py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white rounded-full shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 transform hover:-translate-y-0.5 active:scale-95 focus:outline-hidden ring-4 ring-emerald-500/20"
       title="Boshqar AI Yordamchi"
     >
       <div class="relative flex items-center justify-center">
-        <Sparkles class="w-5 h-5 animate-pulse text-amber-300" />
+        <Sparkles class="w-4 h-4 sm:w-5 sm:h-5 animate-pulse text-amber-300" />
         <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-300 rounded-full animate-ping" />
       </div>
       <span class="font-bold text-xs sm:text-sm tracking-wide">Boshqar AI</span>
@@ -27,8 +27,8 @@
       :class="[
         isFloating
           ? isExpanded
-            ? 'fixed inset-4 sm:inset-10 z-50 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200'
-            : 'w-[92vw] sm:w-[440px] h-[600px] max-h-[82vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200'
+            ? 'fixed inset-2 sm:inset-10 z-50 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200'
+            : 'w-[calc(100vw-1.5rem)] sm:w-[440px] h-[540px] max-h-[calc(100dvh-6rem)] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200'
           : 'lg:col-span-8 w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col overflow-hidden h-[720px] max-h-[82vh]'
       ]"
     >

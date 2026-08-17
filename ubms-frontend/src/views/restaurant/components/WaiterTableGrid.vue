@@ -12,17 +12,19 @@
         </button>
         <button
           @click="$emit('update:statusFilter', 'available')"
-          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1 whitespace-nowrap"
+          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
           :class="statusFilter === 'available' ? 'bg-emerald-500 text-white shadow-xs font-bold' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'"
         >
-          <span>🟢 Bo'sh ({{ freeTablesCount }})</span>
+          <span class="w-2 h-2 rounded-full" :class="statusFilter === 'available' ? 'bg-white' : 'bg-emerald-500'"></span>
+          <span>Bo'sh ({{ freeTablesCount }})</span>
         </button>
         <button
           @click="$emit('update:statusFilter', 'occupied')"
-          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1 whitespace-nowrap"
+          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
           :class="statusFilter === 'occupied' ? 'bg-rose-500 text-white shadow-xs font-bold' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
         >
-          <span>🔴 Band ({{ occupiedTablesCount }})</span>
+          <span class="w-2 h-2 rounded-full" :class="statusFilter === 'occupied' ? 'bg-white' : 'bg-rose-500'"></span>
+          <span>Band ({{ occupiedTablesCount }})</span>
         </button>
       </div>
 

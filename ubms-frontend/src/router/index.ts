@@ -19,7 +19,9 @@ const CustomersView = () => import('../views/customers/CustomersView.vue');
 const SuppliersView = () => import('../views/suppliers/SuppliersView.vue');
 const FinanceView = () => import('../views/finance/FinanceView.vue');
 const SettingsView = () => import('../views/settings/SettingsView.vue');
+const BillingView = () => import('../views/billing/BillingView.vue');
 const GuideView = () => import('../views/guide/GuideView.vue');
+const AboutView = () => import('../views/about/AboutView.vue');
 const SuperAdminView = () => import('../views/superadmin/SuperAdminView.vue');
 const LandingView = () => import('../views/landing/LandingView.vue');
 const NotFoundView = () => import('../views/errors/NotFoundView.vue');
@@ -27,10 +29,6 @@ const NotFoundView = () => import('../views/errors/NotFoundView.vue');
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: LandingView,
-  },
-  {
-    path: '/about',
     component: LandingView,
   },
   {
@@ -75,6 +73,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'finance', component: FinanceView },
       { path: 'guide', component: GuideView },
       { path: 'help', redirect: '/guide' },
+      { path: 'about', redirect: '/guide' },
+      { path: 'billing', component: BillingView },
       { path: 'settings', component: SettingsView },
       { path: 'superadmin', component: SuperAdminView },
     ],

@@ -1,38 +1,69 @@
 <template>
-  <div class="space-y-4 h-[calc(100vh-5.5rem)] flex flex-col overflow-hidden">
+  <div class="space-y-3 sm:space-y-4 h-[calc(100dvh-8rem)] md:h-[calc(100vh-5.5rem)] flex flex-col overflow-hidden">
     <!-- Top Header with live sound & timer indicator -->
-    <div class="flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20">
-          <ChefHat class="w-6 h-6" />
+    <div class="flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm shrink-0">
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div class="p-2 sm:p-2.5 rounded-xl bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20 shrink-0">
+          <ChefHat class="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
-        <div>
-          <h1 class="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            Oshpaz Ekrani (Kitchen Display System — KDS)
-            <span class="text-[10px] uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30 font-bold animate-pulse">
-              Live Monitor
+        <div class="min-w-0">
+          <h1 class="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5 sm:gap-2 truncate">
+            <span>Oshxona (KDS)</span>
+            <span class="text-[9px] sm:text-[10px] uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30 font-bold animate-pulse shrink-0">
+              Live
             </span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Yangi tushgan taomlarni qabul qiling, pishiring va tayyorligini bildiring</p>
+          <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">Taomlarni qabul qiling, pishiring va tayyorlang</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <button
           @click="loadKDS(true)"
           :disabled="loading"
-          class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200 dark:border-slate-700"
+          class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200 dark:border-slate-700"
         >
-          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
-          <span>Yangilash</span>
+          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+          <span class="hidden sm:inline">Yangilash</span>
         </button>
       </div>
+    </div>
+
+    <!-- Mobile Tab Toggle (< md) -->
+    <div class="flex md:hidden items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0 gap-1 text-xs font-bold">
+      <button
+        @click="mobileKdsTab = 'new'"
+        class="flex-1 py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1"
+        :class="mobileKdsTab === 'new' ? 'bg-amber-500 text-slate-950 font-black shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <span>Yangi</span>
+        <span class="px-1.5 py-0.2 rounded-full bg-slate-900/20 text-[10px]">{{ newOrders.length }}</span>
+      </button>
+      <button
+        @click="mobileKdsTab = 'cooking'"
+        class="flex-1 py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1"
+        :class="mobileKdsTab === 'cooking' ? 'bg-blue-500 text-white font-black shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <span>Pishmoqda</span>
+        <span class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">{{ cookingOrders.length }}</span>
+      </button>
+      <button
+        @click="mobileKdsTab = 'ready'"
+        class="flex-1 py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1"
+        :class="mobileKdsTab === 'ready' ? 'bg-emerald-500 text-white font-black shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <span>Tayyor</span>
+        <span class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">{{ readyOrders.length }}</span>
+      </button>
     </div>
 
     <!-- 3 High-contrast Columns: Yangi, Pishmoqda, Tayyor -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 overflow-hidden">
       <!-- 1. Yangi buyurtmalar (New - Yellow) -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col space-y-3 border-amber-500/30 overflow-hidden">
+      <div
+        class="glass-card rounded-2xl p-3 sm:p-4 flex-col space-y-3 border-amber-500/30 overflow-hidden"
+        :class="mobileKdsTab === 'new' ? 'flex' : 'hidden md:flex'"
+      >
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 class="font-black text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></span>
@@ -79,7 +110,10 @@
       </div>
 
       <!-- 2. Pishmoqda (Cooking - Blue) -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col space-y-3 border-blue-500/30 overflow-hidden">
+      <div
+        class="glass-card rounded-2xl p-3 sm:p-4 flex-col space-y-3 border-blue-500/30 overflow-hidden"
+        :class="mobileKdsTab === 'cooking' ? 'flex' : 'hidden md:flex'"
+      >
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 class="font-black text-sm text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
@@ -126,7 +160,10 @@
       </div>
 
       <!-- 3. Tayyor (Ready - Green) -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col space-y-3 border-emerald-500/30 overflow-hidden">
+      <div
+        class="glass-card rounded-2xl p-3 sm:p-4 flex-col space-y-3 border-emerald-500/30 overflow-hidden"
+        :class="mobileKdsTab === 'ready' ? 'flex' : 'hidden md:flex'"
+      >
         <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <h3 class="font-black text-sm text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
             <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
@@ -176,6 +213,7 @@ import { useToast } from '../../composables/useToast';
 const toast = useToast();
 const loading = ref(false);
 const kitchenOrders = ref<any[]>([]);
+const mobileKdsTab = ref<'new' | 'cooking' | 'ready'>('new');
 let pollTimer: any = null;
 
 const newOrders = computed(() => kitchenOrders.value.filter((k) => k.status === 'new'));

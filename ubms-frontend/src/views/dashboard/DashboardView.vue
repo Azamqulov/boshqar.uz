@@ -63,7 +63,7 @@ const topBestsellers = ref<any[]>([]);
 
 // Chart period state with localStorage persistence
 const savedPeriod = localStorage.getItem('dashboard_sales_period');
-const selectedChartPeriod = ref(savedPeriod ? Number(savedPeriod) : 14);
+const selectedChartPeriod = ref(savedPeriod ? Number(savedPeriod) : 7);
 const chartPeriods = [
   { days: 7, label: '7 kun' },
   { days: 14, label: '14 kun' },

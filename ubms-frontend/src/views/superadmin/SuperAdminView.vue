@@ -32,60 +32,26 @@
     <!-- Global Stats Cards -->
     <SuperAdminHeaderStats :stats="stats" />
 
-    <!-- Navigation Tabs -->
-    <div class="flex space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs overflow-x-auto">
-      <button
-        @click="activeTab = 'owners'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'owners' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
-      >
-        <Crown class="w-4 h-4" />
-        <span>Firma Egalari (Owners)</span>
-      </button>
+    <!-- Navigation Tabs with Sliding Animated Pill -->
+    <div class="relative flex items-center gap-1 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-xs overflow-x-auto scrollbar-none">
+      <!-- Animated Sliding Background Pill -->
+      <div
+        v-if="pillStyle"
+        class="absolute rounded-xl bg-white dark:bg-slate-800 shadow-xs border border-slate-200/70 dark:border-slate-700 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+        :style="pillStyle"
+      ></div>
 
       <button
-        @click="activeTab = 'businesses'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'businesses' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
+        v-for="tab in adminTabs"
+        :key="tab.id"
+        :ref="(el) => setTabRef(el, tab.id)"
+        @click="activeTab = tab.id"
+        type="button"
+        class="relative z-10 px-3.5 py-2 rounded-xl font-bold transition-colors duration-300 flex items-center gap-2 whitespace-nowrap btn-interactive"
+        :class="activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
       >
-        <Building2 class="w-4 h-4" />
-        <span>Barcha Bizneslar ({{ businesses.length }})</span>
-      </button>
-
-      <button
-        @click="activeTab = 'users'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'users' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
-      >
-        <Users class="w-4 h-4" />
-        <span>Foydalanuvchilar ({{ users.length }})</span>
-      </button>
-
-      <button
-        @click="activeTab = 'plans'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'plans' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
-      >
-        <CreditCard class="w-4 h-4" />
-        <span>Tarif Rejalari (SaaS)</span>
-      </button>
-
-      <button
-        @click="activeTab = 'audit'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
-      >
-        <ShieldCheck class="w-4 h-4" />
-        <span>Global Audit Tarixi</span>
-      </button>
-
-      <button
-        @click="activeTab = 'businessTypes'"
-        class="px-4 py-2.5 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === 'businessTypes' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'"
-      >
-        <Sliders class="w-4 h-4" />
-        <span>Biznes Turlari Sozlamalari</span>
+        <component :is="tab.icon" class="w-4 h-4" />
+        <span>{{ tab.label }}</span>
       </button>
     </div>
 
@@ -122,14 +88,7 @@
       @toggle-status="toggleUserStatus"
     />
 
-    <!-- TAB 4: PLANS -->
-    <SuperAdminPlansTab
-      v-else-if="activeTab === 'plans'"
-      :plans="plans"
-      @plan-updated="loadAllData"
-    />
-
-    <!-- TAB 5: AUDIT LOGS -->
+    <!-- TAB 4: AUDIT LOGS -->
     <SuperAdminAuditTab
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
@@ -143,6 +102,16 @@
       :business-types-list="businessTypesList"
       :loading-type-toggle="loadingTypeToggle"
       @toggle="toggleBusinessTypeAction"
+    />
+
+    <!-- TAB 7: BILLING & PAYMENT REQUISITES -->
+    <SuperAdminBillingTab
+      v-else-if="activeTab === 'billing'"
+    />
+
+    <!-- TAB 8: DATABASE BACKUPS -->
+    <SuperAdminBackupsTab
+      v-else-if="activeTab === 'backups'"
     />
 
     <!-- OWNER DETAIL & MONITORING MODAL -->
@@ -206,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
@@ -218,19 +187,22 @@ import SuperAdminHeaderStats from './components/SuperAdminHeaderStats.vue';
 import SuperAdminOwnersTab from './components/SuperAdminOwnersTab.vue';
 import SuperAdminBusinessesTab from './components/SuperAdminBusinessesTab.vue';
 import SuperAdminUsersTab from './components/SuperAdminUsersTab.vue';
-import SuperAdminPlansTab from './components/SuperAdminPlansTab.vue';
 import SuperAdminAuditTab from './components/SuperAdminAuditTab.vue';
 import SuperAdminBusinessTypesTab from './components/SuperAdminBusinessTypesTab.vue';
+import SuperAdminBillingTab from './components/SuperAdminBillingTab.vue';
+import SuperAdminBackupsTab from './components/SuperAdminBackupsTab.vue';
 import SuperAdminOwnerDetailModal from './components/SuperAdminOwnerDetailModal.vue';
 import {
   ShieldCheck,
   Building2,
   Users,
   CreditCard,
+  Receipt,
   RefreshCw,
   Crown,
   X,
   Sliders,
+  Database,
   UtensilsCrossed,
   Coffee,
   Scissors,
@@ -247,10 +219,42 @@ const route = useRoute();
 const router = useRouter();
 const { formatCurrency, formatDate } = useFormat();
 
-const validTabs = ['owners', 'businesses', 'users', 'plans', 'audit', 'businessTypes'] as const;
+const validTabs = ['owners', 'businesses', 'users', 'billing', 'audit', 'businessTypes', 'backups'] as const;
 type SuperAdminTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'owners', validTabs);
+
+const tabRefs = reactive<Record<string, HTMLElement>>({});
+const isMounted = ref(false);
+
+onMounted(() => {
+  isMounted.value = true;
+});
+
+const setTabRef = (el: any, id: string) => {
+  if (el) tabRefs[id] = el;
+};
+
+const pillStyle = computed(() => {
+  const activeEl = tabRefs[activeTab.value];
+  if (!activeEl || !isMounted.value) return null;
+  return {
+    left: `${activeEl.offsetLeft}px`,
+    width: `${activeEl.offsetWidth}px`,
+    top: `${activeEl.offsetTop}px`,
+    height: `${activeEl.offsetHeight}px`,
+  };
+});
+
+const adminTabs = computed(() => [
+  { id: 'owners' as const, label: 'Egalar (Owners)', icon: Crown },
+  { id: 'businesses' as const, label: `Bizneslar (${businesses.value.length})`, icon: Building2 },
+  { id: 'users' as const, label: `Foydalanuvchilar (${users.value.length})`, icon: Users },
+  { id: 'audit' as const, label: 'Audit Tarixi', icon: ShieldCheck },
+  { id: 'businessTypes' as const, label: 'Biznes Turlari', icon: Sliders },
+  { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt },
+  { id: 'backups' as const, label: 'Baza Zaxiralari', icon: Database },
+]);
 
 // Sync with route query tab
 watch(

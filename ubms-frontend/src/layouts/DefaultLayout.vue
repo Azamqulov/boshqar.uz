@@ -175,6 +175,18 @@
                     class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900"
                     :class="outOfStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'"
                   />
+
+                  <!-- Collapsed mode dot indicator for billing (red if expired, amber if 1-3 days left) -->
+                  <span
+                    v-if="item.name === 'billing' && (isSubscriptionExpired || isSubscriptionExpiringSoon) && isSidebarCollapsed && !isMobileSidebarOpen"
+                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 animate-ping"
+                    :class="isSubscriptionExpired ? 'bg-rose-500' : 'bg-amber-500'"
+                  />
+                  <span
+                    v-if="item.name === 'billing' && (isSubscriptionExpired || isSubscriptionExpiringSoon) && isSidebarCollapsed && !isMobileSidebarOpen"
+                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900"
+                    :class="isSubscriptionExpired ? 'bg-rose-500' : 'bg-amber-500'"
+                  />
                 </div>
 
                 <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">{{ item.label }}</span>
@@ -197,7 +209,19 @@
                   {{ lowStockCount }}
                 </span>
 
-                <!-- 3. Standard badge (AI on Qo'llanma) -> GREEN exact circle badge -->
+                <!-- 3. Billing Expiry Exclamation Badge (!) -> EXACT MATCHING CIRCLE -->
+                <span
+                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'billing' && (isSubscriptionExpiringSoon || isSubscriptionExpired)"
+                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-xs font-black shadow-2xs animate-pulse"
+                  :class="isSubscriptionExpired
+                    ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'"
+                  :title="isSubscriptionExpired ? 'Obunangiz muddati tugagan!' : 'Obunangiz tugashiga 1 kun qoldi!'"
+                >
+                  !
+                </span>
+
+                <!-- 4. Standard badge (AI on Qo'llanma) -> GREEN exact circle badge -->
                 <span
                   v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
                   class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs"
@@ -370,6 +394,7 @@ import ThemeToggle from '../components/ThemeToggle.vue';
 import AppLogo from '../components/AppLogo.vue';
 import { useLanguage } from '../composables/useLanguage';
 import { usePosSettings } from '../composables/usePosSettings';
+import api from '../services/api';
 
 const langStore = useLanguage();
 const currencyStore = useCurrencyStore();
@@ -405,6 +430,7 @@ import {
   Sparkles,
   AlertTriangle,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -453,9 +479,55 @@ const lowStockCount = computed(() => {
   }).length;
 });
 
+// Subscription Expiration Tracking for Sidebar & Header Reminder
+const billingSubscription = ref<any>(null);
+
+const fetchBillingStatus = async () => {
+  if (!authStore.isAuthenticated) return;
+  try {
+    const cached = localStorage.getItem('ubms_cache_billing_status');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      billingSubscription.value = parsed.subscription;
+    }
+  } catch (e) {}
+
+  try {
+    const { data } = await api.get('/billing/status');
+    if (data?.subscription) {
+      billingSubscription.value = data.subscription;
+      localStorage.setItem('ubms_cache_billing_status', JSON.stringify(data));
+    }
+  } catch (err) {
+    // silently fail
+  }
+};
+
+const subscriptionDaysLeft = computed(() => {
+  if (!billingSubscription.value) return null;
+  if (billingSubscription.value.planName === 'Free') return null;
+  return typeof billingSubscription.value.daysLeft === 'number' ? billingSubscription.value.daysLeft : null;
+});
+
+const isSubscriptionExpiringSoon = computed(() => {
+  if (subscriptionDaysLeft.value === null) return false;
+  return subscriptionDaysLeft.value <= 1;
+});
+
+const isSubscriptionExpired = computed(() => {
+  if (!billingSubscription.value) return false;
+  if (billingSubscription.value.planName === 'Free') return false;
+  return billingSubscription.value.isExpired || (subscriptionDaysLeft.value !== null && subscriptionDaysLeft.value <= 0);
+});
+
+watch(() => authStore.activeBusiness?.id, () => {
+  fetchBillingStatus();
+});
+
 onMounted(() => {
   if (authStore.isAuthenticated) {
     dataStore.fetchProducts();
+    fetchBillingStatus();
   }
 });
 
@@ -535,8 +607,8 @@ const allNavGroups: NavGroup[] = [
     id: 'sozlamalar',
     title: 'SOZLAMALAR',
     items: [
+      { name: 'billing', label: 'Obuna & Tariflar', to: '/billing', icon: CreditCard, types: ['all'] },
       { name: 'guide', label: 'Qo\'llanma & AI', to: '/guide', icon: BookOpen, types: ['all'], badge: 'AI' },
-      { name: 'about', label: 'Tizim Haqida', to: '/about', icon: Sparkles, types: ['all'] },
       { name: 'settings', label: 'Sozlamalar', to: '/settings', icon: Settings, types: ['all'] },
       { name: 'superadmin', label: 'SuperAdmin', to: '/superadmin', icon: ShieldCheck, types: ['superadmin'] },
     ],
@@ -559,8 +631,8 @@ const visibleNavGroups = computed(() => {
       return true;
     }
 
-    // 2. Universal items accessible to ALL users (Guide & AI, About)
-    if (item.name === 'guide' || item.to === '/guide' || item.name === 'about' || item.to === '/about') {
+    // 2. Universal items accessible to ALL users (Guide & AI)
+    if (item.name === 'guide' || item.to === '/guide') {
       return true;
     }
 

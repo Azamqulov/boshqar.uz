@@ -1,7 +1,7 @@
 <template>
   <div class="glass-card rounded-2xl overflow-hidden shadow-sm w-full">
-    <div class="w-full">
-      <table class="w-full text-left text-xs border-collapse">
+    <div class="w-full overflow-x-auto max-w-full">
+      <table class="w-full text-left text-xs border-collapse min-w-[700px]">
         <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold">
           <tr>
             <th class="py-3 px-2.5 sm:px-3">Rasm & Nomi</th>

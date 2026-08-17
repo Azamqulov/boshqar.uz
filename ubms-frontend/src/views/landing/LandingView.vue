@@ -119,6 +119,7 @@ const handleResize = () => {
 };
 
 onMounted(async () => {
+  window.scrollTo(0, 0);
   // Check if initial hash is invalid (e.g. #faqasdsadfgsdfg) -> redirect to 404
   checkHashValidity();
   window.addEventListener('hashchange', checkHashValidity);
@@ -130,15 +131,16 @@ onMounted(async () => {
   AOS.init({
     duration: 700,
     once: true,
-    offset: 40,
+    offset: 20,
     easing: 'ease-out-cubic',
     disableMutationObserver: false,
     mirror: false,
   });
 
-  // Dual refresh to ensure accurate offsets after fonts & images load
+  AOS.refreshHard();
+
   setTimeout(() => {
-    AOS.refresh();
+    AOS.refreshHard();
   }, 100);
 
   setTimeout(() => {

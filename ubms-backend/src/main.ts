@@ -6,15 +6,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { validateEnv } from './config/env.validation';
-
 
 async function bootstrap() {
   validateEnv();
   const app = await NestFactory.create(AppModule);
 
-  // 1. High-Performance HTTP Response Compression (Gzip / Deflate)
+  // 1. Request Body Size Limits for File / Image Uploads
+  app.use(json({ limit: '20mb' }));
+  app.use(urlencoded({ limit: '20mb', extended: true }));
+
+  // 2. High-Performance HTTP Response Compression (Gzip / Deflate)
   app.use(
     compression({
       threshold: 512,

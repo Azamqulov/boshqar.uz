@@ -284,19 +284,40 @@ export class SuperAdminService {
     return { success: true, status };
   }
 
-  async updateOwnerPlan(ownerId: string, planId: string) {
+  async updateOwnerPlan(ownerId: string, planId: string, durationDays = 30) {
     const owner = await this.prisma.user.findUnique({
       where: { id: ownerId },
       include: { ownedBusinesses: true },
     });
     if (!owner) throw new NotFoundException('Firma egasi topilmadi');
 
-    await this.prisma.business.updateMany({
-      where: { ownerId },
-      data: { planId },
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Tarif rejasi topilmadi');
+
+    const now = new Date();
+    const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.business.updateMany({
+        where: { ownerId },
+        data: { planId, status: 'active' },
+      });
+
+      for (const b of owner.ownedBusinesses) {
+        await tx.subscription.create({
+          data: {
+            businessId: b.id,
+            planId,
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            cancelAtPeriodEnd: false,
+          },
+        });
+      }
     });
 
-    return { success: true, planId };
+    return { success: true, planId, planName: plan.name, currentPeriodEnd: periodEnd };
   }
 
   // 2. All Businesses List
@@ -363,14 +384,35 @@ export class SuperAdminService {
   }
 
   // 4. Update Business Plan (Upgrade / Downgrade)
-  async updateBusinessPlan(id: string, planId: string) {
+  async updateBusinessPlan(id: string, planId: string, durationDays = 30) {
     const business = await this.prisma.business.findUnique({ where: { id } });
     if (!business) throw new NotFoundException('Biznes topilmadi');
 
-    return this.prisma.business.update({
-      where: { id },
-      data: { planId },
-      include: { plan: true },
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Tarif rejasi topilmadi');
+
+    const now = new Date();
+    const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedBusiness = await tx.business.update({
+        where: { id },
+        data: { planId, status: 'active' },
+        include: { plan: true },
+      });
+
+      await tx.subscription.create({
+        data: {
+          businessId: id,
+          planId,
+          status: 'active',
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+          cancelAtPeriodEnd: false,
+        },
+      });
+
+      return updatedBusiness;
     });
   }
 

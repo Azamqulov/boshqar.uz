@@ -38,26 +38,48 @@ export class BusinessesService {
     }
 
     // 1. Get Free Plan
-    const defaultPlan = await this.prisma.plan.findFirst({
-      where: { name: 'Free' },
+    let defaultPlan = await this.prisma.plan.findFirst({
+      where: { name: { equals: 'Free', mode: 'insensitive' } },
     });
+    if (!defaultPlan) {
+      defaultPlan = await this.prisma.plan.findFirst({
+        orderBy: { priceMonthly: 'asc' },
+      });
+    }
+    const finalPlanId = defaultPlan?.id || '00000000-0000-0000-0000-000000000001';
+
+    const trialDays = Number(process.env.TRIAL_DAYS) || 14;
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
 
     // 2. Get Owner Role
     const ownerRole = await this.prisma.role.findFirst({
       where: { name: 'Owner', isSystem: true },
     });
 
-    // 3. Create Business, default branch, business_user in transaction
+    // 3. Create Business, default branch, business_user, and trial Subscription in transaction
     return this.prisma.$transaction(async (tx) => {
       const business = await tx.business.create({
         data: {
           name: dto.name,
           businessType: dto.businessType,
           ownerId: userId,
-          planId: defaultPlan?.id || '00000000-0000-0000-0000-000000000001',
+          planId: finalPlanId,
           currency: dto.currency || 'UZS',
           timezone: dto.timezone || 'Asia/Tashkent',
-          status: 'active',
+          status: 'trial',
+        },
+      });
+
+      // Automatically create trial Subscription (14 days default)
+      await tx.subscription.create({
+        data: {
+          businessId: business.id,
+          planId: finalPlanId,
+          status: 'trialing',
+          currentPeriodStart: now,
+          currentPeriodEnd: trialEnd,
+          cancelAtPeriodEnd: false,
         },
       });
 

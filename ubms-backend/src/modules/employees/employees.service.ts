@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmployeeStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -249,11 +249,29 @@ export class EmployeesService {
       );
     }
 
-    // Check if phone belongs to business owner
-    const business = await this.prisma.business.findUnique({
-      where: { id: businessId },
-      include: { owner: true },
-    });
+    // Check if phone belongs to business owner and verify plan maxUsers limit
+    const [business, activeUsersCount] = await Promise.all([
+      this.prisma.business.findUnique({
+        where: { id: businessId },
+        include: { owner: true, plan: true },
+      }),
+      this.prisma.businessUser.count({
+        where: { businessId, status: 'active' },
+      }),
+    ]);
+
+    if (!business) {
+      throw new NotFoundException('Biznes topilmadi');
+    }
+
+    if (business.plan && business.plan.maxUsers !== null && activeUsersCount >= business.plan.maxUsers) {
+      throw new ForbiddenException({
+        code: 'PLAN_LIMIT_USERS',
+        message: `Tarifingiz bo'yicha maksimal ${business.plan.maxUsers} ta foydalanuvchi/xodim qo'shish mumkin. Ko'proq xodimlar uchun tarifni yangilang.`,
+        maxUsers: business.plan.maxUsers,
+        currentUsersCount: activeUsersCount,
+      });
+    }
 
     if (business?.owner?.phone === cleanPhone) {
       throw new BadRequestException(

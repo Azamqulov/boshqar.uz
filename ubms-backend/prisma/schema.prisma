@@ -199,6 +199,12 @@ enum SubscriptionStatus {
   trialing
 }
 
+enum BillingRequestStatus {
+  pending
+  approved
+  rejected
+}
+
 // -------------------------------------------------------------
 // 1. GLOBAL & AUTHENTICATION
 // -------------------------------------------------------------
@@ -241,8 +247,9 @@ model Plan {
   features     Json?
   createdAt    DateTime    @default(now()) @map("created_at")
 
-  businesses    Business[]
-  subscriptions Subscription[]
+  businesses      Business[]
+  subscriptions   Subscription[]
+  billingRequests BillingRequest[]
 
   @@map("plans")
 }
@@ -264,6 +271,40 @@ model Subscription {
   @@map("subscriptions")
 }
 
+model BillingRequest {
+  id             String               @id @default(uuid()) @db.Uuid
+  businessId     String               @map("business_id") @db.Uuid
+  planId         String               @map("plan_id") @db.Uuid
+  amount         Decimal              @db.Decimal(14, 2)
+  durationMonths Int                  @default(1) @map("duration_months")
+  paymentMethod  String               @default("card_transfer") @map("payment_method") @db.VarChar(50)
+  senderCard     String?              @map("sender_card") @db.VarChar(50)
+  senderName     String?              @map("sender_name") @db.VarChar(150)
+  receiptUrl     String?              @map("receipt_url") @db.Text
+  notes          String?              @db.Text
+  status         BillingRequestStatus @default(pending)
+  reviewedBy     String?              @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime?            @map("reviewed_at")
+  rejectReason   String?              @map("reject_reason") @db.Text
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan     Plan     @relation(fields: [planId], references: [id])
+
+  @@index([businessId, status])
+  @@map("billing_requests")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(100)
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
 // -------------------------------------------------------------
 // 2. TENANT & RBAC
 // -------------------------------------------------------------
@@ -282,28 +323,29 @@ model Business {
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
-  owner         User           @relation("BusinessOwner", fields: [ownerId], references: [id])
-  plan          Plan           @relation(fields: [planId], references: [id])
-  branches      Branch[]
-  businessUsers BusinessUser[]
-  roles         Role[]
-  categories    Category[]
-  units         Unit[]
-  products      Product[]
-  customers     Customer[]
-  suppliers     Supplier[]
-  orders        Order[]
-  payments      PaymentMethod[]
-  revenues      Revenue[]
-  expenses      Expense[]
-  services      Service[]
-  appointments  Appointment[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
-  subscriptions Subscription[]
-  employees     Employee[]
-  posShifts     PosShift[]
-  inventories   Inventory[]
+  owner           User             @relation("BusinessOwner", fields: [ownerId], references: [id])
+  plan            Plan             @relation(fields: [planId], references: [id])
+  branches        Branch[]
+  businessUsers   BusinessUser[]
+  roles           Role[]
+  categories      Category[]
+  units           Unit[]
+  products        Product[]
+  customers       Customer[]
+  suppliers       Supplier[]
+  orders          Order[]
+  payments        PaymentMethod[]
+  revenues        Revenue[]
+  expenses        Expense[]
+  services        Service[]
+  appointments    Appointment[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  subscriptions   Subscription[]
+  billingRequests BillingRequest[]
+  employees       Employee[]
+  posShifts       PosShift[]
+  inventories     Inventory[]
 
   @@map("businesses")
 }

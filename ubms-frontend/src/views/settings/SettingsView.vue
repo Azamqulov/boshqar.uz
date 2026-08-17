@@ -6,69 +6,37 @@
     </div>
 
 
-    <!-- Tabs -->
-    <div class="flex space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs overflow-x-auto">
-      <button
-        @click="activeTab = 'my-profile'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'my-profile' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <UserCircle class="w-4 h-4" />
-        <span>Mening Profilim</span>
-      </button>
+    <!-- Tabs with Smooth Sliding Animation -->
+    <div class="relative flex items-center space-x-1.5 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs overflow-x-auto scrollbar-none">
+      <!-- Animated Sliding Background Pill -->
+      <div
+        v-if="pillStyle"
+        class="absolute rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+        :class="activeTab === 'danger' ? 'bg-rose-500 shadow-md shadow-rose-500/25' : 'bg-emerald-500 shadow-md shadow-emerald-500/25'"
+        :style="pillStyle"
+      ></div>
 
       <button
-        @click="activeTab = 'appearance'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'appearance' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+        v-for="tab in settingsTabs"
+        :key="tab.id"
+        :ref="(el) => setTabRef(el, tab.id)"
+        type="button"
+        @click="activeTab = tab.id"
+        class="relative z-10 flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition-colors duration-300 whitespace-nowrap btn-interactive"
+        :class="[
+          activeTab === tab.id
+            ? 'text-white'
+            : tab.id === 'danger'
+            ? 'text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+        ]"
       >
-        <Palette class="w-4 h-4" />
-        <span>Ko'rinish & Xizmatlar</span>
-      </button>
-
-      <button
-        @click="activeTab = 'employees'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'employees' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <Users class="w-4 h-4" />
-        <span>Xodimlar va Ruxsatlar</span>
-      </button>
-
-      <button
-        @click="activeTab = 'receipt'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'receipt' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <Printer class="w-4 h-4" />
-        <span>Chek & Printer</span>
-      </button>
-
-      <button
-        @click="activeTab = 'telegram'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'telegram' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <Bot class="w-4 h-4" />
-        <span>Telegram Bot</span>
-      </button>
-
-      <button
-        @click="activeTab = 'audit'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'audit' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
-      >
-        <ScrollText class="w-4 h-4" />
-        <span>Audit Jurnallari</span>
-      </button>
-
-      <button
-        @click="activeTab = 'danger'"
-        class="flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition whitespace-nowrap btn-interactive"
-        :class="activeTab === 'danger' ? 'bg-rose-500 text-white shadow-sm' : 'text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300'"
-      >
-        <Trash2 class="w-4 h-4" />
-        <span>O'chirish</span>
+        <component
+          :is="tab.icon"
+          class="w-4 h-4 transition-colors duration-300"
+          :class="activeTab === tab.id ? 'text-white' : tab.id === 'danger' ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'"
+        />
+        <span>{{ tab.label }}</span>
       </button>
     </div>
 
@@ -205,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
 import { useThemeStore } from '../../stores/theme.store';
@@ -247,6 +215,38 @@ import {
   DollarSign,
   LayoutDashboard,
 } from 'lucide-vue-next';
+
+const settingsTabs = [
+  { id: 'my-profile' as const, label: 'Mening Profilim', icon: UserCircle },
+  { id: 'appearance' as const, label: "Ko'rinish & Xizmatlar", icon: Palette },
+  { id: 'employees' as const, label: 'Xodimlar va Ruxsatlar', icon: Users },
+  { id: 'receipt' as const, label: 'Chek & Printer', icon: Printer },
+  { id: 'telegram' as const, label: 'Telegram Bot', icon: Bot },
+  { id: 'audit' as const, label: 'Audit Jurnallari', icon: ScrollText },
+  { id: 'danger' as const, label: "O'chirish", icon: Trash2 },
+];
+
+const tabRefs = reactive<Record<string, HTMLElement>>({});
+const isMounted = ref(false);
+
+onMounted(() => {
+  isMounted.value = true;
+});
+
+const setTabRef = (el: any, id: string) => {
+  if (el) tabRefs[id] = el;
+};
+
+const pillStyle = computed(() => {
+  const activeEl = tabRefs[activeTab.value];
+  if (!activeEl || !isMounted.value) return null;
+  return {
+    left: `${activeEl.offsetLeft}px`,
+    width: `${activeEl.offsetWidth}px`,
+    top: `${activeEl.offsetTop}px`,
+    height: `${activeEl.offsetHeight}px`,
+  };
+});
 
 const currencyOptions = [
   { value: 'UZS', label: "UZS (So'm)", icon: Coins },

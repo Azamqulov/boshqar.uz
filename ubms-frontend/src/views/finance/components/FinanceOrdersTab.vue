@@ -49,8 +49,8 @@
       </div>
 
       <!-- 2.1 TABLE VIEW -->
-      <div v-if="viewMode === 'table'" class="overflow-hidden w-full">
-        <table class="w-full text-left text-xs border-collapse">
+      <div v-if="viewMode === 'table'" class="overflow-x-auto max-w-full w-full">
+        <table class="w-full text-left text-xs border-collapse min-w-[650px]">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold whitespace-nowrap">
             <tr>
               <th class="py-3 px-4">Chek #</th>

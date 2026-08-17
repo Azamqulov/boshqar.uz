@@ -79,10 +79,11 @@
               </td>
               <td class="py-2.5 px-2 text-center whitespace-nowrap">
                 <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase"
+                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase"
                   :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
                 >
-                  {{ shift.status === 'open' ? '🟢 Ochiq' : '🔒 Yopilgan' }}
+                  <span class="w-1.5 h-1.5 rounded-full" :class="shift.status === 'open' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                  <span>{{ shift.status === 'open' ? 'Ochiq' : 'Yopilgan' }}</span>
                 </span>
               </td>
               <td class="py-2.5 px-3 text-right whitespace-nowrap">

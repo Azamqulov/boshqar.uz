@@ -1,7 +1,33 @@
 <template>
-  <div class="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
-    <!-- Left Menu & Dishes (60%) -->
-    <div class="flex-1 flex flex-col glass-card rounded-2xl p-4 overflow-hidden">
+  <div class="flex-1 flex flex-col gap-3 overflow-hidden">
+    <!-- Mobile Tab Switcher (< lg) -->
+    <div class="flex lg:hidden items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0 gap-1">
+      <button
+        @click="mobileWaiterTab = 'menu'"
+        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+        :class="mobileWaiterTab === 'menu' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <span>🍕 Taomnoma ({{ filteredMenu.length }})</span>
+      </button>
+      <button
+        @click="mobileWaiterTab = 'cart'"
+        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+        :class="mobileWaiterTab === 'cart' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
+      >
+        <span>🍽️ Stol Savati ({{ existingItems.length + newItems.length }})</span>
+        <span v-if="orderTotalSum > 0" class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+          {{ formatCurrency(orderTotalSum) }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
+      <!-- Left Menu & Dishes (60%) -->
+      <div
+        class="flex-1 flex-col glass-card rounded-2xl p-3 sm:p-4 overflow-hidden"
+        :class="mobileWaiterTab === 'menu' ? 'flex' : 'hidden lg:flex'"
+      >
       <!-- Category Selector & Search -->
       <div class="flex flex-col sm:flex-row gap-3 mb-4 shrink-0">
         <div class="flex-1">
@@ -63,7 +89,10 @@
     </div>
 
     <!-- Right Table Order Cart & Controls (40%) -->
-    <div class="w-full lg:w-96 flex flex-col glass-card rounded-2xl p-4 overflow-hidden shrink-0">
+    <div
+      class="w-full lg:w-96 flex-col glass-card rounded-2xl p-4 overflow-hidden shrink-0"
+      :class="mobileWaiterTab === 'cart' ? 'flex' : 'hidden lg:flex'"
+    >
       <!-- Table Cart Header -->
       <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div>
@@ -71,10 +100,11 @@
           <h2 class="text-lg font-black text-slate-900 dark:text-white">{{ selectedTable.name }}</h2>
         </div>
         <span
-          class="px-2.5 py-1 rounded-full text-xs font-bold"
-          :class="selectedTable.status === 'occupied' ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+          :class="selectedTable.status === 'occupied' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'"
         >
-          {{ selectedTable.status === 'occupied' ? '🔴 Band' : '🟢 Bo\'sh' }}
+          <span class="w-1.5 h-1.5 rounded-full" :class="selectedTable.status === 'occupied' ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+          <span>{{ selectedTable.status === 'occupied' ? 'Band' : 'Bo\'sh' }}</span>
         </span>
       </div>
 
@@ -178,12 +208,16 @@
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Search, Flame, Receipt, CheckCircle2 } from 'lucide-vue-next';
 import AppInput from '../../../components/AppInput.vue';
 import { useFormat } from '../../../composables/useFormat';
+
+const mobileWaiterTab = ref<'menu' | 'cart'>('menu');
 
 defineProps<{
   menuSearch: string;
