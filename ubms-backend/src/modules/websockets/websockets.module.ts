@@ -8,7 +8,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
   imports: [
     PrismaModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'boshqar-jwt-secret-key-super-secure',
+      secret: process.env.JWT_SECRET!,
     }),
   ],
   providers: [EventsGateway],

@@ -44,7 +44,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // 2. Verify JWT signature & expiration
       const payload = this.jwtService.verify(rawToken, {
-        secret: process.env.JWT_SECRET || 'boshqar-jwt-secret-key-super-secure',
+        secret: process.env.JWT_SECRET!,
       });
 
       const userId = payload.sub || payload.userId;
