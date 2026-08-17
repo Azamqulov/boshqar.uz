@@ -28,6 +28,7 @@ import { CurrenciesModule } from './modules/currencies/currencies.module';
 import { AiModule } from './modules/ai/ai.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 
+import { createKeyv } from '@keyv/redis';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -37,10 +38,35 @@ import { HealthController } from './health.controller';
 
 @Module({
   imports: [
-    CacheModule.register({
+    CacheModule.registerAsync({
       isGlobal: true,
-      ttl: 30000, // 30s default
-      max: 500,   // Maximum 500 cached entries in memory
+      useFactory: async () => {
+        const isProd = process.env.NODE_ENV === 'production';
+        const redisUrl =
+          process.env.REDIS_URL ||
+          (process.env.REDIS_HOST ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}` : undefined);
+
+        if (redisUrl) {
+          const keyvStore = createKeyv(redisUrl, {
+            namespace: 'boshqar_cache',
+            throwOnConnectError: isProd,
+          });
+
+          return {
+            stores: [keyvStore],
+            ttl: 30000, // 30s default
+          };
+        }
+
+        if (isProd) {
+          throw new Error('REDIS_URL is required in production environment for distributed caching.');
+        }
+
+        // In-memory fallback for local development when Redis is not running
+        return {
+          ttl: 30000,
+        };
+      },
     }),
     ThrottlerModule.forRoot([
       {
