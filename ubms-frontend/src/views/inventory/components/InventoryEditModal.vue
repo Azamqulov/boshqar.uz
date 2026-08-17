@@ -35,7 +35,7 @@
                 type="number"
                 v-model.number="editForm.quantity"
                 :step="isDecimal ? '0.001' : '1'"
-                :min="isDecimal ? '0.001' : '0'"
+                min="0"
                 placeholder="0"
                 required
                 class="w-full px-3 py-2 pr-14 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500 transition shadow-inner"
@@ -56,7 +56,7 @@
               type="number"
               v-model.number="editForm.minStock"
               :step="isDecimal ? '0.001' : '1'"
-              :min="isDecimal ? '0.001' : '0'"
+              min="0"
               placeholder="5"
               class="w-full px-3 py-2 pr-14 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500 transition shadow-inner"
             />

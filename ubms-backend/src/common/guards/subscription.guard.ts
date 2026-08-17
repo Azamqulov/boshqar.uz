@@ -35,7 +35,7 @@ export class SubscriptionGuard implements CanActivate {
       return true;
     }
 
-    const businessId = request.businessId || request.headers['x-business-id'] || user.businessId;
+    const businessId = request.businessId || user?.businessId;
 
     // If no business context (e.g. creating a business or profile operations before joining one)
     if (!businessId) {

@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService, PaymentRequisitesDto, CreateBillingRequestDto } from './billing.service';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
 import { SkipSubscriptionCheck, Public } from '../../common/decorators/custom.decorator';
+import { CurrentBusinessId } from '../../common/decorators/context.decorator';
 
 @ApiTags('Billing & Obuna (Monetizatsiya)')
 @ApiBearerAuth()
@@ -42,8 +43,7 @@ export class BillingController {
   @Get('status')
   @SkipSubscriptionCheck()
   @ApiOperation({ summary: 'Joriy biznesning obuna holati, qolgan kunlar va tariflar' })
-  getTenantStatus(@Req() req: any) {
-    const businessId = req.businessId || req.headers['x-business-id'] || req.user?.businessId;
+  getTenantStatus(@CurrentBusinessId() businessId: string) {
     return this.billingService.getTenantBillingStatus(businessId);
   }
 
@@ -51,8 +51,10 @@ export class BillingController {
   @Post('request')
   @SkipSubscriptionCheck()
   @ApiOperation({ summary: 'To\'lov cheki va so\'rovini yuborish (Tenant)' })
-  submitRequest(@Req() req: any, @Body() dto: CreateBillingRequestDto) {
-    const businessId = req.businessId || req.headers['x-business-id'] || req.user?.businessId;
+  submitRequest(
+    @CurrentBusinessId() businessId: string,
+    @Body() dto: CreateBillingRequestDto,
+  ) {
     return this.billingService.submitBillingRequest(businessId, dto);
   }
 

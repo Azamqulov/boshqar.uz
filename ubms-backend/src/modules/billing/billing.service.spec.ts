@@ -126,6 +126,49 @@ describe('BillingService', () => {
       expect(result.status).toBe('pending');
       expect(mockPrismaService.billingRequest.create).toHaveBeenCalled();
     });
+    it('klient o\'zicha boshqa (kam) summa yuborsa ham server o\'z hisoblagan calculatedAmount ni qat\'iy saqlashi kerak (SECURITY)', async () => {
+      const proPlan = {
+        id: 'plan-pro',
+        name: 'Pro',
+        priceMonthly: 200000,
+      };
+      mockPrismaService.plan.findUnique.mockResolvedValue(proPlan);
+      mockPrismaService.billingRequest.create.mockImplementation(({ data }) =>
+        Promise.resolve({ id: 'req-fake-price', ...data }),
+      );
+
+      const result = await service.submitBillingRequest('biz-1', {
+        planId: 'plan-pro',
+        durationMonths: 1,
+        amount: 50000, // Attacker sent 50,000 UZS instead of 200,000 UZS
+        receiptUrl: 'https://example.com/receipt.jpg',
+      });
+
+      // Server must NOT trust 50,000. It must enforce calculated 200,000
+      expect(result.amount).toBe(200000);
+      expect(result.notes).toContain('50,000');
+    });
+  });
+
+  describe('rejectBillingRequest', () => {
+    it('to\'lov so\'rovi rad etilganda status rejected bo\'lishi va sababi yozilishi kerak', async () => {
+      const mockReq = {
+        id: 'req-1',
+        businessId: 'biz-1',
+        planId: 'plan-pro',
+        status: 'pending',
+      };
+      mockPrismaService.billingRequest.findUnique.mockResolvedValue(mockReq);
+      mockPrismaService.billingRequest.update.mockResolvedValue({
+        ...mockReq,
+        status: 'rejected',
+        rejectReason: 'Chek noaniq',
+      });
+
+      const result = await service.rejectBillingRequest('req-1', 'admin-1', 'Chek noaniq');
+      expect(result.status).toBe('rejected');
+      expect(result.rejectReason).toBe('Chek noaniq');
+    });
   });
 
   describe('approveBillingRequest', () => {

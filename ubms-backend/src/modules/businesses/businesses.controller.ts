@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, BadRequestException } from '@nestjs/common';
 import { BusinessesService, CreateBusinessDto } from './businesses.service';
-import { CurrentUser } from '../../common/decorators/context.decorator';
+import { CurrentUser, CurrentBusinessId } from '../../common/decorators/context.decorator';
 import { RequirePermission, Public } from '../../common/decorators/custom.decorator';
 
 @Controller('businesses')
@@ -60,7 +60,7 @@ export class BusinessesController {
 
   @Delete('current')
   deleteCurrent(
-    @Headers('x-business-id') businessId: string,
+    @CurrentBusinessId() businessId: string,
     @CurrentUser('userId') userId: string,
   ) {
     if (!businessId) throw new BadRequestException('Biznes tanlanmagan');

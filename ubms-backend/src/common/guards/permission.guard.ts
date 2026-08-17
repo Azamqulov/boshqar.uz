@@ -22,7 +22,7 @@ export class PermissionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const businessId = request.businessId || request.headers['x-business-id'] || user?.businessId;
+    const businessId = request.businessId || user?.businessId;
 
     if (!user) {
       throw new ForbiddenException({

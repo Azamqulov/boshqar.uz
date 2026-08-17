@@ -177,7 +177,12 @@ export class BillingService {
     else if (durationMonths === 6) discountPercent = 5;
 
     const calculatedAmount = Math.round(baseTotal * (1 - discountPercent / 100));
-    const amount = dto.amount && dto.amount > 0 ? dto.amount : calculatedAmount;
+    // SECURITY: Always enforce calculatedAmount from server plan pricing. Never trust client-provided amount.
+    const amount = calculatedAmount;
+    const clientNote = dto.amount && dto.amount !== calculatedAmount
+      ? ` [Klient ko'rsatgan summa: ${dto.amount.toLocaleString()} UZS]`
+      : '';
+    const finalNotes = dto.notes ? `${dto.notes}${clientNote}` : (clientNote ? clientNote.trim() : undefined);
 
     // Check if there is an existing pending request
     const existingPending = await this.prisma.billingRequest.findFirst({
@@ -195,7 +200,7 @@ export class BillingService {
           senderCard: dto.senderCard || existingPending.senderCard,
           senderName: dto.senderName || existingPending.senderName,
           receiptUrl: dto.receiptUrl || existingPending.receiptUrl,
-          notes: dto.notes || existingPending.notes,
+          notes: finalNotes || existingPending.notes,
         },
         include: { plan: true },
       });
@@ -210,7 +215,7 @@ export class BillingService {
         senderCard: dto.senderCard,
         senderName: dto.senderName,
         receiptUrl: dto.receiptUrl,
-        notes: dto.notes,
+        notes: finalNotes,
         status: 'pending',
       },
       include: { plan: true },
