@@ -147,8 +147,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
+    // Strict Branch IDOR validation
+    const requestedBranchId = (req.headers?.['x-branch-id'] as string) || payload.branchId;
+    let verifiedBranchId: string | undefined = undefined;
+
+    if (requestedBranchId && verifiedBusinessId) {
+      if (user.isSuperAdmin) {
+        verifiedBranchId = requestedBranchId;
+      } else {
+        // Verify branch belongs to the verified business
+        const branchBelongsToBusiness = await this.prisma.branch.findFirst({
+          where: { id: requestedBranchId, businessId: verifiedBusinessId },
+          select: { id: true },
+        });
+
+        if (branchBelongsToBusiness) {
+          const isOwner = user.ownedBusinesses.some((b) => b.id === verifiedBusinessId);
+          if (payload.branchId && payload.branchId !== requestedBranchId && !isOwner) {
+            verifiedBranchId = payload.branchId;
+          } else {
+            verifiedBranchId = requestedBranchId;
+          }
+        } else {
+          verifiedBranchId = payload.branchId;
+        }
+      }
+    } else {
+      verifiedBranchId = payload.branchId;
+    }
+
     if (req) {
       req.businessId = verifiedBusinessId;
+      req.branchId = verifiedBranchId;
     }
 
     return {
@@ -160,7 +190,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       phone: user.phone,
       isSuperAdmin: user.isSuperAdmin,
       businessId: verifiedBusinessId,
-      branchId: payload.branchId,
+      branchId: verifiedBranchId,
       roleId: effectiveRoleId,
       permissions: effectivePermissions,
     };

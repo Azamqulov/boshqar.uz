@@ -18,6 +18,6 @@ export const CurrentBusinessId = createParamDecorator(
 export const CurrentBranchId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user?.branchId || request.branchId || request.headers['x-branch-id'];
+    return request.user?.branchId || request.branchId;
   },
 );
