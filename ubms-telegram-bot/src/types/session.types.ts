@@ -3,6 +3,12 @@ export interface TelegramNotificationSettings {
   notifyDailySummary?: boolean;
   notifyOnLowStock?: boolean;
   notifyOnShiftClose?: boolean;
+  allowDebtsInBot?: boolean;
+  allowExpenseInBot?: boolean;
+  allowProductSearch?: boolean;
+  allowCashierControl?: boolean;
+  role?: string;
+  roleLabel?: string;
 }
 
 export interface UserSession {
@@ -11,9 +17,12 @@ export interface UserSession {
   businessName?: string;
   userFullName?: string;
   phone?: string;
+  role?: 'owner' | 'admin' | 'manager' | 'cashier' | 'waiter' | 'stockman' | 'employee';
+  roleLabel?: string;
   state?: 'idle' | 'awaiting_phone' | 'awaiting_password';
   tempPhone?: string;
   settings?: TelegramNotificationSettings;
+  currency?: string;
 }
 
 export interface BusinessSummaryResponse {
@@ -23,4 +32,11 @@ export interface BusinessSummaryResponse {
   todayNetProfit: number;
   newCustomersCount: number;
   lowStockItemsCount: number;
+  currency?: string;
+  isEmployee?: boolean;
+  role?: string;
+  roleLabel?: string;
+  employeeName?: string;
+  hasActiveShift?: boolean;
+  shiftOpenedAt?: string;
 }

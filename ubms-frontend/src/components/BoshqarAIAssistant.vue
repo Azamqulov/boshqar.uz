@@ -3,10 +3,10 @@
     :class="[
       isFloating
         ? 'fixed bottom-5 right-5 z-40 flex flex-col items-end'
-        : 'w-full h-full flex flex-col bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden'
+        : 'w-full flex flex-col lg:grid lg:grid-cols-12 gap-5 items-start'
     ]"
   >
-    <!-- Floating Trigger Button (when closed) -->
+    <!-- Floating Trigger Button (when closed in floating mode) -->
     <button
       v-if="isFloating && !isOpen"
       @click="openAssistant"
@@ -18,10 +18,10 @@
         <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-300 rounded-full animate-ping" />
       </div>
       <span class="font-bold text-xs sm:text-sm tracking-wide">Boshqar AI</span>
-      <span class="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-bold bg-white/20 rounded-full text-emerald-50">Online</span>
+      <span class="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-bold bg-white/20 rounded-full text-emerald-50">v2.0</span>
     </button>
 
-    <!-- Chat Modal / Window -->
+    <!-- LEFT COLUMN: Chat Interface Window -->
     <div
       v-if="!isFloating || isOpen"
       :class="[
@@ -29,31 +29,33 @@
           ? isExpanded
             ? 'fixed inset-4 sm:inset-10 z-50 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200'
             : 'w-[92vw] sm:w-[440px] h-[600px] max-h-[82vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-200'
-          : 'flex-1 flex flex-col h-full overflow-hidden'
+          : 'lg:col-span-8 w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col overflow-hidden h-[720px] max-h-[82vh]'
       ]"
     >
       <!-- Chat Header -->
-      <div class="px-4 sm:px-5 py-3.5 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 text-white flex items-center justify-between shadow-xs shrink-0 select-none">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner shrink-0">
-            <Bot class="w-5 h-5 text-emerald-200" />
+      <div class="px-5 py-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0 select-none">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs shrink-0">
+            <Bot class="w-6 h-6" />
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h3 class="font-extrabold text-sm sm:text-base leading-tight truncate">Boshqar AI</h3>
-              <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-400/25 text-emerald-100 border border-emerald-300/30 rounded-full">Assistant v2.0</span>
+              <h3 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">Boshqar AI</h3>
+              <span class="px-2 py-0.5 text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50 rounded-full">v2.0</span>
             </div>
-            <p class="text-[11px] text-emerald-100/80 truncate">Tizim bo'yicha yo'riqnoma va maslahatchi</p>
+            <p class="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">Tizim bo‘yicha virtual yordamchingiz</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-1">
-          <!-- Voice Output Toggle -->
+        <div class="flex items-center gap-1.5">
+          <!-- Voice Toggle -->
           <button
             @click="toggleSound"
             :class="[
-              'p-2 rounded-xl transition-colors',
-              isSpeechEnabled ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-emerald-200'
+              'p-2.5 rounded-xl transition-all',
+              isSpeechEnabled
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
             ]"
             :title="isSpeechEnabled ? 'Ovozli javob yoqilgan' : 'Ovozli javobni yoqish'"
           >
@@ -61,31 +63,31 @@
             <VolumeX v-else class="w-4 h-4" />
           </button>
 
+          <!-- Restart / Clear Chat -->
+          <button
+            @click="clearChat"
+            class="p-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            title="Suhbatni tozalash"
+          >
+            <RotateCcw class="w-4 h-4" />
+          </button>
+
           <!-- Expand / Minimize Window (Floating mode only) -->
           <button
             v-if="isFloating"
             @click="isExpanded = !isExpanded"
-            class="p-2 hover:bg-white/10 rounded-xl text-emerald-100 transition-colors hidden sm:inline-flex"
+            class="p-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition hidden sm:inline-flex"
             :title="isExpanded ? 'Kichraytirish' : 'Kattalashtirish'"
           >
             <Minimize2 v-if="isExpanded" class="w-4 h-4" />
             <Maximize2 v-else class="w-4 h-4" />
           </button>
 
-          <!-- Reset / Clear Chat -->
-          <button
-            @click="clearChat"
-            class="p-2 hover:bg-white/10 rounded-xl text-emerald-100 transition-colors"
-            title="Suhbatni tozalash"
-          >
-            <RotateCcw class="w-4 h-4" />
-          </button>
-
-          <!-- Close button -->
+          <!-- Close button (Floating mode only) -->
           <button
             v-if="isFloating"
             @click="closeAssistant"
-            class="p-2 hover:bg-white/10 rounded-xl text-emerald-100 transition-colors"
+            class="p-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             title="Yopish"
           >
             <X class="w-4 h-4" />
@@ -93,24 +95,42 @@
         </div>
       </div>
 
-      <!-- Quick Prompt Suggestions Bar with Smooth Scroll -->
-      <div class="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 shrink-0">
-        <div class="flex items-center justify-between mb-1.5">
-          <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-            <HelpCircle class="w-3.5 h-3.5 text-emerald-500" />
-            Tezkor savollar:
-          </span>
-          <span class="text-[10px] text-slate-400">Tanlang:</span>
+      <!-- Quick Questions Bar with Next/Prev Arrow Controls -->
+      <div class="px-5 py-3 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+        <div class="flex items-center justify-between mb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+          <span>Tezkor savollar:</span>
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              @click="scrollPills('left')"
+              class="w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-emerald-500 transition shadow-2xs"
+              title="Oldingilar"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              @click="scrollPills('right')"
+              class="w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:border-emerald-500 transition shadow-2xs"
+              title="Keyingilar"
+            >
+              <ChevronRight class="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-chat-scrollbar">
+        <div
+          ref="pillsContainer"
+          class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth"
+        >
           <button
-            v-for="(prompt, idx) in quickPrompts"
+            v-for="(prompt, idx) in defaultPills"
             :key="idx"
             @click="sendPrompt(prompt.text)"
-            class="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-150 shadow-2xs whitespace-nowrap active:scale-95"
+            class="shrink-0 px-3.5 py-1.5 text-xs font-medium rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-all shadow-2xs flex items-center gap-1.5 whitespace-nowrap active:scale-95"
           >
-            {{ prompt.text }}
+            <component :is="prompt.icon" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{{ prompt.text }}</span>
           </button>
         </div>
       </div>
@@ -118,90 +138,144 @@
       <!-- Messages Area -->
       <div
         ref="messagesContainer"
-        class="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 bg-slate-50/60 dark:bg-slate-950/50 custom-chat-scrollbar"
+        class="flex-1 p-5 overflow-y-auto space-y-5 bg-white dark:bg-slate-900 custom-chat-scrollbar"
       >
         <!-- Message Bubbles -->
         <div
           v-for="msg in messages"
           :key="msg.id"
           :class="[
-            'flex gap-3 max-w-[94%] sm:max-w-[85%]',
+            'flex gap-3.5 max-w-[95%] sm:max-w-[90%]',
             msg.sender === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'
           ]"
         >
           <!-- Avatar -->
           <div
             :class="[
-              'w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-xs font-bold shadow-xs',
+              'w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold shadow-2xs mt-1',
               msg.sender === 'user'
-                ? 'bg-slate-800 text-white'
-                : 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white'
+                ? 'bg-slate-700 text-white'
+                : msg.id === 'welcome'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 border border-emerald-200/60 dark:border-emerald-800/60'
+                  : 'bg-emerald-600 text-white'
             ]"
           >
             <User v-if="msg.sender === 'user'" class="w-4 h-4" />
-            <Sparkles v-else class="w-4 h-4 text-amber-300" />
+            <Bot v-else-if="msg.id === 'welcome'" class="w-4 h-4" />
+            <Sparkles v-else class="w-4 h-4 text-emerald-200" />
           </div>
 
-          <!-- Bubble Content -->
-          <div
-            :class="[
-              'rounded-3xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-sm space-y-2.5',
-              msg.sender === 'user'
-                ? 'bg-emerald-600 text-white rounded-tr-xs'
-                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-slate-700/80 rounded-tl-xs'
-            ]"
-          >
-            <!-- Render markdown text -->
-            <div class="whitespace-pre-wrap select-text space-y-1.5" v-html="formatMessage(msg.text)" />
-
-            <!-- Utility footer for bot messages (Copy, Voice, Action button) -->
+          <!-- Bubble Container -->
+          <div class="space-y-1.5 max-w-full">
+            <!-- User Message Bubble -->
             <div
-              v-if="msg.sender === 'bot'"
-              class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2 flex-wrap"
+              v-if="msg.sender === 'user'"
+              class="rounded-2xl rounded-tr-xs px-4 py-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-slate-900 dark:text-white text-xs sm:text-sm font-medium shadow-2xs flex items-center gap-2"
             >
-              <!-- Copy & Audio Buttons -->
-              <div class="flex items-center gap-1">
-                <button
-                  @click="copyToClipboard(msg.text, msg.id)"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60 transition"
-                  title="Nusxa olish"
-                >
-                  <Check v-if="copiedMsgId === msg.id" class="w-3.5 h-3.5 text-emerald-500" />
-                  <Copy v-else class="w-3.5 h-3.5" />
-                  <span>{{ copiedMsgId === msg.id ? 'Nusxalandi' : 'Nusxa' }}</span>
-                </button>
+              <span>{{ msg.text }}</span>
+              <span class="text-[10px] text-slate-400 shrink-0 ml-1">{{ formatTime(msg.timestamp) }}</span>
+              <Check class="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            </div>
 
-                <button
-                  @click="speakText(msg.text)"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60 transition"
-                  title="Ovoz chiqarib o'qish"
-                >
-                  <Volume2 class="w-3.5 h-3.5" />
-                  <span>O'qish</span>
-                </button>
+            <!-- Bot Message Bubble (Matches User's Exact Mockup) -->
+            <div
+              v-else
+              class="rounded-3xl rounded-tl-xs p-5 bg-white dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 text-xs sm:text-sm shadow-xs space-y-3.5"
+            >
+              <!-- Message Text / Formatted Step List -->
+              <div v-if="parseStructuredSteps(msg.text)" class="space-y-3.5">
+                <p class="font-bold text-slate-900 dark:text-white">
+                  {{ parseStructuredSteps(msg.text)!.intro }}
+                </p>
+
+                <!-- Steps List -->
+                <div class="space-y-2.5">
+                  <div
+                    v-for="(step, stIdx) in parseStructuredSteps(msg.text)!.steps"
+                    :key="stIdx"
+                    class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60"
+                  >
+                    <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                      {{ stIdx + 1 }}
+                    </span>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100 dark:border-emerald-900/50">
+                      <component :is="getStepIcon(stIdx)" class="w-4 h-4" />
+                    </div>
+                    <div class="min-w-0">
+                      <h5 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">{{ step.title }}</h5>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ step.description }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              <!-- General Fallback / Markdown Text -->
+              <div v-else class="whitespace-pre-wrap select-text leading-relaxed space-y-1.5" v-html="formatMessage(msg.text)" />
+
               <!-- Direct Action Link Button -->
-              <router-link
-                v-if="msg.actionRoute"
-                :to="msg.actionRoute"
-                @click="onActionClick"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-xs"
-              >
-                <span>{{ msg.actionText || "Sahifaga o'tish" }}</span>
-                <ArrowRight class="w-3.5 h-3.5" />
-              </router-link>
+              <div v-if="msg.actionRoute" class="pt-1">
+                <router-link
+                  :to="msg.actionRoute"
+                  @click="onActionClick"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm shadow-emerald-500/20 active:scale-95"
+                >
+                  <span>{{ msg.actionText || "Bo‘limga o‘tish" }}</span>
+                  <ArrowRight class="w-4 h-4" />
+                </router-link>
+              </div>
+
+              <!-- Message Footer: Time + Copy + Like/Dislike -->
+              <div class="pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-slate-400 text-xs select-none">
+                <span class="text-[11px]">{{ formatTime(msg.timestamp) }}</span>
+
+                <div class="flex items-center gap-1.5">
+                  <button
+                    @click="copyToClipboard(msg.text, msg.id)"
+                    class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                    title="Nusxa olish"
+                  >
+                    <Check v-if="copiedMsgId === msg.id" class="w-3.5 h-3.5 text-emerald-600" />
+                    <Copy v-else class="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    @click="rateMessage(msg.id, 'up')"
+                    :class="[
+                      'p-1.5 rounded-lg transition',
+                      ratedMessages[msg.id] === 'up'
+                        ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
+                    ]"
+                    title="Foydali"
+                  >
+                    <ThumbsUp class="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    @click="rateMessage(msg.id, 'down')"
+                    :class="[
+                      'p-1.5 rounded-lg transition',
+                      ratedMessages[msg.id] === 'down'
+                        ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/60'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
+                    ]"
+                    title="Yordam bermadi"
+                  >
+                    <ThumbsDown class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Typing Indicator -->
         <div v-if="isTyping" class="flex gap-3 mr-auto max-w-[85%]">
-          <div class="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-xs">
-            <Sparkles class="w-4 h-4 text-amber-300" />
+          <div class="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-emerald-600 text-white shadow-xs">
+            <Sparkles class="w-4 h-4 text-emerald-200" />
           </div>
           <div class="bg-white dark:bg-slate-800 rounded-3xl rounded-tl-xs px-4 py-3 border border-slate-200 dark:border-slate-700/80 shadow-xs flex items-center gap-2">
-            <span class="text-xs text-slate-400 font-medium">Boshqar AI javob tayyorlamoqda...</span>
+            <span class="text-xs text-slate-400 font-medium">Boshqar AI javob yozmoqda...</span>
             <div class="flex items-center gap-1">
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 0ms" />
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay: 150ms" />
@@ -211,34 +285,117 @@
         </div>
       </div>
 
-      <!-- Chat Input Form -->
-      <form @submit.prevent="handleSubmit" class="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 shrink-0">
-        <div class="relative flex-1">
+      <!-- Chat Bottom Input Bar (Matches User's Exact Mockup) -->
+      <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0 space-y-2">
+        <form @submit.prevent="handleSubmit" class="relative flex items-center">
+          <button
+            type="button"
+            class="absolute left-3.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition rounded-lg"
+            title="Fayl yoki rasm ilova qilish"
+          >
+            <Paperclip class="w-4 h-4" />
+          </button>
+
           <input
             v-model="inputQuery"
             type="text"
-            placeholder="Istalgan savolni yozing (masalan: Chek qanday uriladi, qarzni qanday yopaman...)"
-            class="w-full pl-4 pr-10 py-3 text-xs sm:text-sm rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition shadow-inner"
+            placeholder="Savolingizni yozing... (masalan: Chek qanday uriladi, qarzni qanday yopaman...)"
+            class="w-full pl-11 pr-14 py-3.5 text-xs sm:text-sm rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition shadow-2xs"
           />
+
           <button
-            v-if="inputQuery"
-            type="button"
-            @click="inputQuery = ''"
-            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full"
+            type="submit"
+            :disabled="!inputQuery.trim() || isTyping"
+            class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold transition flex items-center justify-center shadow-md shadow-emerald-600/20 active:scale-95"
           >
-            <X class="w-3.5 h-3.5" />
+            <Send class="w-4 h-4" />
           </button>
+        </form>
+
+        <p class="text-[11px] text-center text-slate-400 dark:text-slate-500">
+          Boshqar AI xatolarga yo‘l qo‘yishi mumkin. Muhim ma’lumotlarni tekshirib ko‘ring.
+        </p>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Sidebar (Matches Chat height exactly) -->
+    <div v-if="!isFloating" class="lg:col-span-4 w-full h-[720px] max-h-[82vh] flex flex-col justify-between gap-4">
+
+      <!-- Card 1: Ko'p so'raladigan mavzular (Flexible scrollable area) -->
+      <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3.5 flex-1 flex flex-col overflow-hidden">
+        <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white shrink-0">
+          Ko‘p so‘raladigan mavzular
+        </h4>
+
+        <div class="space-y-2 overflow-y-auto no-scrollbar flex-1 pb-1">
+          <div
+            v-for="item in sidebarTopics"
+            :key="item.id"
+            @click="sendPrompt(item.prompt)"
+            class="p-2.5 sm:p-2.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/70 shadow-xs hover:shadow-md hover:border-emerald-500/40 dark:hover:border-emerald-500/40 transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer group"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <div :class="['w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition', item.iconBg]">
+                <component :is="item.icon" :class="['w-4.5 h-4.5', item.iconColor]" />
+              </div>
+              <div class="min-w-0">
+                <h5 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate">
+                  {{ item.title }}
+                </h5>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ item.desc }}</p>
+              </div>
+            </div>
+
+            <ChevronRight class="w-4 h-4 text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition shrink-0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: AI javoblari sizga foydalimi? -->
+      <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-xs space-y-3 shrink-0">
+        <div>
+          <h5 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+            AI javoblari sizga foydalimi?
+          </h5>
+          <p class="text-xs text-slate-400 mt-0.5">Fikringiz biz uchun muhim!</p>
         </div>
 
-        <button
-          type="submit"
-          :disabled="!inputQuery.trim() || isTyping"
-          class="px-4 sm:px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 shrink-0"
-        >
-          <span class="hidden sm:inline text-xs font-bold">Yuborish</span>
-          <Send class="w-4 h-4" />
-        </button>
-      </form>
+        <div class="flex items-center gap-2.5">
+          <!-- Foydali Button (Expands smoothly to full width when clicked) -->
+          <button
+            type="button"
+            @click="generalFeedback = 'up'"
+            :class="[
+              'py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 border shadow-2xs',
+              generalFeedback === 'up'
+                ? 'w-full bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/25'
+                : generalFeedback === 'down'
+                  ? 'hidden'
+                  : 'flex-1 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/70 dark:border-emerald-900/50 hover:bg-emerald-600 hover:text-white hover:border-emerald-600'
+            ]"
+          >
+            <ThumbsUp class="w-4 h-4" />
+            <span>Foydali</span>
+          </button>
+
+          <!-- Yordam bermadi Button (Smoothly disappears when Foydali is clicked) -->
+          <button
+            v-if="generalFeedback !== 'up'"
+            type="button"
+            @click="generalFeedback = 'down'"
+            :class="[
+              'py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-300 active:scale-95 border',
+              generalFeedback === 'down'
+                ? 'w-full bg-slate-800 text-white border-slate-800'
+                : 'flex-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+            ]"
+          >
+            <ThumbsDown class="w-3.5 h-3.5" />
+            <span>Yordam bermadi</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -253,15 +410,33 @@ import {
   RotateCcw,
   X,
   ArrowRight,
-  HelpCircle,
   Volume2,
   VolumeX,
   Maximize2,
   Minimize2,
   Copy,
   Check,
+  ThumbsUp,
+  ThumbsDown,
+  Paperclip,
+  ChevronLeft,
+  ChevronRight,
+  Lightbulb,
+  ShoppingCart,
+  Package,
+  Store,
+  Users,
+  DollarSign,
+  Settings,
+  PlusCircle,
+  Receipt,
+  SendHorizontal,
+  LayoutGrid,
+  FileText,
+  CheckCircle2,
 } from 'lucide-vue-next';
-import { AI_QUICK_PROMPTS, AI_KNOWLEDGE_BASE, GUIDE_MODULES } from '../views/guide/guideData';
+import api from '../services/api';
+import { AI_KNOWLEDGE_BASE, GUIDE_MODULES } from '../views/guide/guideData';
 
 const props = withDefaults(
   defineProps<{
@@ -285,21 +460,138 @@ const isOpen = ref(false);
 const isExpanded = ref(false);
 const isSpeechEnabled = ref(false);
 const copiedMsgId = ref<string | null>(null);
+const ratedMessages = ref<Record<string, 'up' | 'down'>>({});
+const generalFeedback = ref<'up' | 'down' | null>(null);
 const inputQuery = ref('');
 const isTyping = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
-const quickPrompts = ref(AI_QUICK_PROMPTS);
+const pillsContainer = ref<HTMLElement | null>(null);
+
+const scrollPills = (direction: 'left' | 'right') => {
+  if (pillsContainer.value) {
+    const scrollAmount = direction === 'left' ? -220 : 220;
+    pillsContainer.value.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  }
+};
+
+const defaultPills = [
+  { text: "Bugun qancha savdo bo'ldi?", icon: DollarSign },
+  { text: "Yangi tovar qanday qo'shiladi?", icon: PlusCircle },
+  { text: "Kassada chek qanday chiqariladi?", icon: Receipt },
+  { text: "Telegram botni qanday ulayman?", icon: SendHorizontal },
+  { text: "Barchasini ko'rish", icon: LayoutGrid },
+];
+
+const sidebarTopics = [
+  {
+    id: 'pos',
+    title: 'Kassa (POS)',
+    desc: 'Savdo qilish, chek chiqarish, to‘lov turlari',
+    icon: ShoppingCart,
+    iconBg: 'bg-emerald-50 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    prompt: 'Kassa va savdo qilish bo‘yicha qo‘llanma ber',
+  },
+  {
+    id: 'products',
+    title: 'Mahsulotlar',
+    desc: 'Yangi mahsulot qo‘shish, tahrirlash',
+    icon: Package,
+    iconBg: 'bg-blue-50 dark:bg-blue-950/50',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    prompt: 'Yangi tovar qanday qo‘shiladi?',
+  },
+  {
+    id: 'inventory',
+    title: 'Ombor',
+    desc: 'Qabul qilish, qoldiqni ko‘rish, harakatlar',
+    icon: Store,
+    iconBg: 'bg-amber-50 dark:bg-amber-950/50',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    prompt: 'Ombor qoldig‘i va kirim qilish qanday ishlaydi?',
+  },
+  {
+    id: 'customers',
+    title: 'Mijozlar (CRM)',
+    desc: 'Mijozlarni boshqarish, qarzlar, tarix',
+    icon: Users,
+    iconBg: 'bg-purple-50 dark:bg-purple-950/50',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    prompt: 'Mijoz qarzini qanday yozaman?',
+  },
+  {
+    id: 'finance',
+    title: 'Moliya & Hisobot',
+    desc: 'Kirim-chiqimlar, foyda, xarajatlar',
+    icon: DollarSign,
+    iconBg: 'bg-amber-50 dark:bg-amber-950/50',
+    iconColor: 'text-amber-600 dark:text-amber-500',
+    prompt: 'Kunlik sof foyda qayerda ko‘rinadi?',
+  },
+  {
+    id: 'settings',
+    title: 'Sozlamalar',
+    desc: 'Tizim sozlamalari, foydalanuvchilar',
+    icon: Settings,
+    iconBg: 'bg-slate-100 dark:bg-slate-800',
+    iconColor: 'text-slate-600 dark:text-slate-400',
+    prompt: 'Yangi sotuvchi yoki kassirni qanday qo‘shaman?',
+  },
+];
+
+const keyboardShortcuts = [
+  { key: 'Ctrl + N', action: 'Yangi yozuv' },
+  { key: 'Ctrl + F', action: 'Qidirish' },
+  { key: 'F1', action: 'Yordam markazi' },
+  { key: 'Esc', action: 'Amalni bekor qilish' },
+];
 
 const defaultWelcomeMessage: ChatMessage = {
   id: 'welcome',
   sender: 'bot',
-  text: `Assalomu alaykum! Men **Boshqar AI** aqlli yordamchisiman. 🤖✨
-
-Boshqar.uz tizimidan foydalanishda (Kassa, Ombor, Moliya, Nasiya, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, menga bemalol yozing!`,
+  text: `Assalomu alaykum! Men **Boshqar AI** aqlli yordamchingiz. 🤖✨\n\nBoshqar.uz tizimidan foydalanishda (Kassa, Ombor, Moliya, Nasiya, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, menga bemalol yozing!`,
   timestamp: new Date(),
 };
 
 const messages = ref<ChatMessage[]>([defaultWelcomeMessage]);
+
+const formatTime = (date: Date) => {
+  const d = new Date(date);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
+
+const getStepIcon = (idx: number) => {
+  const icons = [Package, PlusCircle, FileText, CheckCircle2];
+  return icons[idx % icons.length];
+};
+
+const parseStructuredSteps = (text: string) => {
+  // If the text contains step-by-step numbers like "1.", "2."
+  const lines = text.split('\n').filter((l) => l.trim().length > 0);
+  const stepLines = lines.filter((l) => /^\d+\.|\(step\)/i.test(l.trim()));
+
+  if (stepLines.length >= 2) {
+    const intro = lines[0] || 'Quyidagi amallarni bajaring:';
+    const steps = stepLines.map((line) => {
+      const clean = line.replace(/^\d+\.\s*/, '').trim();
+      const parts = clean.split(/[-:—]/);
+      if (parts.length >= 2) {
+        return {
+          title: parts[0].replace(/\*\*/g, '').trim(),
+          description: parts.slice(1).join(':').replace(/\*\*/g, '').trim(),
+        };
+      }
+      return {
+        title: clean.replace(/\*\*/g, '').trim(),
+        description: '',
+      };
+    });
+    return { intro: intro.replace(/\*\*/g, ''), steps };
+  }
+  return null;
+};
 
 const openAssistant = () => {
   isOpen.value = true;
@@ -322,7 +614,6 @@ const scrollToBottom = async () => {
 };
 
 const formatMessage = (text: string) => {
-  // Convert markdown bold **text** to <strong>
   let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-emerald-600 dark:text-emerald-400">$1</strong>');
   return formatted;
 };
@@ -335,9 +626,11 @@ const copyToClipboard = async (text: string, msgId: string) => {
     setTimeout(() => {
       if (copiedMsgId.value === msgId) copiedMsgId.value = null;
     }, 2000);
-  } catch (e) {
-    // ignore
-  }
+  } catch (e) {}
+};
+
+const rateMessage = (msgId: string, rating: 'up' | 'down') => {
+  ratedMessages.value[msgId] = rating;
 };
 
 const toggleSound = () => {
@@ -361,22 +654,21 @@ const findBestAnswer = (query: string) => {
   const normalized = query.toLowerCase().trim();
   const queryTokens = normalized.split(/\s+/).filter((w) => w.length > 1);
 
-  // 1. Check for Greetings & Conversational queries
-  const greetingKeywords = ['salom', 'assalom', 'assalomu', 'privet', 'hello', 'hey', 'qalesiz', 'qalaysiz', 'qalesan', 'kimsan', 'yordamchi', 'qandaysiz', 'yaxshimisiz'];
-  if (greetingKeywords.some((g) => normalized.includes(g))) {
+  if (normalized.includes('tovar') || normalized.includes('mahsulot')) {
     return {
-      text: `**Assalomu alaykum!** Men **Boshqar AI** aqlli yordamchisiman. 🤖✨\n\nBoshqar.uz tizimidan foydalanish bo‘yicha (Kassa, Omborxona, Moliya, Nasiya/Mijozlar, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, bemalol yozing! Har bir amalni aniq va bosqichma-bosqich ko‘rsatib beraman.`,
-      actionRoute: '/pos',
-      actionText: 'Kassa (POS) ga o‘tish',
+      text: `Yangi mahsulot qo‘shish uchun quyidagi amallarni bajaring:\n1. Mahsulotlar bo‘limiga kiring - Chap menyudan "Mahsulotlar" bo‘limini tanlang.\n2. Yangi mahsulot tugmasini bosing - Yuqori o‘ng burchakdagi "+ Mahsulot qo‘shish" tugmasini bosing.\n3. Ma‘lumotlarni kiriting - Mahsulot nomi, shtrix-kod, narxi, o‘lchov birligi, qoldiq miqdori va boshqa zarur maydonlarni to‘ldiring.\n4. Saqlash tugmasini bosing - Kiritilgan ma‘lumotlarni tekshirib chiqib, "Saqlash" tugmasini bosing.`,
+      actionRoute: '/products',
+      actionText: 'Mahsulotlar bo‘limiga o‘tish',
     };
   }
 
-  const thanksKeywords = ['rahmat', 'katta rahmat', 'tushunarli', 'spasibo', 'tashakkur', 'raxmat', 'zo\'r', 'zo‘r', 'yaxshi'];
-  if (thanksKeywords.some((t) => normalized.includes(t))) {
+  // 1. Check for Greetings & Conversational queries
+  const greetingKeywords = ['salom', 'assalom', 'assalomu', 'privet', 'hello', 'hey', 'qalesiz', 'qalaysiz', 'kimsan', 'yordamchi'];
+  if (greetingKeywords.some((g) => normalized.includes(g))) {
     return {
-      text: `**Arzimaydi!** Sizga yordam berganimdan bag‘oyat xursandman. 😊✨\n\nAgar yana biror narsaga tushunmasangiz yoki savol tug‘ilsa, bemalol yozing. Ishlaringizga omad va baraka tilayman! 🚀`,
-      actionRoute: '/guide',
-      actionText: 'To‘liq Qo‘llanma',
+      text: `**Assalomu alaykum!** Men **Boshqar AI** aqlli yordamchisiman. 🤖✨\n\nBoshqar.uz tizimidan foydalanish bo‘yicha (Kassa, Omborxona, Moliya, Nasiya/Mijozlar, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, bemalol yozing!`,
+      actionRoute: '/pos',
+      actionText: 'Kassa (POS) ga o‘tish',
     };
   }
 
@@ -404,7 +696,7 @@ const findBestAnswer = (query: string) => {
     for (const kw of item.keywords) {
       const kwLower = kw.toLowerCase();
       if (normalized.includes(kwLower)) {
-        score += kwLower.split(/\s+/).length * 4; // exact phrase match gets high score
+        score += kwLower.split(/\s+/).length * 4;
       } else {
         const tokenHits = queryTokens.filter((t) => kwLower.includes(t) || t.includes(kwLower)).length;
         score += tokenHits * 2;
@@ -425,38 +717,7 @@ const findBestAnswer = (query: string) => {
     };
   }
 
-  // 4. Ranked scoring in GUIDE_MODULES (Steps & Titles)
-  let bestMod: any = null;
-  let highestModScore = 0;
-
-  for (const mod of GUIDE_MODULES) {
-    let score = 0;
-    if (normalized.includes(mod.id)) score += 5;
-    if (normalized.includes(mod.title.toLowerCase())) score += 6;
-    if (normalized.includes(mod.badge.toLowerCase())) score += 4;
-
-    for (const step of mod.steps) {
-      const stepText = (step.title + ' ' + step.description).toLowerCase();
-      const hits = queryTokens.filter((t) => stepText.includes(t)).length;
-      score += hits * 1.5;
-    }
-
-    if (score > highestModScore) {
-      highestModScore = score;
-      bestMod = mod;
-    }
-  }
-
-  if (bestMod && highestModScore >= 4) {
-    const stepSummary = bestMod.steps.map((s: any) => `• **${s.title}**: ${s.description}`).join('\n\n');
-    return {
-      text: `**${bestMod.title} bo‘yicha qo‘llanma:**\n\n${stepSummary}`,
-      actionRoute: bestMod.route,
-      actionText: `${bestMod.title} sahifasiga o‘tish`,
-    };
-  }
-
-  // 5. Fallback smart generic guide with clear navigation
+  // 4. Fallback smart generic guide
   return {
     text: `Ushbu savol bo‘yicha to‘liqroq ma’lumot olish uchun **Qo‘llanma** bo‘limidagi modullarni ko‘rib chiqishingiz yoki quyidagi asosiy bo‘limlardan biriga o‘tishingiz mumkin:\n\n• **Kassa (POS)** — Tezkor sotuv va cheklar\n• **Mahsulotlar** — Yangi tovar va kategoriyalar\n• **Moliya** — Kunlik hisobot va xarajatlar\n• **Mijozlar** — Nasiya va qarz daftari\n• **Sozlamalar** — Xodimlar va ruxsatlar`,
     actionRoute: '/guide',
@@ -483,26 +744,50 @@ const handleSubmit = async () => {
   inputQuery.value = '';
   scrollToBottom();
 
-  // Simulate AI typing delay
   isTyping.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 400));
 
-  const response = findBestAnswer(q);
-  isTyping.value = false;
+  try {
+    const chatHistory = messages.value.slice(-6).map((m) => ({ sender: m.sender, text: m.text }));
+    const endpoint = localStorage.getItem('token') ? '/ai/query' : '/ai/public-query';
+    const { data } = await api.post(endpoint, { query: q, chatHistory });
 
-  messages.value.push({
-    id: String(Date.now() + 1),
-    sender: 'bot',
-    text: response.text,
-    actionRoute: response.actionRoute,
-    actionText: response.actionText,
-    timestamp: new Date(),
-  });
-
-  scrollToBottom();
-
-  if (isSpeechEnabled.value) {
-    speakText(response.text);
+    if (data?.answer) {
+      messages.value.push({
+        id: String(Date.now() + 1),
+        sender: 'bot',
+        text: data.answer,
+        actionRoute: data.actionRoute,
+        actionText: data.actionText,
+        timestamp: new Date(),
+      });
+    } else {
+      const response = findBestAnswer(q);
+      messages.value.push({
+        id: String(Date.now() + 1),
+        sender: 'bot',
+        text: response.text,
+        actionRoute: response.actionRoute,
+        actionText: response.actionText,
+        timestamp: new Date(),
+      });
+    }
+  } catch (e) {
+    const response = findBestAnswer(q);
+    messages.value.push({
+      id: String(Date.now() + 1),
+      sender: 'bot',
+      text: response.text,
+      actionRoute: response.actionRoute,
+      actionText: response.actionText,
+      timestamp: new Date(),
+    });
+  } finally {
+    isTyping.value = false;
+    scrollToBottom();
+    const lastMsg = messages.value[messages.value.length - 1];
+    if (isSpeechEnabled.value && lastMsg?.text) {
+      speakText(lastMsg.text);
+    }
   }
 };
 
@@ -518,7 +803,7 @@ const onActionClick = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   scrollToBottom();
 });
 </script>
@@ -537,5 +822,13 @@ onMounted(() => {
 }
 .custom-chat-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.45);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

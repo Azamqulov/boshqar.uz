@@ -80,7 +80,7 @@
     <!-- 1. Table View -->
     <CustomerTableView
       v-else-if="viewMode === 'table'"
-      :customers="filteredCustomers"
+      :customers="pagination.paginatedItems.value"
       @open-add-debt="openAddDebtModal"
       @open-pay-debt="openPayDebtModal"
       @open-history="openHistoryModal"
@@ -91,10 +91,19 @@
     <!-- 2. Grid/Cards View -->
     <CustomerGridView
       v-else-if="viewMode === 'grid'"
-      :customers="filteredCustomers"
+      :customers="pagination.paginatedItems.value"
       @open-pay-debt="openPayDebtModal"
       @open-history="openHistoryModal"
       @open-edit="openEditModal"
+    />
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredCustomers.length"
+      item-name="mijoz"
     />
 
     <!-- 1. Create / Edit Customer Modal -->
@@ -148,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import {
@@ -161,12 +170,14 @@ import AppButton from '../../components/AppButton.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
+import AppPagination from '../../components/AppPagination.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
 import { usePosSettings } from '../../composables/usePosSettings';
+import { usePagination } from '../../composables/usePagination';
 
 import CustomerStatsCards from './components/CustomerStatsCards.vue';
 import CustomerTableView from './components/CustomerTableView.vue';
@@ -242,6 +253,12 @@ const filteredCustomers = computed(() => {
   return list.filter((c) => {
     return c.fullName.toLowerCase().includes(q) || (c.phone && c.phone.includes(q));
   });
+});
+
+const pagination = usePagination(filteredCustomers);
+
+watch([searchQuery, activeFilter], () => {
+  pagination.resetPage();
 });
 
 const loadCustomers = async (force = false) => {

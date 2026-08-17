@@ -130,6 +130,7 @@
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
       :loading="loadingAudit"
+      @refresh="loadAudit"
     />
 
     <!-- Tab 6: Xavfli Hudud -->
@@ -250,7 +251,8 @@ import {
 const currencyOptions = [
   { value: 'UZS', label: "UZS (So'm)", icon: Coins },
   { value: 'USD', label: "USD ($ Dollar)", icon: Coins },
-  { value: 'RUB', label: "RUB (Rubl)", icon: Coins },
+  { value: 'RUB', label: "RUB (₽ Rubl)", icon: Coins },
+  { value: 'EUR', label: "EUR (€ Evro)", icon: Coins },
 ];
 
 const router = useRouter();

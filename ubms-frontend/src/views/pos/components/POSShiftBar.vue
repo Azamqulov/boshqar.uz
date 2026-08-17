@@ -29,6 +29,36 @@
     </div>
 
     <div class="flex items-center gap-1.5">
+      <!-- Network / Offline Sync Status Badge -->
+      <div
+        class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition border"
+        :class="
+          isOnline
+            ? (pendingCount > 0
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20')
+            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 animate-pulse'
+        "
+        :title="isOnline ? (pendingCount > 0 ? `${pendingCount} ta savdo sinxronlashga tayyor` : 'Tarmoq faol') : 'Internet aloqasi yo\'q. Offline rejimda ishlanmoqda.'"
+      >
+        <Wifi v-if="isOnline" class="w-3.5 h-3.5" />
+        <WifiOff v-else class="w-3.5 h-3.5" />
+        <span class="hidden sm:inline">{{ isOnline ? (pendingCount > 0 ? `Sinxronlash (${pendingCount})` : 'Online') : `Offline (${pendingCount})` }}</span>
+      </div>
+
+      <!-- Sync Button if pending orders exist -->
+      <button
+        v-if="pendingCount > 0 && isOnline"
+        type="button"
+        @click="$emit('syncOffline')"
+        :disabled="isSyncing"
+        class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition btn-interactive disabled:opacity-50"
+        title="Offline savdolarni serverga yuborish"
+      >
+        <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isSyncing }" />
+        <span class="hidden md:inline">{{ isSyncing ? 'Sinxronlanmoqda...' : 'Sinxronlash' }}</span>
+      </button>
+
       <button
         v-if="enableHotkeys !== false"
         type="button"
@@ -73,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Receipt, Moon, Sun, Keyboard } from 'lucide-vue-next';
+import { AlertTriangle, Receipt, Moon, Sun, Keyboard, Wifi, WifiOff, RefreshCw } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
 withDefaults(
@@ -81,15 +111,22 @@ withDefaults(
     currentShift: any;
     cashierName?: string;
     enableHotkeys?: boolean;
+    isOnline?: boolean;
+    pendingCount?: number;
+    isSyncing?: boolean;
   }>(),
   {
     enableHotkeys: true,
+    isOnline: true,
+    pendingCount: 0,
+    isSyncing: false,
   }
 );
 
 defineEmits<{
   (e: 'openShift', mode: 'open' | 'close' | 'report'): void;
   (e: 'openHotkeys'): void;
+  (e: 'syncOffline'): void;
 }>();
 
 const { formatCurrency, formatDateTime } = useFormat();

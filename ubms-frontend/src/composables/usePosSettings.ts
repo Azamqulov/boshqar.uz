@@ -24,6 +24,14 @@ export interface PosSettings {
   showQrCode: boolean;
   showCashierName: boolean;
   showItemCount: boolean;
+  // Currency exchange rate mode and custom overrides
+  currencyRateMode: 'auto' | 'custom';
+  showCurrencyTicker: boolean;
+  customRates: {
+    USD: number;
+    RUB: number;
+    EUR: number;
+  };
 }
 
 export const defaultPosSettings: PosSettings = {
@@ -48,6 +56,14 @@ export const defaultPosSettings: PosSettings = {
   showQrCode: true,
   showCashierName: true,
   showItemCount: true,
+  // Currency defaults
+  currencyRateMode: 'auto',
+  showCurrencyTicker: true,
+  customRates: {
+    USD: 12900,
+    RUB: 145,
+    EUR: 14000,
+  },
 };
 
 const STORAGE_KEY = 'ubms_pos_feature_settings';

@@ -49,4 +49,38 @@ export class ApiService {
     const businessId = session?.businessId || '00000000-0000-0000-0000-000000000100';
     return axios.get(`${BOT_CONFIG.API_URL}/telegram/inventory/${businessId}`);
   }
+
+  static async getDebts(chatId: number) {
+    const session = sessionService.getSession(chatId);
+    const businessId = session?.businessId || '00000000-0000-0000-0000-000000000100';
+    return axios.get(`${BOT_CONFIG.API_URL}/telegram/debts/${businessId}`);
+  }
+
+  static async createExpense(chatId: number, amount: number, description: string, category?: string) {
+    const session = sessionService.getSession(chatId);
+    const businessId = session?.businessId || '00000000-0000-0000-0000-000000000100';
+    return axios.post(`${BOT_CONFIG.API_URL}/telegram/expense`, {
+      businessId,
+      amount,
+      description,
+      category,
+    });
+  }
+
+  static async searchProducts(chatId: number, query: string) {
+    const session = sessionService.getSession(chatId);
+    const businessId = session?.businessId || '00000000-0000-0000-0000-000000000100';
+    return axios.get(`${BOT_CONFIG.API_URL}/telegram/search-products/${businessId}?q=${encodeURIComponent(query)}`);
+  }
+
+  static async getCashiers(chatId: number) {
+    const session = sessionService.getSession(chatId);
+    const businessId = session?.businessId || '00000000-0000-0000-0000-000000000100';
+    return axios.get(`${BOT_CONFIG.API_URL}/telegram/cashiers/${businessId}`);
+  }
+
+  static async dispatchDailySummaries() {
+    return axios.post(`${BOT_CONFIG.API_URL}/telegram/dispatch-daily-summaries`);
+  }
 }
+

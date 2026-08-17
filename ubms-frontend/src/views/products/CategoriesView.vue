@@ -141,7 +141,7 @@
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
             <tr
-              v-for="cat in filteredCategories"
+              v-for="cat in pagination.paginatedItems.value"
               :key="cat.id"
               class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group"
             >
@@ -220,7 +220,7 @@
     <!-- 2. Grid / Cards View -->
     <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <div
-        v-for="cat in filteredCategories"
+        v-for="cat in pagination.paginatedItems.value"
         :key="cat.id"
         class="glass-card rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition group border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90"
       >
@@ -258,29 +258,42 @@
               class="font-bold text-[11px]"
               :class="getProductCount(cat.id) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'"
             >
-              {{ getProductCount(cat.id) > 0 ? 'Faol mahsulotlar bor' : 'Hozircha bo\'sh' }}
+              {{ getProductCount(cat.id) > 0 ? 'Faol' : 'Bo\'sh' }}
             </span>
           </div>
         </div>
 
-        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-1">
-          <button
-            @click="editCategory(cat)"
-            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title="Tahrirlash"
-          >
-            <Edit2 class="w-4 h-4" />
-          </button>
-          <button
-            @click="confirmDeleteCategory(cat)"
-            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-            title="O'chirish"
-          >
-            <Trash2 class="w-4 h-4" />
-          </button>
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <span class="text-[10px] text-slate-400 font-mono font-bold">{{ cat.color || '#10b981' }}</span>
+
+          <div class="flex items-center gap-1">
+            <button
+              @click="editCategory(cat)"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Tahrirlash"
+            >
+              <Edit2 class="w-4 h-4" />
+            </button>
+            <button
+              @click="confirmDeleteCategory(cat)"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+              title="O'chirish"
+            >
+              <Trash2 class="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredCategories.length"
+      item-name="kategoriya"
+    />
 
     <!-- Create / Edit Category Modal (Teleport to body) -->
     <Teleport to="body">
@@ -463,7 +476,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useDataStore } from '../../stores/data.store';
@@ -475,7 +488,9 @@ import AppButton from '../../components/AppButton.vue';
 import AppStatCard from '../../components/AppStatCard.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
+import AppPagination from '../../components/AppPagination.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import { usePagination } from '../../composables/usePagination';
 import {
   FolderTree,
   Plus,
@@ -635,6 +650,12 @@ const filteredCategories = computed(() => {
   if (!searchQuery.value.trim()) return list;
   const q = searchQuery.value.toLowerCase().trim();
   return list.filter(c => c.name.toLowerCase().includes(q) || (c.icon && c.icon.includes(q)));
+});
+
+const pagination = usePagination(filteredCategories);
+
+watch([searchQuery, activeFilter], () => {
+  pagination.resetPage();
 });
 
 const loadData = async (force = false) => {

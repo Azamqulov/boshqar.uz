@@ -69,9 +69,9 @@
                 <span>Hech qanday mahsulot topilmadi</span>
               </td>
             </tr>
-            <tr v-for="(prod, idx) in filteredSoldProducts" :key="prod.id || idx"
+            <tr v-for="(prod, idx) in pagination.paginatedItems.value" :key="prod.id || idx"
               class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-3 px-3 font-mono text-slate-400 whitespace-nowrap">{{ idx + 1 }}</td>
+              <td class="py-3 px-3 font-mono text-slate-400 whitespace-nowrap">{{ pagination.startIndex.value + idx }}</td>
               <td class="py-3 px-3 whitespace-nowrap">
                 <div class="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{{ prod.name }}</div>
                 <div v-if="prod.barcode || prod.sku" class="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
@@ -98,7 +98,7 @@
                 <span class="px-2 py-0.5 rounded text-[11px] whitespace-nowrap" :class="[
                   prod.revenue > 0 && ((prod.profit / prod.revenue) * 100) >= 20
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                 ]">
                   {{ prod.revenue > 0 ? Math.round((prod.profit / prod.revenue) * 100) : 0 }}%
                 </span>
@@ -111,42 +111,42 @@
       <!-- 1.2 CARD / GRID VIEW -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="prod in filteredSoldProducts"
-          :key="prod.id"
+          v-for="prod in pagination.paginatedItems.value"
+          :key="prod.id || prod.name"
           class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-emerald-500/50 transition"
         >
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <span class="font-bold text-sm text-slate-900 dark:text-white block">{{ prod.name }}</span>
-              <span v-if="prod.barcode || prod.sku" class="text-[10px] text-slate-400 font-mono block">
-                {{ prod.barcode || prod.sku }}
-              </span>
-            </div>
-            <span
-              class="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0"
-            >
-              {{ prod.quantitySold }} dona
+          <div>
+            <span class="font-bold text-slate-900 dark:text-white text-sm block truncate">
+              {{ prod.name }}
+            </span>
+            <span v-if="prod.sku || prod.barcode" class="text-[10px] text-slate-400 font-mono">
+              {{ prod.sku || prod.barcode }}
             </span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
+          <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span class="text-slate-400 text-[10px] block">Jami Tushum</span>
-              <span class="font-bold font-mono text-slate-900 dark:text-white">{{ formatCurrency(prod.revenue) }}</span>
+              <span class="text-[10px] text-slate-400 block">Sotilgan</span>
+              <span class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ prod.quantitySold }} dona</span>
             </div>
             <div>
-              <span class="text-slate-400 text-[10px] block">Tannarx (COGS)</span>
-              <span class="font-semibold font-mono text-amber-600 dark:text-amber-400">{{ formatCurrency(prod.cogs) }}</span>
+              <span class="text-[10px] text-slate-400 block">Tushum</span>
+              <span class="font-bold font-mono text-slate-800 dark:text-slate-200">{{ formatCurrency(prod.revenue) }}</span>
             </div>
-          </div>
-
-          <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
             <div>
-              <span class="text-slate-400 text-[10px] block">Sof Foyda</span>
-              <span class="font-black font-mono" :class="prod.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'">
+              <span class="text-[10px] text-slate-400 block">Tannarx</span>
+              <span class="font-bold font-mono text-amber-600 dark:text-amber-400">{{ formatCurrency(prod.cogs) }}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 block">Sof Foyda</span>
+              <span class="font-bold font-mono" :class="prod.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'">
                 {{ formatCurrency(prod.profit) }}
               </span>
             </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <span class="text-[10px] text-slate-400 font-semibold">Rentabellik darajasi</span>
             <span class="px-2 py-0.5 rounded text-[11px] font-bold font-mono" :class="[
               prod.revenue > 0 && ((prod.profit / prod.revenue) * 100) >= 20
                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
@@ -157,14 +157,24 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <AppPagination
+        v-model:current-page="pagination.currentPage.value"
+        v-model:page-size="pagination.pageSize.value"
+        :total-items="filteredSoldProducts.length"
+        item-name="mahsulot"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { PackageCheck, Search } from 'lucide-vue-next';
+import AppPagination from '../../../components/AppPagination.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePagination } from '../../../composables/usePagination';
 
 const props = defineProps<{
   soldProducts: any[];
@@ -193,5 +203,11 @@ const filteredSoldProducts = computed(() => {
       p.sku?.toLowerCase().includes(q) ||
       p.barcode?.includes(q),
   );
+});
+
+const pagination = usePagination(filteredSoldProducts);
+
+watch([productSearch, productProfitFilter], () => {
+  pagination.resetPage();
 });
 </script>

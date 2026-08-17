@@ -52,9 +52,8 @@
           <div class="w-44">
             <AppSelect
               :model-value="selectedCurrency"
-              @update:model-value="$emit('update:selectedCurrency', $event)"
+              @update:model-value="$emit('update:selectedCurrency', $event); $emit('currencyChange')"
               :options="currencyOptions"
-              @change="$emit('currencyChange')"
             />
           </div>
         </div>
@@ -148,15 +147,145 @@
             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tizim Valyutasi *</label>
             <AppSelect
               :model-value="selectedCurrency"
-              @update:model-value="$emit('update:selectedCurrency', $event)"
+              @update:model-value="$emit('update:selectedCurrency', $event); $emit('currencyChange')"
               :options="currencyOptions"
-              @change="$emit('currencyChange')"
             />
           </div>
 
           <div>
             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Foydalanuvchi Roli</label>
             <input :value="authStore.activeBusiness?.role || 'Owner'" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-black cursor-not-allowed" />
+          </div>
+        </div>
+
+        <!-- CBU vs Custom Exchange Rate Live Control Box -->
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-slate-500/5 dark:from-emerald-500/10 dark:via-slate-800/60 dark:to-slate-900/60 border border-emerald-500/20 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                <Coins class="w-5 h-5" />
+              </div>
+              <div>
+                <p class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Valyuta Kursi va Hisoblagich Tizimi</span>
+                </p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Mahsulotlar va POS kassadagi dollar/rubl narxlarini hisoblash manbasi
+                </p>
+              </div>
+            </div>
+
+            <!-- Mode Switch Toggle: Auto (CBU) vs Custom (Manual) -->
+            <div class="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold shrink-0">
+              <button
+                type="button"
+                @click="currencyStore.setRateMode('auto')"
+                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                :class="currencyStore.rateMode === 'auto'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'"
+              >
+                <Globe class="w-3.5 h-3.5" />
+                <span>Markaziy Bank (Avtomatik)</span>
+              </button>
+              <button
+                type="button"
+                @click="currencyStore.setRateMode('custom')"
+                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                :class="currencyStore.rateMode === 'custom'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'"
+              >
+                <Sliders class="w-3.5 h-3.5" />
+                <span>Maxsus (O'zim kiritgan kurs)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode 1: Auto (Central Bank CBU) View -->
+          <div v-if="currencyStore.rateMode === 'auto'" class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-emerald-500/10">
+            <div class="text-xs text-slate-700 dark:text-slate-300 space-y-1">
+              <p class="font-bold flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Rasmiy Markaziy Bank (CBU.uz) kursi faol:</span>
+              </p>
+              <p class="text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+                <span>1 USD = <b class="text-emerald-600 dark:text-emerald-400">{{ currencyStore.cbuUsdRate.toLocaleString('uz-UZ') }} so'm</b></span>
+                <span class="mx-2 text-slate-300 dark:text-slate-600">|</span>
+                <span>1 RUB = <b class="text-emerald-600 dark:text-emerald-400">{{ currencyStore.cbuRubRate.toLocaleString('uz-UZ') }} so'm</b></span>
+                <span class="mx-2 text-slate-300 dark:text-slate-600">|</span>
+                <span>1 EUR = <b class="text-emerald-600 dark:text-emerald-400">{{ currencyStore.cbuEurRate.toLocaleString('uz-UZ') }} so'm</b></span>
+                <span class="text-slate-400 ml-2 font-sans">(Sana: {{ currencyStore.rates.USD?.date || 'Bugun' }})</span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              @click="currencyStore.fetchRates(true)"
+              :disabled="currencyStore.loading"
+              class="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-sm"
+            >
+              <RefreshCw class="w-3.5 h-3.5 text-emerald-500" :class="{ 'animate-spin': currencyStore.loading }" />
+              <span>{{ currencyStore.loading ? "Yangilanmoqda..." : "Kursni Yangilash" }}</span>
+            </button>
+          </div>
+
+          <!-- Mode 2: Custom (Manual Override) View -->
+          <div v-else class="space-y-3 pt-3 border-t border-amber-500/20">
+            <p class="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span>✍️ O'zingiz kiritgan tijorat/bozor kursi bo'yicha hisoblanadi:</span>
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- Custom USD Rate -->
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">1 USD ($) kursi</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    :value="currencyStore.customRates.USD"
+                    @input="currencyStore.setCustomRate('USD', Number(($event.target as HTMLInputElement).value))"
+                    placeholder="12900"
+                    class="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                  <span class="text-xs font-bold text-slate-500 shrink-0">so'm</span>
+                </div>
+              </div>
+
+              <!-- Custom RUB Rate -->
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">1 RUB (₽) kursi</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    :value="currencyStore.customRates.RUB"
+                    @input="currencyStore.setCustomRate('RUB', Number(($event.target as HTMLInputElement).value))"
+                    placeholder="145"
+                    class="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                  <span class="text-xs font-bold text-slate-500 shrink-0">so'm</span>
+                </div>
+              </div>
+
+              <!-- Custom EUR Rate -->
+              <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">1 EUR (€) kursi</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    :value="currencyStore.customRates.EUR"
+                    @input="currencyStore.setCustomRate('EUR', Number(($event.target as HTMLInputElement).value))"
+                    placeholder="14000"
+                    class="w-full px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                  <span class="text-xs font-bold text-slate-500 shrink-0">so'm</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 italic">
+              * Kiritilgan kurslar avtomatik saqlanadi va butun tizimdagi (Kassa, Mahsulotlar, Valyuta kalkulyatori) hisob-kitoblarga darhol ta'sir qiladi.
+            </p>
           </div>
         </div>
       </div>
@@ -187,8 +316,13 @@ import {
   Save,
   Languages,
   ShieldCheck,
+  Coins,
+  RefreshCw,
+  Globe,
+  Sliders,
 } from 'lucide-vue-next';
 import { useAuthStore } from '../../../stores/auth.store';
+import { useCurrencyStore } from '../../../stores/currency.store';
 import AppSelect from '../../../components/AppSelect.vue';
 import PhoneInput from '../../../components/PhoneInput.vue';
 import { useLanguage } from '../../../composables/useLanguage';
@@ -196,6 +330,7 @@ import { useLanguage } from '../../../composables/useLanguage';
 // reactive() bilan o'rashimiz kerak — aks holda langStore.scriptMode template da
 // Ref object sifatida uzatiladi va AppSelect 'Tanlang...' ko'rsatadi
 const langStore = reactive(useLanguage());
+const currencyStore = useCurrencyStore();
 
 const scriptOptions = [
   { value: 'latin', label: "O'zbek Lotin (Aa)", icon: Languages },

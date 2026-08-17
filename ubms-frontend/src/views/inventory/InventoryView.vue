@@ -67,7 +67,7 @@
     <!-- 1. Table View -->
     <InventoryTableView
       v-else-if="viewMode === 'table'"
-      :inventory="filteredInventory"
+      :inventory="pagination.paginatedItems.value"
       :can-edit="canEdit('inventory')"
       :can-delete="canDelete('inventory')"
       @edit="openEditModal"
@@ -77,11 +77,20 @@
     <!-- 2. Grid/Cards View -->
     <InventoryGridView
       v-else-if="viewMode === 'grid'"
-      :inventory="filteredInventory"
+      :inventory="pagination.paginatedItems.value"
       :can-edit="canEdit('inventory')"
       :can-delete="canDelete('inventory')"
       @edit="openEditModal"
       @delete="confirmDeleteProduct"
+    />
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredInventory.length"
+      item-name="tovar"
     />
 
     <!-- Stock In Modal -->
@@ -127,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useFormat } from '../../composables/useFormat';
 import { ArrowDownLeft, ArrowUpRight, Search, AlertTriangle } from 'lucide-vue-next';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
@@ -135,10 +144,12 @@ import AppInput from '../../components/AppInput.vue';
 import AppButton from '../../components/AppButton.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
+import AppPagination from '../../components/AppPagination.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePermissions } from '../../composables/usePermissions';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+import { usePagination } from '../../composables/usePagination';
 import api from '../../services/api';
 
 import InventoryStatsCards from './components/InventoryStatsCards.vue';
@@ -260,6 +271,12 @@ const filteredInventory = computed(() => {
   }
 
   return list;
+});
+
+const pagination = usePagination(filteredInventory);
+
+watch([searchQuery, activeStatusFilter], () => {
+  pagination.resetPage();
 });
 
 const loadInventory = async (force = false) => {

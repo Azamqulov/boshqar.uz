@@ -95,46 +95,57 @@ export class SuperAdminService {
       this.prisma.user.count({ where }),
     ]);
 
-    // Calculate GMV for each owner's businesses
-    const formattedOwners = await Promise.all(
-      owners.map(async (o) => {
-        const business = o.ownedBusinesses[0];
-        let lifetimeGMV = 0;
-        if (business) {
-          const gmvAgg = await this.prisma.order.aggregate({
-            where: { businessId: business.id, status: 'completed' },
-            _sum: { total: true },
-          });
-          lifetimeGMV = Number(gmvAgg._sum.total || 0);
-        }
+    // Extract business IDs for batch GMV calculation (eliminates N+1 DB roundtrips)
+    const businessIds = owners
+      .map((o) => o.ownedBusinesses[0]?.id)
+      .filter((id): id is string => Boolean(id));
 
-        return {
-          id: o.id,
-          fullName: o.fullName,
-          phone: o.phone,
-          email: o.email,
-          status: o.status,
-          isSuperAdmin: o.isSuperAdmin,
-          createdAt: o.createdAt,
-          lastLoginAt: o.lastLoginAt,
-          business: business
-            ? {
-                id: business.id,
-                name: business.name,
-                businessType: business.businessType,
-                currency: business.currency,
-                status: business.status,
-                plan: business.plan?.name || 'Free',
-                planId: business.planId,
-                productsCount: business._count.products,
-                ordersCount: business._count.orders,
-                employeesCount: business._count.employees,
-                lifetimeGMV,
-              }
-            : null,
-        };
-      })
-    );
+    const gmvMap = new Map<string, number>();
+    if (businessIds.length > 0) {
+      const gmvGroup = await this.prisma.order.groupBy({
+        by: ['businessId'],
+        where: {
+          businessId: { in: businessIds },
+          status: 'completed',
+        },
+        _sum: { total: true },
+      });
+      gmvGroup.forEach((g) => {
+        gmvMap.set(g.businessId, Number(g._sum.total || 0));
+      });
+    }
+
+    // Format owners response in memory
+    const formattedOwners = owners.map((o) => {
+      const business = o.ownedBusinesses[0];
+      const lifetimeGMV = business ? (gmvMap.get(business.id) || 0) : 0;
+
+      return {
+        id: o.id,
+        fullName: o.fullName,
+        phone: o.phone,
+        email: o.email,
+        status: o.status,
+        isSuperAdmin: o.isSuperAdmin,
+        createdAt: o.createdAt,
+        lastLoginAt: o.lastLoginAt,
+        business: business
+          ? {
+              id: business.id,
+              name: business.name,
+              businessType: business.businessType,
+              currency: business.currency,
+              status: business.status,
+              plan: business.plan?.name || 'Free',
+              planId: business.planId,
+              productsCount: business._count.products,
+              ordersCount: business._count.orders,
+              employeesCount: business._count.employees,
+              lifetimeGMV,
+            }
+          : null,
+      };
+    });
 
     return {
       items: formattedOwners,
@@ -457,6 +468,28 @@ export class SuperAdminService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async cleanupGlobalAuditLogs(period: '1d' | '7d' | '30d' | 'all' = '7d') {
+    const where: Prisma.AuditLogWhereInput = {};
+    if (period !== 'all') {
+      const cutoff = new Date();
+      if (period === '1d') {
+        cutoff.setDate(cutoff.getDate() - 1);
+      } else if (period === '7d') {
+        cutoff.setDate(cutoff.getDate() - 7);
+      } else if (period === '30d') {
+        cutoff.setDate(cutoff.getDate() - 30);
+      }
+      where.createdAt = { lte: cutoff };
+    }
+
+    const result = await this.prisma.auditLog.deleteMany({ where });
+    return {
+      success: true,
+      count: result.count,
+      message: `${result.count} ta global audit yozuvi tozalandi`,
+    };
   }
 
   // 10. Business Types Configuration for SuperAdmin

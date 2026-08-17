@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SuperAdminService } from './super-admin.service';
 import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
@@ -119,6 +119,12 @@ export class SuperAdminController {
   @ApiOperation({ summary: 'Global tizim audit jurnali' })
   getGlobalAuditLogs(@Query('limit') limit?: number) {
     return this.superAdminService.getGlobalAuditLogs(limit ? Number(limit) : 50);
+  }
+
+  @Delete('audit-logs/cleanup')
+  @ApiOperation({ summary: 'Global tizim audit jurnallarini tozalash (1 kun, 1 hafta, 1 oy yoki barchasi)' })
+  cleanupGlobalAuditLogs(@Query('period') period?: '1d' | '7d' | '30d' | 'all') {
+    return this.superAdminService.cleanupGlobalAuditLogs(period || '7d');
   }
 
   @Get('business-types')

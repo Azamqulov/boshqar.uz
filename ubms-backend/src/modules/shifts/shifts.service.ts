@@ -1,10 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Optional, Inject } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OpenShiftDto, CloseShiftDto } from './dto/shift.dto';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class ShiftsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly telegramService?: TelegramService,
+  ) {}
 
   // Helper to ensure today's unlinked orders get assigned to an open shift
   // Helper to ensure today's unlinked orders get assigned to an open shift if one is currently active
@@ -373,6 +377,9 @@ export class ShiftsService {
         },
       },
     });
+
+    // Fire-and-forget Telegram notification
+    this.telegramService?.sendShiftCloseNotification(businessId, updatedShift).catch(() => null);
 
     return {
       ...updatedShift,

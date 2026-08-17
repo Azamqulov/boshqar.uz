@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { TelegramService, TelegramSettings } from './telegram.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentBusinessId } from '../../common/decorators/context.decorator';
@@ -20,8 +20,28 @@ export class UpdateTelegramSettingsDto {
   notifyDailySummary?: boolean;
 
   @IsOptional()
+  @IsString()
+  dailySummaryTime?: string;
+
+  @IsOptional()
   @IsBoolean()
   notifyOnShiftClose?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowDebtsInBot?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowExpenseInBot?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowProductSearch?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowCashierControl?: boolean;
 }
 
 export class LinkChatDto {
@@ -69,18 +89,40 @@ export class TelegramController {
     return this.telegramService.updateSettings(businessId, body);
   }
 
+  @Post('settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update Telegram notification triggers (POST alias)' })
+  updateSettingsPost(
+    @CurrentBusinessId() businessId: string,
+    @Body() body: UpdateTelegramSettingsDto,
+  ) {
+    return this.telegramService.updateSettings(businessId, body);
+  }
+
   @Post('disconnect')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Disconnect Telegram bot from business' })
+  @ApiOperation({ summary: 'Disconnect all Telegram bot accounts from business' })
   disconnect(@CurrentBusinessId() businessId: string) {
     return this.telegramService.disconnect(businessId);
+  }
+
+  @Post('disconnect-account')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Disconnect specific Telegram account from business' })
+  disconnectAccount(
+    @CurrentBusinessId() businessId: string,
+    @Body() body: { chatId: string },
+  ) {
+    return this.telegramService.disconnectAccount(businessId, body.chatId);
   }
 
   @Post('test-message')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Send test notification message to linked Telegram' })
+  @ApiOperation({ summary: 'Send test notification message to linked Telegram accounts' })
   sendTestMessage(@CurrentBusinessId() businessId: string) {
     return this.telegramService.sendTestMessage(businessId);
   }
@@ -102,8 +144,11 @@ export class TelegramController {
   @Public()
   @Get('summary/:businessId')
   @ApiOperation({ summary: 'Get summary for Telegram Bot' })
-  getSummary(@Param('businessId') businessId: string) {
-    return this.telegramService.getBotSummary(businessId);
+  getSummary(
+    @Param('businessId') businessId: string,
+    @Query('chatId') chatId?: string,
+  ) {
+    return this.telegramService.getBotSummary(businessId, chatId);
   }
 
   @Public()
@@ -111,6 +156,41 @@ export class TelegramController {
   @ApiOperation({ summary: 'Get low stock inventory for Telegram Bot' })
   getInventory(@Param('businessId') businessId: string) {
     return this.telegramService.getBotInventory(businessId);
+  }
+
+  @Public()
+  @Get('debts/:businessId')
+  @ApiOperation({ summary: 'Get debts and customers for Telegram Bot' })
+  getDebts(@Param('businessId') businessId: string) {
+    return this.telegramService.getBotDebts(businessId);
+  }
+
+  @Public()
+  @Post('expense')
+  @ApiOperation({ summary: 'Create expense from Telegram Bot' })
+  createExpense(@Body() body: { businessId: string; amount: number; description: string; category?: string }) {
+    return this.telegramService.createBotExpense(body.businessId, Number(body.amount), body.description, body.category);
+  }
+
+  @Public()
+  @Get('search-products/:businessId')
+  @ApiOperation({ summary: 'Search products and stock for Telegram Bot' })
+  searchProducts(
+    @Param('businessId') businessId: string,
+    @Query('q') q: string,
+    @Query('chatId') chatId?: string,
+  ) {
+    return this.telegramService.searchBotProducts(businessId, q || '', chatId);
+  }
+
+  @Public()
+  @Get('cashiers/:businessId')
+  @ApiOperation({ summary: 'Get cashiers and shifts for Telegram Bot' })
+  getCashiers(
+    @Param('businessId') businessId: string,
+    @Query('chatId') chatId?: string,
+  ) {
+    return this.telegramService.getBotCashiers(businessId, chatId);
   }
 
   @Post('link-by-query')
@@ -135,5 +215,19 @@ export class TelegramController {
       return this.telegramService.linkChatDirect(body.businessId, body.chatId, body.username);
     }
     return this.telegramService.linkChatWithToken(body.token || '', body.chatId, body.username);
+  }
+
+  @Public()
+  @Post('dispatch-daily-summaries')
+  @ApiOperation({ summary: 'Dispatch scheduled daily summaries to businesses matching current time' })
+  dispatchDailySummariesPost() {
+    return this.telegramService.dispatchScheduledDailySummaries();
+  }
+
+  @Public()
+  @Get('dispatch-daily-summaries')
+  @ApiOperation({ summary: 'Dispatch scheduled daily summaries (GET alias)' })
+  dispatchDailySummariesGet() {
+    return this.telegramService.dispatchScheduledDailySummaries();
   }
 }

@@ -80,7 +80,7 @@
     <!-- 1. Table View -->
     <SupplierTableView
       v-else-if="viewMode === 'table'"
-      :suppliers="filteredSuppliers"
+      :suppliers="pagination.paginatedItems.value"
       @open-pay="openPayModal"
       @open-history="openHistoryModal"
       @open-statement="openStatementModal"
@@ -91,12 +91,21 @@
     <!-- 2. Grid/Cards View -->
     <SupplierGridView
       v-else-if="viewMode === 'grid'"
-      :suppliers="filteredSuppliers"
+      :suppliers="pagination.paginatedItems.value"
       @open-pay="openPayModal"
       @open-history="openHistoryModal"
       @open-statement="openStatementModal"
       @open-edit="openEditModal"
       @delete="confirmDeleteSupplier"
+    />
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredSuppliers.length"
+      item-name="ta'minotchi"
     />
 
     <!-- Modal 1: Create / Edit Supplier -->
@@ -152,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   AlertCircle,
   Search,
@@ -163,10 +172,12 @@ import AppInput from '../../components/AppInput.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
+import AppPagination from '../../components/AppPagination.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
+import { usePagination } from '../../composables/usePagination';
 import api, { getErrorMessage } from '../../services/api';
 
 import SupplierStatsCards from './components/SupplierStatsCards.vue';
@@ -247,6 +258,12 @@ const filteredSuppliers = computed(() => {
   }
 
   return list;
+});
+
+const pagination = usePagination(filteredSuppliers);
+
+watch([searchQuery, activeFilter], () => {
+  pagination.resetPage();
 });
 
 const formatCurrency = (val: number) => {

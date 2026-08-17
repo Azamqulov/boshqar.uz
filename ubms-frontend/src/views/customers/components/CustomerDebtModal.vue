@@ -51,28 +51,28 @@
                   @click="$emit('update:debtAddAmount', (debtAddAmount || 0) + 20000)"
                   class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                 >
-                  +20 000 so'm
+                  +{{ formatCurrency(20000) }}
                 </button>
                 <button
                   type="button"
                   @click="$emit('update:debtAddAmount', (debtAddAmount || 0) + 50000)"
                   class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                 >
-                  +50 000 so'm
+                  +{{ formatCurrency(50000) }}
                 </button>
                 <button
                   type="button"
                   @click="$emit('update:debtAddAmount', (debtAddAmount || 0) + 100000)"
                   class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                 >
-                  +100 000 so'm
+                  +{{ formatCurrency(100000) }}
                 </button>
                 <button
                   type="button"
                   @click="$emit('update:debtAddAmount', (debtAddAmount || 0) + 500000)"
                   class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                 >
-                  +500 000 so'm
+                  +{{ formatCurrency(500000) }}
                 </button>
               </div>
             </div>

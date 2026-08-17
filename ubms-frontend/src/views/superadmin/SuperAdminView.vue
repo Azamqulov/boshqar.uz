@@ -134,6 +134,7 @@
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
       v-model:view-mode="viewMode"
+      @refresh="loadAllData"
     />
 
     <!-- TAB 6: BUSINESS TYPES CONFIGURATION -->
@@ -317,7 +318,7 @@ const getBusinessTypeIcon = (type: string) => {
 const loadAllData = async () => {
   loading.value = true;
   try {
-    const [statsRes, ownersRes, bizRes, usersRes, plansRes, auditRes, typesRes] = await Promise.all([
+    const results = await Promise.allSettled([
       api.get('/superadmin/stats'),
       api.get('/superadmin/owners'),
       api.get('/superadmin/businesses'),
@@ -326,13 +327,14 @@ const loadAllData = async () => {
       api.get('/superadmin/audit-logs'),
       api.get('/superadmin/business-types'),
     ]);
-    stats.value = statsRes.data || {};
-    owners.value = ownersRes.data?.items || [];
-    businesses.value = bizRes.data || [];
-    users.value = usersRes.data || [];
-    plans.value = plansRes.data || [];
-    auditLogs.value = auditRes.data || [];
-    businessTypesList.value = typesRes.data || [];
+
+    if (results[0].status === 'fulfilled') stats.value = results[0].value.data || {};
+    if (results[1].status === 'fulfilled') owners.value = results[1].value.data?.items || [];
+    if (results[2].status === 'fulfilled') businesses.value = results[2].value.data || [];
+    if (results[3].status === 'fulfilled') users.value = results[3].value.data || [];
+    if (results[4].status === 'fulfilled') plans.value = results[4].value.data || [];
+    if (results[5].status === 'fulfilled') auditLogs.value = results[5].value.data || [];
+    if (results[6].status === 'fulfilled') businessTypesList.value = results[6].value.data || [];
   } catch (err) {
     console.error('Failed to load superadmin data', err);
   } finally {

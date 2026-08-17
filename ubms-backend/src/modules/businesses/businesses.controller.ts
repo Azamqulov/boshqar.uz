@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Headers, BadRequestException } from '@nestjs/common';
 import { BusinessesService, CreateBusinessDto } from './businesses.service';
 import { CurrentUser } from '../../common/decorators/context.decorator';
 import { RequirePermission, Public } from '../../common/decorators/custom.decorator';
@@ -36,7 +36,13 @@ export class BusinessesController {
 
   @Put(':id')
   @RequirePermission('settings.manage')
-  update(@Param('id') id: string, @Body() dto: Partial<CreateBusinessDto>) {
+  updatePut(@Param('id') id: string, @Body() dto: Partial<CreateBusinessDto>) {
+    return this.businessesService.update(id, dto);
+  }
+
+  @Patch(':id')
+  @RequirePermission('settings.manage')
+  updatePatch(@Param('id') id: string, @Body() dto: Partial<CreateBusinessDto>) {
     return this.businessesService.update(id, dto);
   }
 

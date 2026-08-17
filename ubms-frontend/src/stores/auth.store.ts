@@ -186,10 +186,17 @@ export const useAuthStore = defineStore('auth', {
       if (this.activeBusiness) {
         this.activeBusiness = { ...this.activeBusiness, currency };
         localStorage.setItem('ubms_active_business', JSON.stringify(this.activeBusiness));
+
+        const idx = this.businesses.findIndex((b) => b.id === this.activeBusiness?.id);
+        if (idx !== -1) {
+          this.businesses[idx] = { ...this.businesses[idx], currency };
+          localStorage.setItem('ubms_businesses', JSON.stringify(this.businesses));
+        }
+
         try {
           await api.patch(`/businesses/${this.activeBusiness.id}`, { currency });
         } catch (err) {
-          // fallback
+          console.error('Failed to update business currency on backend:', err);
         }
       }
     },

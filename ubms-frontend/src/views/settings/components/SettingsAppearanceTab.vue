@@ -62,6 +62,45 @@
           <span class="text-xs">Tizim (Avto)</span>
         </button>
       </div>
+
+      <!-- Header Ticker Toggle Option -->
+      <div class="pt-5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <TrendingUp class="w-4 h-4 text-emerald-500" />
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white">Yuqori Paneldagi Valyuta Kursi Vidjeti (Ticker)</h4>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Tizimning eng yuqori header qismidagi Markaziy Bank (CBU) / Maxsus valyuta kursi vidjetini ko'rsatish yoki yashirish
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <!-- Mini Preview Ticker -->
+          <div
+            class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-mono font-bold transition"
+            :class="posSettings.showCurrencyTicker !== false
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+              : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 opacity-50'"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :class="posSettings.showCurrencyTicker !== false ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+            <span>CBU: $1=11 937 | ₽1=141</span>
+          </div>
+
+          <!-- Toggle Switch -->
+          <button
+            type="button"
+            @click="$emit('togglePosSetting', 'showCurrencyTicker')"
+            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+            :class="posSettings.showCurrencyTicker !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+          >
+            <span
+              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+              :class="posSettings.showCurrencyTicker !== false ? 'translate-x-5' : 'translate-x-0'"
+            />
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Section 1: Xizmat Turlari (Service Modes) -->
@@ -345,7 +384,6 @@
                   :model-value="debtLimitInput"
                   @update:model-value="debtLimitInput = $event"
                   placeholder="0 = cheksiz"
-                  suffix="so'm"
                   :input-class="posSettings.maxDebtLimit > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : ''"
                 />
               </div>
@@ -369,7 +407,7 @@
             <span class="text-slate-600 dark:text-slate-300">
               Mijozlar bir vaqtda
               <strong class="text-rose-600 dark:text-rose-400 font-mono font-black">
-                {{ posSettings.maxDebtLimit.toLocaleString('uz-UZ') }} so'm
+                {{ formatCurrency(posSettings.maxDebtLimit) }}
               </strong>
               dan ko'p qarz yoza olmaydi.
             </span>
@@ -395,9 +433,13 @@ import {
   Package,
   Keyboard,
   ShieldAlert,
+  TrendingUp,
 } from 'lucide-vue-next';
 import { useThemeStore } from '../../../stores/theme.store';
+import { useFormat } from '../../../composables/useFormat';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
+
+const { formatCurrency } = useFormat();
 
 const props = defineProps<{
   posSettings: {
@@ -410,6 +452,7 @@ const props = defineProps<{
     allowZeroStockSale: boolean;
     enableHotkeys?: boolean;
     maxDebtLimit: number;
+    showCurrencyTicker?: boolean;
   };
 }>();
 

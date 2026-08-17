@@ -1,9 +1,26 @@
 /**
- * Format raw currency numbers to Uzbek so'm format
+ * Format raw currency numbers to target business currency (UZS, USD, RUB, EUR, KZT)
  */
-export function formatSum(amount: number | string = 0): string {
-  return Number(amount || 0).toLocaleString('uz-UZ') + " so'm";
+export function formatCurrency(amount: number | string = 0, currency: string = 'UZS'): string {
+  const num = Number(amount || 0);
+  const cur = (currency || 'UZS').toUpperCase();
+
+  if (cur === 'USD') {
+    return `$${num.toLocaleString('en-US', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+  }
+  if (cur === 'RUB') {
+    return `${num.toLocaleString('ru-RU')} ₽`;
+  }
+  if (cur === 'EUR') {
+    return `€${num.toLocaleString('de-DE', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })}`;
+  }
+  if (cur === 'KZT') {
+    return `${num.toLocaleString('ru-RU')} ₸`;
+  }
+  return `${num.toLocaleString('uz-UZ')} so'm`;
 }
+
+export const formatSum = formatCurrency;
 
 /**
  * Format raw phone input to clean readable Uzbek format: +998 (77) 040-46-24

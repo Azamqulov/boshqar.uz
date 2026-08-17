@@ -13,21 +13,24 @@
       @focus="handleFocus"
       :class="[
         'w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition',
-        suffix ? 'pr-12' : '',
+        effectiveSuffix ? 'pr-12' : '',
         inputClass,
       ]"
     />
     <span
-      v-if="suffix"
+      v-if="effectiveSuffix"
       class="absolute right-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 pointer-events-none select-none"
     >
-      {{ suffix }}
+      {{ effectiveSuffix }}
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useCurrencyStore } from '../stores/currency.store';
+
+const currencyStore = useCurrencyStore();
 
 const props = withDefaults(
   defineProps<{
@@ -41,12 +44,19 @@ const props = withDefaults(
   {
     modelValue: 0,
     placeholder: '0',
-    suffix: "so'm",
+    suffix: '',
     disabled: false,
     required: false,
     inputClass: '',
   },
 );
+
+const effectiveSuffix = computed(() => {
+  if (props.suffix && props.suffix !== "so'm") {
+    return props.suffix;
+  }
+  return currencyStore.getSymbol();
+});
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: number): void;

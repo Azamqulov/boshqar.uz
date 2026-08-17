@@ -47,7 +47,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-for="shift in shifts" :key="shift.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+            <tr v-for="shift in pagination.paginatedItems.value" :key="shift.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                 #{{ shift.shiftNumber || (shift.id?.startsWith('shift-') ? shift.id.substring(6, 12) : shift.id?.substring(0, 6)) }}
               </td>
@@ -98,7 +98,7 @@
                   <button
                     @click="$emit('deleteShift', shift)"
                     class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                    title="Smena yozuvini o'chirish"
+                    title="Smenani o'chirish"
                   >
                     <Trash2 class="w-3.5 h-3.5" />
                   </button>
@@ -109,44 +109,47 @@
         </table>
       </div>
 
-      <!-- 8.2 CARDS VIEW -->
+      <!-- 8.2 CARD / GRID VIEW -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="shift in shifts"
+          v-for="shift in pagination.paginatedItems.value"
           :key="shift.id"
-          class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-emerald-500/40 transition flex flex-col justify-between"
+          class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-emerald-500/50 transition"
         >
-          <div>
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-xs text-slate-900 dark:text-white font-mono">
-                #{{ shift.id?.startsWith('shift-') ? shift.id.substring(6, 12) : shift.id?.substring(0, 8) }}
-              </span>
-              <span
-                class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase"
-                :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 border-slate-200 dark:border-slate-700'"
-              >
-                {{ shift.status === 'open' ? '🟢 Ochiq' : '🔒 Yopilgan' }}
-              </span>
-            </div>
-            <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold mt-1">
-              Kassir: {{ shift.user?.fullName || shift.user?.name || cashierDefaultName }}
-            </p>
-            <p class="text-[10px] text-slate-400 font-mono mt-0.5">
-              {{ formatDateTime(shift.openedAt) }}
-            </p>
+          <div class="flex items-center justify-between">
+            <span class="font-bold font-mono text-slate-900 dark:text-white text-sm">
+              #{{ shift.shiftNumber || (shift.id?.startsWith('shift-') ? shift.id.substring(6, 12) : shift.id?.substring(0, 6)) }}
+            </span>
+            <span
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+              :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
+            >
+              {{ shift.status === 'open' ? 'Ochiq' : 'Yopilgan' }}
+            </span>
           </div>
 
-          <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Naqd savdo:</span>
-              <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">+{{ formatCurrency(shift.cashSales) }}</span>
+          <div class="text-xs space-y-1">
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+              <span>Kassir:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ shift.user?.fullName || shift.user?.name || cashierDefaultName }}</span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">Kutilgan naqd:</span>
-              <span class="font-bold font-mono">{{ formatCurrency(shift.expectedCash) }}</span>
+            <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+              <span>Ochilgan:</span>
+              <span class="font-mono">{{ formatDateTime(shift.openedAt) }}</span>
             </div>
-            <div class="flex justify-between border-t border-slate-100 dark:border-slate-700/60 pt-1">
-              <span class="text-slate-400">Tafovut:</span>
+            <div v-if="shift.closedAt" class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+              <span>Yopilgan:</span>
+              <span class="font-mono">{{ formatDateTime(shift.closedAt) }}</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <span class="text-[10px] text-slate-400 block">Naqd Savdo</span>
+              <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400">+{{ formatCurrency(shift.cashSales) }}</span>
+            </div>
+            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <span class="text-[10px] text-slate-400 block">Kassa Farqi</span>
               <span
                 class="font-bold font-mono"
                 :class="Number(shift.difference) < 0 ? 'text-rose-600' : 'text-emerald-600'"
@@ -174,16 +177,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <AppPagination
+        v-if="!loading"
+        v-model:current-page="pagination.currentPage.value"
+        v-model:page-size="pagination.pageSize.value"
+        :total-items="shifts.length"
+        item-name="smena"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { History, RefreshCw, Receipt, Trash2 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppPagination from '../../../components/AppPagination.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePagination } from '../../../composables/usePagination';
 
-defineProps<{
+const props = defineProps<{
   shifts: any[];
   loading: boolean;
   viewMode: 'table' | 'grid';
@@ -197,4 +212,6 @@ defineEmits<{
 }>();
 
 const { formatCurrency, formatDateTime } = useFormat();
+
+const pagination = usePagination(() => props.shifts);
 </script>

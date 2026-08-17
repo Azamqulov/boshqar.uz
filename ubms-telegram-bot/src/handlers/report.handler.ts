@@ -17,22 +17,42 @@ export async function handleDailyReport(ctx: Context) {
     );
   }
 
+  // Employee protection check
+  if (session.role === 'cashier' || session.role === 'employee' || session.role === 'waiter') {
+    return ctx.reply(
+      `🔒 <b>Ruxsat cheklangan</b>\n\n` +
+      `Do'konning umumiy moliyaviy hisoboti va sof foydasi faqat <b>Do'kon Rahbari (Admin)</b> uchun ochiq.\n\n` +
+      `Siz o'z savdoingizni ko'rish uchun <b>💰 Mening Savdom</b> tugmasidan foydalanishingiz mumkin.`,
+      { parse_mode: 'HTML', ...getDynamicMenu(session.settings, session.role) }
+    );
+  }
+
   try {
     const { data } = await ApiService.getDashboardSummary(chatId);
+    const cur = data?.currency || session?.currency || 'UZS';
+
+    if (data?.isEmployee) {
+      return ctx.reply(
+        `🔒 <b>Ruxsat cheklangan</b>\n\n` +
+        `Do'konning umumiy moliyaviy hisoboti va sof foydasi faqat <b>Do'kon Rahbari (Admin)</b> uchun ochiq.\n\n` +
+        `Siz o'z savdoingizni ko'rish uchun <b>💰 Mening Savdom</b> tugmasidan foydalanishingiz mumkin.`,
+        { parse_mode: 'HTML', ...getDynamicMenu(session.settings, session.role) }
+      );
+    }
 
     const msg =
       `📊 <b>KUNLIK YAKUNIY HISOBOT (KPI)</b>\n` +
       `🏢 <b>Biznes:</b> ${session.businessName || 'Do\'kon'}\n` +
       `📅 <b>Sana:</b> ${new Date().toLocaleDateString('uz-UZ')}\n\n` +
-      `🟢 <b>Kirim (Savdo):</b> ${formatSum(data.todaySalesTotal || 0)}\n` +
-      `🔴 <b>Chiqim (Xarajatlar):</b> ${formatSum(data.todayExpensesTotal || 0)}\n` +
-      `💎 <b>Sof Foyda:</b> <b>${formatSum(data.todayNetProfit || ((data.todaySalesTotal || 0) - (data.todayExpensesTotal || 0)))}</b>\n\n` +
+      `🟢 <b>Kirim (Savdo):</b> ${formatSum(data.todaySalesTotal || 0, cur)}\n` +
+      `🔴 <b>Chiqim (Xarajatlar):</b> ${formatSum(data.todayExpensesTotal || 0, cur)}\n` +
+      `💎 <b>Sof Foyda:</b> <b>${formatSum(data.todayNetProfit || ((data.todaySalesTotal || 0) - (data.todayExpensesTotal || 0)), cur)}</b>\n\n` +
       `🧾 <b>Cheklar soni:</b> ${data.todayOrdersCount || 0} ta\n` +
       `👥 <b>Yangi mijozlar:</b> ${data.newCustomersCount || 0} ta\n` +
       `📦 <b>Kam qolgan tovarlar:</b> ${data.lowStockItemsCount || 0} ta\n\n` +
       `<i>boshqar.uz — Tizimli biznes boshqaruvi</i>`;
 
-    return ctx.reply(msg, { parse_mode: 'HTML', ...getDynamicMenu(session.settings) });
+    return ctx.reply(msg, { parse_mode: 'HTML', ...getDynamicMenu(session.settings, session.role) });
   } catch (e: any) {
     return ctx.reply("❌ Hisobotni yuklashda xatolik yuz berdi.");
   }

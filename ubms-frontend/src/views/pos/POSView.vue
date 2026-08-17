@@ -5,8 +5,12 @@
       :current-shift="currentShift"
       :cashier-name="authStore.user?.fullName"
       :enable-hotkeys="posSettings.enableHotkeys"
+      :is-online="isOnline"
+      :pending-count="pendingCount"
+      :is-syncing="isSyncing"
       @open-shift="openShiftModal"
       @open-hotkeys="isHotkeysModalOpen = true"
+      @sync-offline="syncOfflineOrders(api)"
     />
 
     <!-- Mobile Tab Toggle (< lg) -->
@@ -242,6 +246,7 @@ import POSHeldOrdersModal from './components/POSHeldOrdersModal.vue';
 import POSQuickCustomerModal from './components/POSQuickCustomerModal.vue';
 import POSDiscountModal from './components/POSDiscountModal.vue';
 import POSHotkeysModal from './components/POSHotkeysModal.vue';
+import { useOfflinePOS } from '../../composables/useOfflinePOS';
 
 const mobileViewTab = ref<'catalog' | 'cart'>('catalog');
 const cartStore = useCartStore();
@@ -250,6 +255,16 @@ const shiftStore = useShiftStore();
 const authStore = useAuthStore();
 const toast = useToast();
 const { formatCurrency, formatDate, formatDateTime } = useFormat();
+const {
+  isOnline,
+  isSyncing,
+  pendingCount,
+  cacheCatalog,
+  getCachedCatalog,
+  enqueueOfflineOrder,
+  syncOfflineOrders,
+  setupListeners,
+} = useOfflinePOS();
 
 const isDiscountModalOpen = ref(false);
 const isHotkeysModalOpen = ref(false);
@@ -530,8 +545,15 @@ const loadProducts = async () => {
       promises.push(dataStore.fetchTables());
     }
     await Promise.all(promises);
+    cacheCatalog(dataStore.products, dataStore.categories);
   } catch (err) {
-    console.error(err);
+    console.warn('Network error loading products, attempting offline cache recovery...', err);
+    const cached = getCachedCatalog();
+    if (cached.products && cached.products.length > 0 && dataStore.products.length === 0) {
+      dataStore.products = cached.products;
+      dataStore.categories = cached.categories;
+      toast.info('Katalog offline keshdan muvaffaqiyatli yuklandi', 'Offline Rejim');
+    }
   } finally {
     loading.value = false;
   }
@@ -721,26 +743,89 @@ const handleCompleteOrder = async () => {
 
   isProcessing.value = true;
   try {
-    const { data } = await api.post('/orders', {
-      orderType: apiOrderType,
-      customerId: selectedCustomerId.value || undefined,
-      tableNumber: resolvedTableNumber,
-      tableName: resolvedTableNumber,
-      items: cartStore.items.map((i) => ({
-        productId: i.productId || i.id,
-        serviceId: i.serviceId,
-        quantity: i.quantity,
-        unitPrice: i.price,
-        discountAmount: i.discount || 0,
-      })),
-      discountAmount: cartStore.generalDiscount || 0,
-      payments: [
-        {
-          paymentMethodId: selectedPaymentMethod.value,
-          amount: actualPaid,
-        },
-      ],
-    });
+    const pmObj = paymentMethods.value.find((p) => p.id === selectedPaymentMethod.value);
+    let data: any;
+
+    if (!isOnline.value) {
+      data = enqueueOfflineOrder({
+        orderType: isRestaurant.value ? orderType.value : 'pos',
+        customerId: selectedCustomerId.value || undefined,
+        customer: selectedCustomer.value,
+        tableNumber: resolvedTableNumber,
+        items: cartStore.items.map((i) => ({
+          productId: i.productId || i.id,
+          serviceId: i.serviceId,
+          name: i.name,
+          quantity: i.quantity,
+          unitPrice: i.price,
+          discountAmount: i.discount || 0,
+        })),
+        discountAmount: cartStore.generalDiscount || 0,
+        payments: [
+          {
+            paymentMethodId: selectedPaymentMethod.value,
+            amount: actualPaid,
+            paymentMethodName: pmObj?.name || 'Naqd pul (Offline)',
+            paymentMethodType: pmObj?.type || 'cash',
+          },
+        ],
+        cashierName: authStore.user?.fullName || 'Kassir',
+      });
+    } else {
+      try {
+        const res = await api.post('/orders', {
+          orderType: apiOrderType,
+          customerId: selectedCustomerId.value || undefined,
+          tableNumber: resolvedTableNumber,
+          tableName: resolvedTableNumber,
+          items: cartStore.items.map((i) => ({
+            productId: i.productId || i.id,
+            serviceId: i.serviceId,
+            quantity: i.quantity,
+            unitPrice: i.price,
+            discountAmount: i.discount || 0,
+          })),
+          discountAmount: cartStore.generalDiscount || 0,
+          payments: [
+            {
+              paymentMethodId: selectedPaymentMethod.value,
+              amount: actualPaid,
+            },
+          ],
+        });
+        data = res.data;
+      } catch (postErr: any) {
+        if (!navigator.onLine || postErr.code === 'ERR_NETWORK' || postErr.message?.includes('Network')) {
+          data = enqueueOfflineOrder({
+            orderType: isRestaurant.value ? orderType.value : 'pos',
+            customerId: selectedCustomerId.value || undefined,
+            customer: selectedCustomer.value,
+            tableNumber: resolvedTableNumber,
+            items: cartStore.items.map((i) => ({
+              productId: i.productId || i.id,
+              serviceId: i.serviceId,
+              name: i.name,
+              quantity: i.quantity,
+              unitPrice: i.price,
+              discountAmount: i.discount || 0,
+            })),
+            discountAmount: cartStore.generalDiscount || 0,
+            payments: [
+              {
+                paymentMethodId: selectedPaymentMethod.value,
+                amount: actualPaid,
+                paymentMethodName: pmObj?.name || 'Naqd pul (Offline)',
+                paymentMethodType: pmObj?.type || 'cash',
+              },
+            ],
+            cashierName: authStore.user?.fullName || 'Kassir',
+          });
+          toast.warning('Internet uzildi, savdo offline navbatga saqlandi!', 'Offline Saqlandi');
+        } else {
+          throw postErr;
+        }
+      }
+    }
 
     data.orderType = isRestaurant.value ? orderType.value : 'pos';
     data.tableNumber = resolvedTableNumber;
@@ -750,7 +835,6 @@ const handleCompleteOrder = async () => {
 
     // Ensure payment method details exist on completed order
     if (!data.payments || data.payments.length === 0) {
-      const pmObj = paymentMethods.value.find((p) => p.id === selectedPaymentMethod.value);
       data.payments = [
         {
           id: 'pay-' + Date.now(),
@@ -762,7 +846,6 @@ const handleCompleteOrder = async () => {
         },
       ];
     } else if (data.payments[0] && !data.payments[0].paymentMethod) {
-      const pmObj = paymentMethods.value.find((p) => p.id === selectedPaymentMethod.value);
       data.payments[0].paymentMethod = {
         name: pmObj?.name || (selectedPaymentMethod.value === '3' ? 'Click / Payme' : 'Naqd pul'),
         type: pmObj?.type || (selectedPaymentMethod.value === '3' ? 'click' : 'cash'),
@@ -795,7 +878,9 @@ const handleCompleteOrder = async () => {
     toast.success(`Savdo muvaffaqiyatli yakunlandi! Chek: ${data.orderNumber || '#001'}`, 'Kassa (POS)');
     dataStore.invalidate('products');
     dataStore.invalidate('customers');
-    await Promise.allSettled([loadProducts(), fetchCurrentShift(), dataStore.fetchCustomers()]);
+    if (isOnline.value) {
+      await Promise.allSettled([loadProducts(), fetchCurrentShift(), dataStore.fetchCustomers()]);
+    }
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Savdoni yakunlashda xatolik', 'Xatolik');
   } finally {
@@ -909,7 +994,10 @@ const handleGlobalKeyDown = (e: KeyboardEvent) => {
   }
 };
 
+let cleanupOfflineListeners: (() => void) | null = null;
+
 onMounted(() => {
+  cleanupOfflineListeners = setupListeners(api);
   loadProducts();
   fetchCurrentShift();
   dataStore.fetchCustomers();
@@ -920,6 +1008,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (cleanupOfflineListeners) {
+    cleanupOfflineListeners();
+  }
   window.removeEventListener('keydown', handleGlobalKeyDown);
 });
 </script>

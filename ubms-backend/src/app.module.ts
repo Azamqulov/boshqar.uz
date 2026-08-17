@@ -24,6 +24,9 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { ShiftsModule } from './modules/shifts/shifts.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
+import { CurrenciesModule } from './modules/currencies/currencies.module';
+import { AiModule } from './modules/ai/ai.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
@@ -68,6 +71,9 @@ import { HealthController } from './health.controller';
     SuperAdminModule,
     ShiftsModule,
     TelegramModule,
+    CurrenciesModule,
+    AiModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
   providers: [

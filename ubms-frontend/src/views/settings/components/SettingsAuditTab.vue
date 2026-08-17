@@ -43,9 +43,9 @@
     </div>
 
     <!-- 2. Qidiruv va Filterlar Boshqaruvi -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
       <!-- Search Input -->
-      <div class="w-full sm:w-80">
+      <div class="w-full lg:w-80">
         <div class="relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -57,8 +57,9 @@
         </div>
       </div>
 
-      <!-- Action Type Filter Buttons & View Toggle -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+      <!-- Action Type Filter Buttons, View Toggle & Cleanup -->
+      <div class="flex items-center justify-between lg:justify-end gap-2.5 flex-wrap sm:flex-nowrap">
+        <!-- Filter Tabs -->
         <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
           <button
             type="button"
@@ -94,7 +95,22 @@
           </button>
         </div>
 
-        <AppViewToggle v-model="viewMode" />
+        <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+
+        <!-- View Switcher & Action Button -->
+        <div class="flex items-center gap-2 shrink-0">
+          <AppViewToggle v-model="viewMode" />
+
+          <button
+            type="button"
+            @click="showCleanupModal = true"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition btn-interactive shadow-xs shrink-0"
+            title="Keraksiz eski audit yozuvlarini tozalash"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Tozalash</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -133,7 +149,7 @@
 
             <!-- Log Rows -->
             <tr
-              v-for="log in filteredAuditLogs"
+              v-for="log in pagination.paginatedItems.value"
               :key="log.id"
               class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group cursor-pointer"
               @click="openDetails(log)"
@@ -159,10 +175,10 @@
                 </div>
               </td>
 
-              <!-- Action Badge with Description -->
-              <td class="py-3.5 px-4 whitespace-nowrap">
+              <!-- Action Badge -->
+              <td class="py-3.5 px-4">
                 <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border"
                   :class="getActionBadgeClass(log.action)"
                 >
                   <component :is="getActionIcon(log.action)" class="w-3.5 h-3.5 shrink-0" />
@@ -170,26 +186,29 @@
                 </span>
               </td>
 
-              <!-- Entity / Section with Lucide Icon -->
-              <td class="py-3.5 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium text-xs border border-slate-200/60 dark:border-slate-700/60">
-                  <component :is="getEntityIcon(log.entity)" class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+              <!-- Entity (Section) Badge -->
+              <td class="py-3.5 px-4 font-semibold">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 text-xs border border-slate-200/60 dark:border-slate-700/60">
+                  <component :is="getEntityIcon(log.entity)" class="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>{{ getEntityLabel(log.entity) }}</span>
                 </span>
               </td>
 
-              <!-- IP Address -->
-              <td class="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400 text-xs">
-                <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80">{{ formatIpAddress(log.ipAddress) }}</span>
+              <!-- IP Address & User Agent -->
+              <td class="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                <span class="block text-slate-700 dark:text-slate-300 font-semibold">{{ formatIpAddress(log.ipAddress) }}</span>
+                <span v-if="log.userAgent" class="text-[10px] text-slate-400 truncate max-w-[140px] block" :title="log.userAgent">
+                  {{ log.userAgent.split(' ')[0] }}
+                </span>
               </td>
 
-              <!-- View Details Button -->
+              <!-- Action: View details -->
               <td class="py-3.5 px-4 text-right">
                 <button
                   type="button"
                   @click.stop="openDetails(log)"
-                  class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-500/10 transition"
-                  title="Batafsil ma'lumotni ko'rish"
+                  class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
+                  title="Batafsil ko'rish"
                 >
                   <Eye class="w-4 h-4" />
                 </button>
@@ -213,7 +232,7 @@
       </div>
 
       <div
-        v-for="log in filteredAuditLogs"
+        v-for="log in pagination.paginatedItems.value"
         :key="log.id"
         class="glass-card rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 group cursor-pointer"
         @click="openDetails(log)"
@@ -265,6 +284,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredAuditLogs.length"
+      item-name="audit yozuvi"
+    />
 
     <!-- 5. Audit Log Details Modal -->
     <Teleport to="body">
@@ -352,11 +380,104 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- 6. Cleanup Audit Modal -->
+    <Teleport to="body">
+      <div v-if="showCleanupModal" @click.self="showCleanupModal = false" class="modal-overlay">
+        <div class="modal-container max-w-md" @click.stop>
+          <div class="modal-header border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                <Trash2 class="w-5 h-5" />
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Audit Jurnallarini Tozalash</h3>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Biznesingizdagi eski audit ma'lumotlarini o'chirish</p>
+              </div>
+            </div>
+            <button @click="showCleanupModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <div class="modal-body p-4 space-y-3.5 text-xs">
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+              Baza hajmini tejash va eski harakatlarni tozalash uchun muddatni tanlang:
+            </p>
+
+            <!-- Options Radio Group -->
+            <div class="space-y-2">
+              <label
+                v-for="opt in cleanupOptions"
+                :key="opt.value"
+                class="flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer"
+                :class="
+                  selectedPeriod === opt.value
+                    ? 'border-rose-500/80 bg-rose-500/10 text-slate-900 dark:text-white ring-1 ring-rose-500/30'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50'
+                "
+              >
+                <input
+                  type="radio"
+                  name="settingsCleanupPeriod"
+                  :value="opt.value"
+                  v-model="selectedPeriod"
+                  class="mt-0.5 text-rose-600 focus:ring-rose-500"
+                />
+                <div class="min-w-0">
+                  <span class="font-bold block text-slate-900 dark:text-white text-xs">{{ opt.label }}</span>
+                  <span class="text-[11px] text-slate-400 block mt-0.5">{{ opt.desc }}</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- Warning notice -->
+            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] flex items-start gap-2">
+              <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+              <span>Diqqat: O'chirilgan audit ma'lumotlarini qayta tiklab bo'lmaydi.</span>
+            </div>
+          </div>
+
+          <div class="modal-footer border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 p-3">
+            <button
+              type="button"
+              @click="showCleanupModal = false"
+              :disabled="cleaningUp"
+              class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="button"
+              @click="promptConfirmCleanup"
+              :disabled="cleaningUp"
+              class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/25 transition btn-interactive disabled:opacity-50"
+            >
+              <Trash2 class="w-3.5 h-3.5" />
+              <span>Tozalash</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Double Confirmation Dialog -->
+    <AppConfirmDialog
+      :open="showConfirmDialog"
+      title="Audit Jurnallarini O'chirishni Tasdiqlang"
+      :message="confirmMessage"
+      variant="danger"
+      confirm-text="Ha, o'chirilsin"
+      cancel-text="Bekor qilish"
+      :loading="cleaningUp"
+      @confirm="executeCleanup"
+      @cancel="showConfirmDialog = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   ShieldCheck,
   Search,
@@ -382,18 +503,91 @@ import {
   FileText,
   CreditCard,
   Lock,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-vue-next';
 import AppViewToggle from '../../../components/AppViewToggle.vue';
 import AppButton from '../../../components/AppButton.vue';
+import AppPagination from '../../../components/AppPagination.vue';
+import AppConfirmDialog from '../../../components/AppConfirmDialog.vue';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePagination } from '../../../composables/usePagination';
+import { useToast } from '../../../composables/useToast';
+import api from '../../../services/api';
 
 const props = defineProps<{
   auditLogs: any[];
   loading?: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
+
+const toast = useToast();
 const { formatDate } = useFormat();
+
+const showCleanupModal = ref(false);
+const showConfirmDialog = ref(false);
+const selectedPeriod = ref<'1d' | '7d' | '30d' | 'all'>('7d');
+const cleaningUp = ref(false);
+
+const cleanupOptions = [
+  {
+    value: '1d',
+    label: '1 kundan eski yozuvlar',
+    desc: 'Oxirgi 24 soatdan avvalgi barcha loglarni tozalash',
+  },
+  {
+    value: '7d',
+    label: '1 haftadan eski yozuvlar (Tavsiya etiladi)',
+    desc: 'Oxirgi 7 kundan avvalgi eski yozuvlarni tozalash',
+  },
+  {
+    value: '30d',
+    label: '1 oydan (30 kundan) eski yozuvlar',
+    desc: 'Oxirgi 30 kundan oldingi arxiv yozuvlarini tozalash',
+  },
+  {
+    value: 'all',
+    label: 'Barcha audit yozuvlarini butunlay o\'chirish',
+    desc: 'Jurnaldagi barcha yozuvlarni to\'liq o\'chirib bo\'shatish',
+  },
+];
+
+const selectedOption = computed(() => {
+  return cleanupOptions.find((o) => o.value === selectedPeriod.value) || cleanupOptions[1];
+});
+
+const confirmMessage = computed(() => {
+  if (selectedPeriod.value === 'all') {
+    return 'Haqiqatan ham BARCHA audit yozuvlarini butunlay o\'chirib tashlamoqchimisiz? Ushbu amalni ortga qaytarib bo\'lmaydi!';
+  }
+  return `Haqiqatan ham «${selectedOption.value.label}» bo'yicha audit jurnallarini o'chirmoqchimisiz? Ushbu amalni ortga qaytarib bo'lmaydi!`;
+});
+
+const promptConfirmCleanup = () => {
+  showConfirmDialog.value = true;
+};
+
+const executeCleanup = async () => {
+  cleaningUp.value = true;
+  try {
+    const { data } = await api.delete(`/audit-logs/cleanup?period=${selectedPeriod.value}`);
+    toast.success(
+      data?.message || 'Audit jurnallari muvaffaqiyatli tozalandi',
+      'Audit Tozalash'
+    );
+    showConfirmDialog.value = false;
+    showCleanupModal.value = false;
+    emit('refresh');
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Audit jurnallarini tozalashda xatolik yuz berdi', 'Xatolik');
+  } finally {
+    cleaningUp.value = false;
+  }
+};
 
 const viewMode = ref<'table' | 'grid'>('table');
 const searchQuery = ref('');
@@ -428,6 +622,12 @@ const filteredAuditLogs = computed(() => {
       (l.ipAddress && l.ipAddress.includes(q))
     );
   });
+});
+
+const pagination = usePagination(filteredAuditLogs);
+
+watch([searchQuery, activeActionFilter], () => {
+  pagination.resetPage();
 });
 
 const getActionLabel = (action: string) => {

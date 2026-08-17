@@ -25,6 +25,8 @@ export async function handleStart(ctx: Context) {
         sessionService.setSession(chatId, {
           businessId: token,
           businessName: data.businessName,
+          role: 'owner',
+          roleLabel: "Do'kon Egasi (Admin)",
           state: 'idle',
         });
 
@@ -45,27 +47,38 @@ export async function handleStart(ctx: Context) {
     if (data?.isConnected && data?.businessId) {
       const bId = data.businessId;
       const bName = data.businessName || 'Universal Supermarket & Kafe (Demo)';
-      const uName = data.ownerName || ctx.from?.first_name || 'Boshqaruvchi Admin';
+      const uName = data.ownerName || ctx.from?.first_name || 'Foydalanuvchi';
+      const role = data.role || 'owner';
+      const roleLabel = data.roleLabel || (role === 'cashier' ? 'Kassir' : "Do'kon Egasi (Admin)");
+
       const settings = {
         notifyOnOrder: data.notifyOnOrder === true,
         notifyOnLowStock: data.notifyOnLowStock === true,
         notifyDailySummary: data.notifyDailySummary === true,
         notifyOnShiftClose: data.notifyOnShiftClose === true,
+        role,
+        roleLabel,
       };
 
       sessionService.setSession(chatId, {
         businessId: bId,
         businessName: bName,
         userFullName: uName,
+        currency: data.currency || 'UZS',
+        role,
+        roleLabel,
         settings,
         state: 'idle',
       });
 
+      const roleBadge = role === 'owner' || role === 'admin' ? '👑' : role === 'cashier' ? '👤' : '📦';
+
       return ctx.reply(
         `👋 <b>Xush kelibsiz, ${uName}!</b>\n\n` +
-        `🏪 <b>Ulangan biznes:</b> "${bName}"\n\n` +
+        `🏪 <b>Ulangan biznes:</b> "${bName}"\n` +
+        `${roleBadge} <b>Lavozim:</b> ${roleLabel}\n\n` +
         `Quyidagi menyu orqali boshqarishingiz mumkin:`,
-        { parse_mode: 'HTML', ...getDynamicMenu(settings) }
+        { parse_mode: 'HTML', ...getDynamicMenu(settings, role) }
       );
     }
   } catch (e) {}
@@ -74,21 +87,28 @@ export async function handleStart(ctx: Context) {
   const session = sessionService.getSession(chatId);
   if (session && (session.businessId || session.token || session.phone || session.userFullName)) {
     const businessName = session.businessName || 'Universal Supermarket & Kafe (Demo)';
-    const fullName = session.userFullName || ctx.from?.first_name || 'Boshqaruvchi Admin';
+    const fullName = session.userFullName || ctx.from?.first_name || 'Foydalanuvchi';
     const businessId = session.businessId || '00000000-0000-0000-0000-000000000100';
+    const role = session.role || 'owner';
+    const roleLabel = session.roleLabel || (role === 'cashier' ? 'Kassir' : "Do'kon Egasi (Admin)");
 
     sessionService.setSession(chatId, {
       businessId,
       businessName,
       userFullName: fullName,
+      role,
+      roleLabel,
       state: 'idle',
     });
 
+    const roleBadge = role === 'owner' || role === 'admin' ? '👑' : role === 'cashier' ? '👤' : '📦';
+
     return ctx.reply(
       `👋 <b>Xush kelibsiz, ${fullName}!</b>\n\n` +
-      `🏪 <b>Biznes:</b> "${businessName}"\n\n` +
+      `🏪 <b>Biznes:</b> "${businessName}"\n` +
+      `${roleBadge} <b>Lavozim:</b> ${roleLabel}\n\n` +
       `Quyidagi menyu orqali boshqarishingiz mumkin:`,
-      { parse_mode: 'HTML', ...getDynamicMenu(session.settings) }
+      { parse_mode: 'HTML', ...getDynamicMenu(session.settings, role) }
     );
   }
 

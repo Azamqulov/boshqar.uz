@@ -274,6 +274,30 @@
               <span class="hidden sm:inline text-emerald-600 dark:text-emerald-400 font-semibold uppercase">{{
                 authStore.activeBusiness?.businessType }}</span>
             </div>
+
+            <!-- Currency Rate Ticker Badge (Auto CBU vs Custom Manual) -->
+            <router-link
+              v-if="posSettings.showCurrencyTicker !== false"
+              to="/settings?tab=profile"
+              class="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition shadow-2xs group cursor-pointer"
+              :class="currencyStore.rateMode === 'custom'
+                ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/5 to-transparent border-amber-500/30 text-amber-900 dark:text-amber-200 hover:border-amber-500/60'
+                : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20 text-slate-700 dark:text-slate-300 hover:border-emerald-500/40'"
+              :title="currencyStore.rateMode === 'custom'
+                ? 'Maxsus (qo\'lda kiritilgan) kurs faol. O\'zgartirish uchun bosing.'
+                : `Markaziy Bank (CBU) kursi faol. Sana: ${currencyStore.rates.USD?.date || 'Bugun'}`"
+            >
+              <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="currencyStore.rateMode === 'custom' ? 'bg-amber-400' : 'bg-emerald-400'"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2" :class="currencyStore.rateMode === 'custom' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+              </span>
+              <span class="text-[11px] font-black" :class="currencyStore.rateMode === 'custom' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'">
+                {{ currencyStore.rateMode === 'custom' ? 'Maxsus:' : 'CBU:' }}
+              </span>
+              <span class="text-[11px] text-slate-800 dark:text-slate-200">$1={{ currencyStore.usdRate.toLocaleString('uz-UZ') }}</span>
+              <span class="text-slate-400">|</span>
+              <span class="text-[11px] text-slate-800 dark:text-slate-200">₽1={{ currencyStore.rubRate.toLocaleString('uz-UZ') }}</span>
+            </router-link>
           </div>
 
           <!-- Right Header Actions: POS, Theme Toggle, Settings -->
@@ -341,11 +365,15 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 import { useDataStore } from '../stores/data.store';
+import { useCurrencyStore } from '../stores/currency.store';
 import ThemeToggle from '../components/ThemeToggle.vue';
 import AppLogo from '../components/AppLogo.vue';
 import { useLanguage } from '../composables/useLanguage';
+import { usePosSettings } from '../composables/usePosSettings';
 
 const langStore = useLanguage();
+const currencyStore = useCurrencyStore();
+const { posSettings } = usePosSettings();
 import {
   LayoutDashboard,
   ShoppingCart,

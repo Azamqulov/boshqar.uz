@@ -61,7 +61,7 @@
     <!-- 1. Table View -->
     <ProductTableView
       v-else-if="viewMode === 'table'"
-      :products="filteredProducts"
+      :products="pagination.paginatedItems.value"
       @toggle-availability="toggleAvailability"
       @edit="editProduct"
       @delete="deleteProduct"
@@ -70,9 +70,18 @@
     <!-- 2. Grid/Cards View -->
     <ProductGridView
       v-else-if="viewMode === 'grid'"
-      :products="filteredProducts"
+      :products="pagination.paginatedItems.value"
       @edit="editProduct"
       @delete="deleteProduct"
+    />
+
+    <!-- Pagination -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredProducts.length"
+      item-name="tovar"
     />
 
     <!-- Product Create/Edit Modal -->
@@ -124,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
 import { Plus, Search, FolderTree } from 'lucide-vue-next';
@@ -134,12 +143,14 @@ import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
+import AppPagination from '../../components/AppPagination.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 import { useAuthStore } from '../../stores/auth.store';
 import { getCategoryIcon } from '../../composables/useCategoryIcon';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
+import { usePagination } from '../../composables/usePagination';
 
 import ProductStatsCards from './components/ProductStatsCards.vue';
 import ProductTableView from './components/ProductTableView.vue';
@@ -420,6 +431,12 @@ const filteredProducts = computed(() => {
 
     return matchesSearch && matchesCategory;
   });
+});
+
+const pagination = usePagination(filteredProducts);
+
+watch([searchQuery, selectedCategoryId], () => {
+  pagination.resetPage();
 });
 
 const openCreateModal = () => {

@@ -321,11 +321,14 @@ export class OrdersService {
         });
 
         // 3. Atomically update inventory & log transactions inside transaction
+        const lowStockItems: { product: any; afterQty: number }[] = [];
+
         for (const item of dto.items) {
           if (!item.productId) continue;
 
           const product = await tx.product.findUnique({
             where: { id: item.productId },
+            include: { unit: { select: { shortName: true } } },
           });
           if (!product) continue;
 
@@ -360,6 +363,11 @@ export class OrdersService {
               where: { id: inv.id },
               data: { quantity: afterQty },
             });
+
+            const minThreshold = Number(product.minStock || 5);
+            if (afterQty <= minThreshold) {
+              lowStockItems.push({ product, afterQty });
+            }
 
             await tx.inventoryTransaction.create({
               data: {
@@ -444,7 +452,10 @@ export class OrdersService {
           },
         });
 
-        return fullOrder || order;
+        return {
+          order: fullOrder || order,
+          lowStockItems,
+        };
       },
       {
         maxWait: 20000,
@@ -452,12 +463,22 @@ export class OrdersService {
       },
     );
 
+    const fullOrderResult = (result as any)?.order || result;
+    const lowStockAlerts = (result as any)?.lowStockItems || [];
+
     // Send asynchronous Telegram notification (fire-and-forget)
-    if (result && isImmediateComplete) {
-      this.telegramService?.sendOrderNotification(businessId, result).catch(() => null);
+    if (fullOrderResult && isImmediateComplete) {
+      this.telegramService?.sendOrderNotification(businessId, fullOrderResult).catch(() => null);
     }
 
-    return result;
+    // Trigger low stock notifications if any
+    if (lowStockAlerts.length > 0) {
+      for (const alert of lowStockAlerts) {
+        this.telegramService?.sendLowStockNotification(businessId, alert.product, alert.afterQty).catch(() => null);
+      }
+    }
+
+    return fullOrderResult;
   }
 
   async completeOrder(businessId: string, branchId: string, userId: string, orderId: string, payments: { paymentMethodId: string; amount: number }[]) {

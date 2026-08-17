@@ -34,24 +34,55 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        businessUsers: {
-          where: { status: 'active' },
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: { permission: true },
+    let user;
+    try {
+      user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          businessUsers: {
+            where: { status: 'active' },
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: { permission: true },
+                  },
                 },
               },
             },
           },
+          ownedBusinesses: true,
         },
-        ownedBusinesses: true,
-      },
-    });
+      });
+    } catch (err) {
+      // Resilient 1-shot retry for Supabase cloud pooler momentary drops
+      try {
+        await new Promise((r) => setTimeout(r, 350));
+        user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            businessUsers: {
+              where: { status: 'active' },
+              include: {
+                role: {
+                  include: {
+                    rolePermissions: {
+                      include: { permission: true },
+                    },
+                  },
+                },
+              },
+            },
+            ownedBusinesses: true,
+          },
+        });
+      } catch (retryErr) {
+        throw new UnauthorizedException({
+          code: 'DB_CONNECTION_RETRY_FAILED',
+          message: 'Baza bilan vaqtinchalik aloqa uzildi. Iltimos sahifani yangilang.',
+        });
+      }
+    }
 
     if (!user || user.status !== 'active') {
       throw new UnauthorizedException({

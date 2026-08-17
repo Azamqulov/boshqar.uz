@@ -49,7 +49,7 @@
                 <span>Xarajatlar mavjud emas</span>
               </td>
             </tr>
-            <tr v-for="exp in filteredExpenses" :key="exp.id"
+            <tr v-for="exp in pagination.paginatedItems.value" :key="exp.id"
               class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">{{ formatDate(exp.recordedAt) }}</td>
               <td class="py-3.5 px-4 font-bold uppercase text-rose-600 dark:text-rose-400 whitespace-nowrap">
@@ -78,7 +78,7 @@
       <!-- 3.2 CARD / GRID VIEW -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="exp in filteredExpenses"
+          v-for="exp in pagination.paginatedItems.value"
           :key="exp.id"
           class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-rose-500/50 transition"
         >
@@ -109,16 +109,26 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <AppPagination
+        v-model:current-page="pagination.currentPage.value"
+        v-model:page-size="pagination.pageSize.value"
+        :total-items="filteredExpenses.length"
+        item-name="xarajat"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { TrendingDown, Plus, Trash2 } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import AppSelect from '../../../components/AppSelect.vue';
+import AppPagination from '../../../components/AppPagination.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePagination } from '../../../composables/usePagination';
 
 const props = defineProps<{
   expenses: any[];
@@ -155,5 +165,11 @@ const filteredExpenses = computed(() => {
     list = list.filter((e: any) => e.category === expenseCategoryFilter.value);
   }
   return list;
+});
+
+const pagination = usePagination(filteredExpenses);
+
+watch(expenseCategoryFilter, () => {
+  pagination.resetPage();
 });
 </script>

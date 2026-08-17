@@ -165,8 +165,16 @@
                       <CurrencyInput
                         v-model="form.purchasePrice"
                         placeholder="0"
-                        suffix="so'm"
+                        :suffix="currencyStore.getSymbol()"
                       />
+                      <!-- Live CBU conversion for purchasePrice -->
+                      <p v-if="Number(form.purchasePrice) > 0" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                        <Coins class="w-3 h-3 text-emerald-500 shrink-0" />
+                        <span v-if="currencyStore.activeCurrency === 'UZS'">≈ ${{ (Number(form.purchasePrice) / currencyStore.usdRate).toFixed(2) }} | ≈ {{ (Number(form.purchasePrice) / currencyStore.rubRate).toFixed(1) }} ₽</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'USD'">≈ {{ Math.round(Number(form.purchasePrice) * currencyStore.usdRate).toLocaleString('uz-UZ') }} so'm</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'RUB'">≈ {{ Math.round(Number(form.purchasePrice) * currencyStore.rubRate).toLocaleString('uz-UZ') }} so'm</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'EUR'">≈ {{ Math.round(Number(form.purchasePrice) * currencyStore.eurRate).toLocaleString('uz-UZ') }} so'm</span>
+                      </p>
                     </div>
 
                     <div>
@@ -176,10 +184,18 @@
                       <CurrencyInput
                         v-model="form.salePrice"
                         placeholder="0"
-                        suffix="so'm"
+                        :suffix="currencyStore.getSymbol()"
                         :required="true"
                         inputClass="font-bold text-emerald-600 dark:text-emerald-400"
                       />
+                      <!-- Live CBU conversion for salePrice -->
+                      <p v-if="Number(form.salePrice) > 0" class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                        <Coins class="w-3 h-3 text-emerald-500 shrink-0" />
+                        <span v-if="currencyStore.activeCurrency === 'UZS'">≈ ${{ (Number(form.salePrice) / currencyStore.usdRate).toFixed(2) }} | ≈ {{ (Number(form.salePrice) / currencyStore.rubRate).toFixed(1) }} ₽</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'USD'">≈ {{ Math.round(Number(form.salePrice) * currencyStore.usdRate).toLocaleString('uz-UZ') }} so'm | ≈ {{ (Number(form.salePrice) * (currencyStore.usdRate / currencyStore.rubRate)).toFixed(1) }} ₽</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'RUB'">≈ {{ Math.round(Number(form.salePrice) * currencyStore.rubRate).toLocaleString('uz-UZ') }} so'm | ≈ ${{ (Number(form.salePrice) * (currencyStore.rubRate / currencyStore.usdRate)).toFixed(2) }}</span>
+                        <span v-else-if="currencyStore.activeCurrency === 'EUR'">≈ {{ Math.round(Number(form.salePrice) * currencyStore.eurRate).toLocaleString('uz-UZ') }} so'm | ≈ ${{ (Number(form.salePrice) * (currencyStore.eurRate / currencyStore.usdRate)).toFixed(2) }}</span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -384,7 +400,7 @@
                     <div class="flex-1 min-w-0">
                       <h4 class="font-black text-slate-900 dark:text-white text-xs truncate">{{ form.name || "Nomsiz mahsulot" }}</h4>
                       <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ Number(form.salePrice || 0).toLocaleString('uz-UZ') }} so'm</span>
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ currencyStore.format(form.salePrice) }}</span>
                         <span>/</span>
                         <span class="uppercase font-bold">{{ selectedUnitShortName }}</span>
                         <span v-if="form.productType === 'goods'">• Qoldiq: {{ form.initialStock || 0 }} {{ selectedUnitShortName }}</span>
@@ -461,13 +477,17 @@ import {
   CheckCircle2,
   Trash2,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Coins,
 } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import { useToast } from '../../../composables/useToast';
+import { useCurrencyStore } from '../../../stores/currency.store';
+
+const currencyStore = useCurrencyStore();
 
 const props = defineProps<{
   isOpen: boolean;

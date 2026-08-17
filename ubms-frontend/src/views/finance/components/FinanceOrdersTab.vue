@@ -69,7 +69,7 @@
                 <span>Cheklar mavjud emas</span>
               </td>
             </tr>
-            <tr v-for="order in filteredOrders" :key="order.id"
+            <tr v-for="order in pagination.paginatedItems.value" :key="order.id"
               class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-3.5 px-4 font-black font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                 {{ order.orderNumber }}
@@ -125,7 +125,7 @@
       <!-- 2.2 CARD / GRID VIEW -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
-          v-for="order in filteredOrders"
+          v-for="order in pagination.paginatedItems.value"
           :key="order.id"
           class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-blue-500/50 transition"
         >
@@ -138,19 +138,25 @@
             </span>
           </div>
 
-          <div class="text-xs space-y-1">
-            <span class="text-[10px] text-slate-400 block font-semibold">Kassir: {{ order.cashier?.fullName || 'Kassir' }}</span>
-            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] truncate text-slate-700 dark:text-slate-300">
+          <div class="space-y-1 py-1">
+            <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Kassir: <span class="font-bold">{{ order.cashier?.fullName || 'Kassir' }}</span>
+            </p>
+            <p v-if="order.customer?.fullName" class="text-xs text-slate-500">
+              Mijoz: {{ order.customer.fullName }}
+            </p>
+            <div class="text-xs text-slate-500 truncate">
               <span v-for="(item, i) in order.items" :key="item.id">
-                {{ item.quantity }}x {{ item.product?.name || item.service?.name }}<span v-if="i < order.items.length - 1">, </span>
+                {{ item.quantity }}x {{ item.product?.name || item.service?.name }}<span
+                  v-if="i < order.items.length - 1">, </span>
               </span>
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-1">
+          <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div class="flex flex-wrap gap-1">
               <span v-for="pay in order.payments" :key="pay.id"
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold" :class="[
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold" :class="[
                   pay.paymentMethod?.type === 'cash'
                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     : pay.paymentMethod?.type === 'card'
@@ -160,12 +166,9 @@
                 {{ pay.paymentMethod?.name || 'To\'lov' }}
               </span>
             </div>
-
-            <div class="text-right">
-              <span class="font-black text-slate-900 dark:text-white font-mono text-sm block">
-                {{ formatCurrency(order.total) }}
-              </span>
-            </div>
+            <span class="font-black text-sm text-slate-900 dark:text-white font-mono">
+              {{ formatCurrency(order.total) }}
+            </span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -182,14 +185,24 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <AppPagination
+        v-model:current-page="pagination.currentPage.value"
+        v-model:page-size="pagination.pageSize.value"
+        :total-items="filteredOrders.length"
+        item-name="chek"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Receipt, Search, Eye, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePagination } from '../../../composables/usePagination';
+import AppPagination from '../../../components/AppPagination.vue';
 
 const props = defineProps<{
   orders: any[];
@@ -230,5 +243,11 @@ const filteredOrders = computed(() => {
       o.cashier?.fullName?.toLowerCase().includes(q) ||
       o.customer?.fullName?.toLowerCase().includes(q),
   );
+});
+
+const pagination = usePagination(filteredOrders);
+
+watch([orderSearch, orderPaymentFilter], () => {
+  pagination.resetPage();
 });
 </script>

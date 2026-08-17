@@ -129,13 +129,26 @@
             />
           </div>
 
+          <!-- Dedicated Address Field -->
           <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Manzil va Telefon raqami</label>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Do'kon / Savdo Nuqtasi Manzili</label>
             <input
-              v-model="receiptSettings.headerSubtitle"
-              placeholder="Masalan: Toshkent sh., Chilonzor tumani. Tel: +998 90 123 45 67"
+              :value="parsedAddress"
+              @input="updateAddress(($event.target as HTMLInputElement).value)"
+              placeholder="Masalan: Toshkent sh., Chilonzor tumani, 19-mavze"
               class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
+          </div>
+
+          <!-- Dedicated Phone Number with Strict Uzbek Phone Masking -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Chekdagi Telefon Raqami (Aloqa uchun)</label>
+            <PhoneInput
+              :model-value="parsedPhone"
+              @update:model-value="updatePhone($event)"
+              placeholder="+998 90 123-45-67"
+            />
+            <p class="text-[10px] text-slate-400 mt-1">Avtomatik format: +998 (XX) XXX-XX-XX</p>
           </div>
 
           <div>
@@ -149,32 +162,48 @@
           </div>
         </div>
 
-        <!-- Toggles -->
+        <!-- Toggles with Modern Emerald iOS-style Switch -->
         <div class="glass-card rounded-2xl p-5 space-y-3 text-xs">
           <h3 class="text-sm font-bold text-slate-900 dark:text-white">Chekdagi Qo'shimcha Bloklar</h3>
 
           <div class="space-y-2.5">
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
-              <span class="font-medium text-slate-700 dark:text-slate-300">Chekda shtrix-kod ko'rsatish</span>
-              <input type="checkbox" v-model="receiptSettings.showBarcode" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            <!-- 1. Shtrix-kod -->
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition">
+              <span class="font-bold text-slate-700 dark:text-slate-300">Chekda shtrix-kod ko'rsatish</span>
+              <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" v-model="receiptSettings.showBarcode" class="sr-only peer" />
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+              </div>
             </label>
 
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
-              <span class="font-medium text-slate-700 dark:text-slate-300">Kassir / Mas'ul xodim ismini ko'rsatish</span>
-              <input type="checkbox" v-model="receiptSettings.showCashier" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            <!-- 2. Kassir ismi -->
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition">
+              <span class="font-bold text-slate-700 dark:text-slate-300">Kassir / Mas'ul xodim ismini ko'rsatish</span>
+              <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" v-model="receiptSettings.showCashier" class="sr-only peer" />
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+              </div>
             </label>
 
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
-              <span class="font-medium text-slate-700 dark:text-slate-300">Mijoz ma'lumotlarini (agar kiritilgan bo'lsa) ko'rsatish</span>
-              <input type="checkbox" v-model="receiptSettings.showCustomer" class="rounded text-emerald-500 focus:ring-emerald-500" />
+            <!-- 3. Mijoz ma'lumotlari -->
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition">
+              <span class="font-bold text-slate-700 dark:text-slate-300">Mijoz ma'lumotlarini (agar kiritilgan bo'lsa) ko'rsatish</span>
+              <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" v-model="receiptSettings.showCustomer" class="sr-only peer" />
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+              </div>
             </label>
 
-            <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 cursor-pointer">
+            <!-- 4. Avtomatik chop etish -->
+            <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800 transition">
               <div>
-                <span class="font-medium text-slate-700 dark:text-slate-300 block">Avtomatik chop etish (Auto-Print)</span>
+                <span class="font-bold text-slate-700 dark:text-slate-300 block">Avtomatik chop etish (Auto-Print)</span>
                 <span class="text-[11px] text-slate-400">To'lov tasdiqlangach to'g'ridan-to'g'ri printerni ishga tushiradi</span>
               </div>
-              <input type="checkbox" v-model="receiptSettings.autoPrint" class="rounded text-emerald-500 focus:ring-emerald-500" />
+              <div class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" v-model="receiptSettings.autoPrint" class="sr-only peer" />
+                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+              </div>
             </label>
           </div>
         </div>
@@ -259,26 +288,26 @@
           <div class="space-y-1.5 py-1">
             <div class="flex justify-between">
               <span>Coca-Cola 1.5L x2</span>
-              <span class="font-bold">28 000</span>
+              <span class="font-bold font-mono">{{ formatCurrency(28000) }}</span>
             </div>
             <div class="flex justify-between">
               <span>Nestle Sut 1L x1</span>
-              <span class="font-bold">14 000</span>
+              <span class="font-bold font-mono">{{ formatCurrency(14000) }}</span>
             </div>
           </div>
 
           <div class="border-t border-dashed border-slate-400 my-2 pt-1.5 space-y-1 text-[10px]">
             <div class="flex justify-between">
               <span>Oraliq summa:</span>
-              <span>42 000 so'm</span>
+              <span class="font-mono font-bold">{{ formatCurrency(42000) }}</span>
             </div>
             <div class="flex justify-between text-xs font-black text-slate-900 border-t border-slate-900 pt-1">
               <span>JAMI TO'LOV:</span>
-              <span>42 000 SO'M</span>
+              <span class="font-mono font-black">{{ formatCurrency(42000).toUpperCase() }}</span>
             </div>
             <div class="flex justify-between pt-1">
               <span>To'lov (Naqd pul):</span>
-              <span>42 000 so'm</span>
+              <span class="font-mono font-bold">{{ formatCurrency(42000) }}</span>
             </div>
           </div>
 
@@ -297,14 +326,21 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Printer, Receipt, Save, CheckCircle2, AlertCircle } from 'lucide-vue-next';
+import PhoneInput from '../../../components/PhoneInput.vue';
+import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
+const { formatCurrency } = useFormat();
+
+const props = defineProps<{
   receiptSettings: {
     enableReceiptPrinting?: boolean;
     paperSize: string;
     headerTitle: string;
     headerSubtitle: string;
+    address?: string;
+    phone?: string;
     footerText: string;
     showBarcode: boolean;
     showCashier: boolean;
@@ -314,9 +350,45 @@ defineProps<{
   businessName?: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'save'): void;
   (e: 'testPrint'): void;
 }>();
+
+const parsedAddress = computed(() => {
+  if (props.receiptSettings.address !== undefined) {
+    return props.receiptSettings.address;
+  }
+  const parts = (props.receiptSettings.headerSubtitle || '').split(' • Tel: ');
+  return parts[0] || '';
+});
+
+const parsedPhone = computed(() => {
+  if (props.receiptSettings.phone !== undefined) {
+    return props.receiptSettings.phone;
+  }
+  const parts = (props.receiptSettings.headerSubtitle || '').split(' • Tel: ');
+  return parts[1] || '';
+});
+
+function syncSubtitle(addr: string, ph: string) {
+  const cleanAddr = addr.trim();
+  const cleanPh = ph.trim();
+  if (cleanAddr && cleanPh) {
+    props.receiptSettings.headerSubtitle = `${cleanAddr} • Tel: ${cleanPh}`;
+  } else {
+    props.receiptSettings.headerSubtitle = cleanAddr || (cleanPh ? `Tel: ${cleanPh}` : '');
+  }
+}
+
+function updateAddress(val: string) {
+  props.receiptSettings.address = val;
+  syncSubtitle(val, parsedPhone.value);
+}
+
+function updatePhone(val: string) {
+  props.receiptSettings.phone = val;
+  syncSubtitle(parsedAddress.value, val);
+}
 </script>
 

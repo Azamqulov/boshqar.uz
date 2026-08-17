@@ -1,13 +1,14 @@
+import { useCurrencyStore } from '../stores/currency.store';
 import { useAuthStore } from '../stores/auth.store';
 
 export function useFormat() {
+  const currencyStore = useCurrencyStore();
   const authStore = useAuthStore();
 
-  const formatCurrency = (amount: number | string | null | undefined): string => {
+  const formatCurrency = (amount: number | string | null | undefined, currencyOverride?: string, isAlreadyInCurrency = false): string => {
     const val = Number(amount || 0);
-    const currency = authStore.activeBusiness?.currency || 'UZS';
-    const formatted = val.toLocaleString('uz-UZ').replace(/,/g, ' ');
-    return `${formatted} ${currency === 'UZS' ? "so'm" : currency}`;
+    const curr = currencyOverride || authStore.activeBusiness?.currency || 'UZS';
+    return currencyStore.format(val, curr, isAlreadyInCurrency);
   };
 
   const formatDate = (dateInput: string | Date | null | undefined): string => {
@@ -48,4 +49,3 @@ export function useFormat() {
     formatTime,
   };
 }
-

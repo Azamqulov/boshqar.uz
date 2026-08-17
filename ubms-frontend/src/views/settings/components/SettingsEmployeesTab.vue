@@ -34,7 +34,7 @@
             <tr v-if="employees.length === 0">
               <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500">Xodimlar mavjud emas</td>
             </tr>
-            <tr v-for="emp in employees" :key="emp.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+            <tr v-for="emp in pagination.paginatedItems.value" :key="emp.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
               <td class="py-3 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-bold text-emerald-600 dark:text-emerald-400 text-xs">
                   {{ emp.fullName.charAt(0).toUpperCase() }}
@@ -91,15 +91,27 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <AppPagination
+        v-if="!loading"
+        v-model:current-page="pagination.currentPage.value"
+        v-model:page-size="pagination.pageSize.value"
+        :total-items="employees.length"
+        item-name="xodim"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { UserPlus, Edit2, Trash2 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppPagination from '../../../components/AppPagination.vue';
+import { usePagination } from '../../../composables/usePagination';
 
-defineProps<{
+const props = defineProps<{
   employees: any[];
   loading: boolean;
   getModuleLabel: (id: string) => string;
@@ -110,4 +122,6 @@ defineEmits<{
   (e: 'edit', emp: any): void;
   (e: 'delete', emp: any): void;
 }>();
+
+const pagination = usePagination(() => props.employees);
 </script>
