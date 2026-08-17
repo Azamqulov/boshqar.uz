@@ -15,7 +15,12 @@ export interface CreateOrderDto {
     productId?: string;
     serviceId?: string;
     quantity: number;
+    /**
+     * unitPrice — faqat isManualPrice=true bo'lganda (maxsus narx kiritish ruxsati bilan) server tomonidan qabul qilinadi.
+     * Standart holatda narx har doim bazadagi product.salePrice / service.price dan olinadi.
+     */
     unitPrice?: number;
+    isManualPrice?: boolean;
     discountAmount?: number;
   }[];
   discountAmount?: number;
@@ -168,29 +173,46 @@ export class OrdersService {
       where: { businessId, userId },
     });
 
-    // 1. Fetch item prices and prepare lines
+    // 1. Fetch item prices from DB and prepare lines (Strict Server-Side Pricing)
     let subtotal = 0;
     const orderItemsData = [];
 
     for (const item of dto.items) {
-      let unitPrice = item.unitPrice || 0;
+      let unitPrice = 0;
       let lineDiscount = item.discountAmount || 0;
 
       if (item.productId) {
-        const product = await this.prisma.product.findUnique({
-          where: { id: item.productId },
+        const product = await this.prisma.product.findFirst({
+          where: { id: item.productId, businessId },
         });
-        if (!product) throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
-        if (!item.unitPrice) unitPrice = Number(product.salePrice);
+        if (!product) {
+          throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
+        }
+        
+        // Manual price is only permitted when explicitly marked with isManualPrice
+        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+          unitPrice = Number(item.unitPrice);
+        } else {
+          unitPrice = Number(product.salePrice);
+        }
       } else if (item.serviceId) {
-        const service = await this.prisma.service.findUnique({
-          where: { id: item.serviceId },
+        const service = await this.prisma.service.findFirst({
+          where: { id: item.serviceId, businessId },
         });
-        if (!service) throw new NotFoundException({ code: 'SERVICE_NOT_FOUND', message: 'Xizmat topilmadi' });
-        if (!item.unitPrice) unitPrice = Number(service.price);
+        if (!service) {
+          throw new NotFoundException({ code: 'SERVICE_NOT_FOUND', message: 'Xizmat topilmadi' });
+        }
+
+        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+          unitPrice = Number(item.unitPrice);
+        } else {
+          unitPrice = Number(service.price);
+        }
+      } else {
+        throw new BadRequestException({ code: 'INVALID_ITEM', message: 'productId yoki serviceId ko\'rsatilishi shart' });
       }
 
-      const lineTotal = Number(item.quantity) * unitPrice - lineDiscount;
+      const lineTotal = Math.max(0, Number(item.quantity) * unitPrice - lineDiscount);
       subtotal += lineTotal;
 
       orderItemsData.push({
@@ -326,8 +348,8 @@ export class OrdersService {
         for (const item of dto.items) {
           if (!item.productId) continue;
 
-          const product = await tx.product.findUnique({
-            where: { id: item.productId },
+          const product = await tx.product.findFirst({
+            where: { id: item.productId, businessId },
             include: { unit: { select: { shortName: true } } },
           });
           if (!product) continue;
@@ -484,8 +506,8 @@ export class OrdersService {
   async completeOrder(businessId: string, branchId: string, userId: string, orderId: string, payments: { paymentMethodId: string; amount: number }[]) {
     const result = await this.prisma.$transaction(
       async (tx) => {
-        const order = await tx.order.findUnique({
-          where: { id: orderId },
+        const order = await tx.order.findFirst({
+          where: { id: orderId, businessId },
           include: {
             items: { include: { product: true } },
             customer: true,

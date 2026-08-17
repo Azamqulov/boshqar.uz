@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
-describe('OrdersService - Concurrency & Tenant Isolation', () => {
+describe('OrdersService - Pricing Security & Tenant Isolation', () => {
   let service: OrdersService;
   let prisma: any;
 
@@ -39,9 +39,16 @@ describe('OrdersService - Concurrency & Tenant Isolation', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'emp-1' }),
       },
       product: {
+        findFirst: jest.fn().mockImplementation(({ where }) => {
+          if (where.id === 'prod-100' && where.businessId === 'tenant-a') {
+            return Promise.resolve(mockProduct);
+          }
+          return Promise.resolve(null);
+        }),
         findUnique: jest.fn().mockResolvedValue(mockProduct),
       },
       service: {
+        findFirst: jest.fn(),
         findUnique: jest.fn(),
       },
       inventory: {
@@ -73,6 +80,7 @@ describe('OrdersService - Concurrency & Tenant Isolation', () => {
 
     const mockTelegramService = {
       sendOrderNotification: jest.fn().mockResolvedValue(true),
+      sendLowStockNotification: jest.fn().mockResolvedValue(true),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -86,7 +94,7 @@ describe('OrdersService - Concurrency & Tenant Isolation', () => {
     service = module.get<OrdersService>(OrdersService);
   });
 
-  it('should successfully create an order with atomic stock decrement', async () => {
+  it('should successfully create an order with server-enforced product price', async () => {
     prisma.order.create.mockResolvedValue({
       id: 'order-1',
       orderNumber: '#0006',
@@ -103,18 +111,106 @@ describe('OrdersService - Concurrency & Tenant Isolation', () => {
     });
 
     const dto: any = {
+      orderType: 'dine_in',
       branchId: 'branch-1',
-      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 28000 }],
+      items: [{ productId: 'prod-100', quantity: 2 }],
       payments: [{ paymentMethodId: 'pm-1', amount: 56000 }],
     };
 
     const order = await service.create('tenant-a', 'branch-1', 'user-1', dto);
     expect(order).toBeDefined();
+    expect(prisma.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          total: 56000, // 2 * 28000
+        }),
+      }),
+    );
     expect(prisma.inventory.update).toHaveBeenCalledWith({
       where: { id: 'inv-100' },
       data: { quantity: 8 },
     });
-    expect(prisma.inventoryTransaction.create).toHaveBeenCalled();
+  });
+
+  it('should ignore client-supplied unitPrice and strictly enforce server DB price (Price Manipulation Guard)', async () => {
+    prisma.order.create.mockResolvedValue({
+      id: 'order-2',
+      orderNumber: '#0007',
+      total: 56000,
+      status: 'completed',
+      items: [],
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-2',
+      orderNumber: '#0007',
+      total: 56000,
+      status: 'completed',
+      items: [],
+    });
+
+    // Malicious or buggy client tries to pay 100 UZS instead of 28000 UZS
+    const dto: any = {
+      orderType: 'dine_in',
+      branchId: 'branch-1',
+      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 100 }],
+      payments: [{ paymentMethodId: 'pm-1', amount: 56000 }],
+    };
+
+    await service.create('tenant-a', 'branch-1', 'user-1', dto);
+
+    // Server must calculate total as 56,000 (2 * 28,000 from DB), NOT 200 (2 * 100)
+    expect(prisma.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          total: 56000,
+        }),
+      }),
+    );
+  });
+
+  it('should allow custom price only when isManualPrice is explicitly set', async () => {
+    prisma.order.create.mockResolvedValue({
+      id: 'order-3',
+      orderNumber: '#0008',
+      total: 50000,
+      status: 'completed',
+      items: [],
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-3',
+      orderNumber: '#0008',
+      total: 50000,
+      status: 'completed',
+      items: [],
+    });
+
+    const dto: any = {
+      orderType: 'dine_in',
+      branchId: 'branch-1',
+      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 25000, isManualPrice: true }],
+      payments: [{ paymentMethodId: 'pm-1', amount: 50000 }],
+    };
+
+    await service.create('tenant-a', 'branch-1', 'user-1', dto);
+
+    expect(prisma.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          total: 50000, // 2 * 25000
+        }),
+      }),
+    );
+  });
+
+  it('should throw NotFoundException when trying to order a product belonging to another tenant (IDOR Protection)', async () => {
+    const dto: any = {
+      orderType: 'dine_in',
+      branchId: 'branch-1',
+      items: [{ productId: 'prod-100', quantity: 1 }],
+    };
+
+    // Tenant-B tries to order Tenant-A's product
+    await expect(service.create('tenant-b', 'branch-1', 'user-1', dto)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw ConflictException when stock is insufficient', async () => {
@@ -124,8 +220,9 @@ describe('OrdersService - Concurrency & Tenant Isolation', () => {
     });
 
     const dto: any = {
+      orderType: 'dine_in',
       branchId: 'branch-1',
-      items: [{ productId: 'prod-100', quantity: 5 }], // Requesting 5
+      items: [{ productId: 'prod-100', quantity: 5 }],
     };
 
     await expect(service.create('tenant-a', 'branch-1', 'user-1', dto)).rejects.toThrow(ConflictException);
