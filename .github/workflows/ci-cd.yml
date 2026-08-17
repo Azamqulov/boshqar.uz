@@ -1,12 +1,9 @@
 # ════════════════════════════════════════════════════
-#  boshqar.uz — GitHub Actions CI Pipeline
-#  Trigger: push yoki PR -> main branch
-#  Jobs:
-#    1. frontend-build  — Frontend build va TypeScript tekshiruvi
-#    2. backend-build-test — Backend build va unit testlar
+#  boshqar.uz — Enterprise CI/CD Pipeline
+#  Trigger: push & pull_request -> main branch
 # ════════════════════════════════════════════════════
 
-name: CI Pipeline - boshqar.uz
+name: Enterprise CI/CD Pipeline - boshqar.uz
 
 on:
   push:
@@ -19,78 +16,79 @@ env:
 
 jobs:
   # ───────────────────────────────────────────────────
-  # JOB 1: Frontend Build va TypeScript Check
+  # JOB 1: Frontend - Lint, TypeCheck & Production Build
   # ───────────────────────────────────────────────────
   frontend-build:
-    name: "Frontend - Build & Type Check"
+    name: "Frontend: TypeCheck & Build"
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Checkout kodi"
+      - name: "Checkout repo"
         uses: actions/checkout@v4
 
-      - name: "Node.js o'rnatish"
+      - name: "Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: "ubms-frontend/package-lock.json"
 
-      - name: "Shared types o'rnatish"
+      - name: "Install Shared Types"
         run: |
           cd ubms-shared-types
           npm ci
 
-      - name: "Frontend dependencies o'rnatish"
+      - name: "Install Frontend Dependencies"
         run: |
           cd ubms-frontend
           npm ci
 
-      - name: "Frontend build (vue-tsc + vite)"
+      - name: "Build Frontend (vue-tsc + vite build)"
         run: |
           cd ubms-frontend
           npm run build
 
   # ───────────────────────────────────────────────────
-  # JOB 2: Backend Build va Unit Testlar
+  # JOB 2: Backend - Prisma, TypeCheck, Build & Unit Tests
   # ───────────────────────────────────────────────────
-  backend-build-test:
-    name: "Backend - Build & Test"
+  backend-test-build:
+    name: "Backend: Tests & Build"
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Checkout kodi"
+      - name: "Checkout repo"
         uses: actions/checkout@v4
 
-      - name: "Node.js o'rnatish"
+      - name: "Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: "ubms-backend/package-lock.json"
 
-      - name: "Backend dependencies o'rnatish"
+      - name: "Install Backend Dependencies"
         run: |
           cd ubms-backend
           npm ci
 
-      - name: "Prisma client generatsiya"
+      - name: "Prisma Schema Validate & Generate"
         run: |
           cd ubms-backend
+          npx prisma validate
           npx prisma generate
 
-      - name: "Backend build (nest build)"
-        run: |
-          cd ubms-backend
-          npm run build
-        env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars"
-
-      - name: "Unit testlar ishga tushirish"
+      - name: "Run Backend Unit & Integration Tests (Jest)"
         run: |
           cd ubms-backend
           npm test -- --passWithNoTests
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars"
+          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars-2026"
+
+      - name: "Build Backend (NestJS Build)"
+        run: |
+          cd ubms-backend
+          npm run build
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars-2026"

@@ -279,14 +279,23 @@
           </div>
         </div>
 
-        <!-- Barcode / QR & Footer -->
+        <!-- Barcode / QR & OFD Fiscal Block -->
         <div class="divider">================================</div>
-        <div class="receipt-footer text-center">
+        <div class="receipt-footer text-center space-y-1">
+          <!-- OFD Fiscal Details -->
+          <div class="text-[10px] text-slate-700 leading-tight border border-dashed border-slate-400 p-1.5 my-1.5 rounded">
+            <div class="font-bold">DAVLAT SOLIQ QO'MITASI (OFD)</div>
+            <div>STIR (INN): <strong>{{ authStore.activeBusiness?.id ? '308912450' : '300000000' }}</strong></div>
+            <div>FM: <strong>FM{{ (order.id || '00000000').slice(0, 8).toUpperCase() }}</strong> | F-BELGI: <strong>{{ (order.id || '12345678').slice(-8).toUpperCase() }}</strong></div>
+            <div>QQS (12%): <strong>{{ formatCurrencyNumber(Math.round((order.total * 12) / 112)) }} so'm</strong></div>
+            <div class="text-[9px] text-slate-500 mt-0.5">ofd.soliq.uz orqali tekshirish mumkin</div>
+          </div>
+
           <div v-if="settings.showBarcode" class="barcode-sim">
             * {{ order.orderNumber }} *
           </div>
           <p class="footer-msg">{{ settings.footerText || 'Xaridingiz uchun rahmat!' }}</p>
-          <p class="system-tag">boshqar.uz — Savdoni avtomatlashtirish</p>
+          <p class="system-tag">boshqar.uz — Universal Biznes Boshqaruvi</p>
         </div>
       </div>
     </div>
