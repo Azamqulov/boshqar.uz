@@ -71,32 +71,46 @@
                 <span class="text-blue-600 dark:text-blue-400 font-bold">{{ b.productsCount }}</span> tovar ·
                 <span class="text-teal-600 dark:text-teal-400 font-bold">{{ b.ordersCount }}</span> chek
               </td>
-              <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded font-bold text-[10px]" :class="getPlanBadgeClass(b.plan)">
-                  {{ b.plan }}
-                </span>
+              <td class="py-3.5 px-4">
+                <div class="space-y-1">
+                  <span class="px-2 py-0.5 rounded font-bold text-[10px] inline-block" :class="getPlanBadgeClass(b.plan)">
+                    {{ b.plan }}
+                  </span>
+                  <div v-if="b.plan !== 'Free' && b.subscription" class="text-[10px] font-mono">
+                    <span v-if="b.subscription.isExpired" class="text-rose-500 font-black flex items-center gap-1">
+                      <AlertTriangle class="w-3 h-3" />
+                      <span>Muddati tugagan</span>
+                    </span>
+                    <span v-else-if="b.subscription.daysLeft !== null" class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                      <Clock class="w-3 h-3 text-slate-400" />
+                      <span>{{ b.subscription.daysLeft }} kun qoldi</span>
+                    </span>
+                  </div>
+                  <span v-else-if="b.plan === 'Free'" class="text-[10px] text-slate-400 block font-mono">Cheksiz (Start)</span>
+                </div>
               </td>
-              <td class="py-3 px-4">
+              <td class="py-3.5 px-4">
                 <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                  :class="b.status === 'active' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                  :class="b.status === 'active' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'"
                 >
-                  {{ b.status }}
+                  {{ b.status === 'active' ? 'Faol' : 'To\'xtatilgan' }}
                 </span>
               </td>
-              <td class="py-3 px-4 text-right space-x-1">
+              <td class="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                 <button
                   @click="$emit('openPlanModal', b)"
-                  class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-                  title="Tarifni o'zgartirish"
+                  class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs transition inline-flex items-center gap-1 btn-interactive"
+                  title="Tarif va muddatni sozlash"
                 >
-                  <Zap class="w-3.5 h-3.5 text-amber-500" />
+                  <Zap class="w-3.5 h-3.5" />
+                  <span>Tarif & Muddat</span>
                 </button>
                 <button
                   @click="$emit('toggleStatus', b)"
-                  class="p-1.5 rounded-lg transition"
+                  class="p-1.5 rounded-xl transition inline-flex items-center"
                   :class="b.status === 'active' ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'"
-                  :title="b.status === 'active' ? 'Bloklash' : 'Faollashtirish'"
+                  :title="b.status === 'active' ? 'To\'xtatish' : 'Faollashtirish'"
                 >
                   <Ban v-if="b.status === 'active'" class="w-3.5 h-3.5" />
                   <CheckCircle v-else class="w-3.5 h-3.5" />
@@ -217,7 +231,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { Search, Building2, Calendar, Crown, Zap, Ban, CheckCircle } from 'lucide-vue-next';
+import { Search, Building2, Calendar, Crown, Zap, Ban, CheckCircle, AlertTriangle, Clock } from 'lucide-vue-next';
 import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import AppViewToggle from '../../../components/AppViewToggle.vue';

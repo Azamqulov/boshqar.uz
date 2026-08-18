@@ -343,6 +343,11 @@ export class SuperAdminService {
         plan: {
           select: { id: true, name: true, priceMonthly: true },
         },
+        subscriptions: {
+          where: { status: 'active' },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
         _count: {
           select: {
             branches: true,
@@ -355,21 +360,44 @@ export class SuperAdminService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return businesses.map((b) => ({
-      id: b.id,
-      name: b.name,
-      businessType: b.businessType,
-      currency: b.currency,
-      status: b.status,
-      createdAt: b.createdAt,
-      owner: b.owner,
-      plan: b.plan?.name || 'Free',
-      planId: b.planId,
-      branchesCount: b._count.branches,
-      productsCount: b._count.products,
-      ordersCount: b._count.orders,
-      usersCount: b._count.businessUsers,
-    }));
+    const now = new Date();
+
+    return businesses.map((b) => {
+      const activeSub = b.subscriptions[0];
+      const isFree = b.plan?.name === 'Free';
+      let daysLeft: number | null = null;
+      let isExpired = false;
+
+      if (!isFree && activeSub?.currentPeriodEnd) {
+        const diffMs = new Date(activeSub.currentPeriodEnd).getTime() - now.getTime();
+        daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        isExpired = daysLeft <= 0;
+      }
+
+      return {
+        id: b.id,
+        name: b.name,
+        businessType: b.businessType,
+        currency: b.currency,
+        status: b.status,
+        createdAt: b.createdAt,
+        owner: b.owner,
+        plan: b.plan?.name || 'Free',
+        planId: b.planId,
+        branchesCount: b._count.branches,
+        productsCount: b._count.products,
+        ordersCount: b._count.orders,
+        usersCount: b._count.businessUsers,
+        subscription: activeSub
+          ? {
+              status: activeSub.status,
+              currentPeriodEnd: activeSub.currentPeriodEnd,
+              daysLeft,
+              isExpired,
+            }
+          : null,
+      };
+    });
   }
 
   // 3. Update Business Status (Block / Activate / Suspend)

@@ -285,12 +285,12 @@ const pillStyle = computed(() => {
 
 const adminTabs = computed(() => [
   { id: 'leads' as const, label: 'Demo & Leadlar', icon: Target },
-  { id: 'owners' as const, label: 'Egalar (Owners)', icon: Crown },
-  { id: 'businesses' as const, label: `Bizneslar (${businesses.value.length})`, icon: Building2 },
-  { id: 'users' as const, label: `Foydalanuvchilar (${users.value.length})`, icon: Users },
+  { id: 'owners' as const, label: `Mijozlar CRM (${owners.value.length})`, icon: Crown },
+  { id: 'businesses' as const, label: `Korxonalar & Obunalar (${businesses.value.length})`, icon: Building2 },
+  { id: 'users' as const, label: `Xodimlar & Rollar (${users.value.length})`, icon: Users },
+  { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt },
   { id: 'audit' as const, label: 'Audit Tarixi', icon: ShieldCheck },
   { id: 'businessTypes' as const, label: 'Biznes Turlari', icon: Sliders },
-  { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt },
   { id: 'backups' as const, label: 'Baza Zaxiralari', icon: Database },
 ]);
 

@@ -50,60 +50,75 @@
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase font-semibold">
             <tr>
-              <th class="py-3 px-4">Firma Egasi (Owner)</th>
-              <th class="py-3 px-4">Biznes Nomi</th>
-              <th class="py-3 px-4">Sohasi</th>
-              <th class="py-3 px-4">Tarif Rejasi</th>
-              <th class="py-3 px-4">Jami Savdo (GMV)</th>
-              <th class="py-3 px-4">Holati</th>
-              <th class="py-3 px-4 text-right">Monitoring</th>
+              <th class="py-3.5 px-4">Firma Egasi (Klient)</th>
+              <th class="py-3.5 px-4">Tegishli Biznes(lar)</th>
+              <th class="py-3.5 px-4 text-center">Filial / Tovar / Xodim</th>
+              <th class="py-3.5 px-4">Jami Savdo (GMV / LTV)</th>
+              <th class="py-3.5 px-4">Akkaunt Holati</th>
+              <th class="py-3.5 px-4 text-right">Mijoz Monitoringi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
             <tr v-if="owners.length === 0">
-              <td colspan="7" class="py-8 text-center text-slate-400 dark:text-slate-500">Firma egalari topilmadi</td>
+              <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500">Firma egalari topilmadi</td>
             </tr>
             <tr v-for="o in pagination.paginatedItems.value" :key="o.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+              <!-- Owner Info -->
               <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold text-xs">
+                <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold text-xs shrink-0">
                   {{ o.fullName.charAt(0).toUpperCase() }}
                 </div>
                 <div>
                   <span class="block">{{ o.fullName }}</span>
-                  <span class="text-[10px] text-slate-400 font-mono">{{ o.phone }}</span>
+                  <span class="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                    <Phone class="w-2.5 h-2.5" />
+                    {{ o.phone }}
+                  </span>
                 </div>
               </td>
-              <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                {{ o.business?.name || '-' }}
-              </td>
+
+              <!-- Owned Businesses -->
               <td class="py-3.5 px-4">
-                <span class="px-2 py-0.5 rounded uppercase text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  {{ o.business?.businessType || '-' }}
+                <div class="flex items-center gap-1.5">
+                  <Building2 class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span class="font-bold text-slate-900 dark:text-white">{{ o.business?.name || 'Biriktirilmagan' }}</span>
+                  <span v-if="o.business?.businessType" class="px-1.5 py-0.2 rounded uppercase text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    {{ o.business.businessType }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Resources Scale -->
+              <td class="py-3.5 px-4 text-center">
+                <span class="font-mono text-slate-600 dark:text-slate-300 font-bold">
+                  {{ o.business?.productsCount || 0 }} ta tovar · {{ o.business?.employeesCount || 0 }} xodim
                 </span>
               </td>
-              <td class="py-3.5 px-4">
-                <span class="px-2 py-0.5 rounded font-bold text-[10px]" :class="getPlanBadgeClass(o.business?.plan || 'Free')">
-                  {{ o.business?.plan || 'Free' }}
-                </span>
-              </td>
-              <td class="py-3.5 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+
+              <!-- Total Platform Sales -->
+              <td class="py-3.5 px-4 font-mono font-black text-emerald-600 dark:text-emerald-400">
                 {{ formatCurrency(o.business?.lifetimeGMV || 0) }}
               </td>
+
+              <!-- Account Status -->
               <td class="py-3.5 px-4">
                 <span
-                  class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                   :class="o.status === 'active' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'"
                 >
                   {{ o.status === 'active' ? 'Faol' : 'Bloklangan' }}
                 </span>
               </td>
-              <td class="py-3.5 px-4 text-right space-x-1.5">
+
+              <!-- Action: Open Detail Monitoring -->
+              <td class="py-3.5 px-4 text-right">
                 <button
                   @click="$emit('openDetailModal', o.id)"
-                  class="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition"
-                  title="Biznes Monitoringi & Statistika"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs transition inline-flex items-center gap-1.5 btn-interactive"
+                  title="Firma egasi to'liq statistikasi va dinamikasi"
                 >
-                  <Eye class="w-4 h-4" />
+                  <Eye class="w-3.5 h-3.5" />
+                  <span>Monitoring</span>
                 </button>
               </td>
             </tr>
