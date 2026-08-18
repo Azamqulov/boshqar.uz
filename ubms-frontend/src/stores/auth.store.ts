@@ -16,10 +16,19 @@ export interface BusinessItem {
   businessType: string;
   currency: string;
   role: string;
+  plan?: string;
+  planId?: string;
   branchId?: string;
   branches?: any[];
   allowedModules?: string[];
   actionPermissions?: Record<string, { create?: boolean; edit?: boolean; delete?: boolean }>;
+  subscription?: {
+    status: string;
+    currentPeriodEnd: string;
+    daysLeft: number | null;
+    isExpired: boolean;
+  } | null;
+  isSubscriptionExpired?: boolean;
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -40,6 +49,12 @@ export const useAuthStore = defineStore('auth', {
       state.user?.id === 'demo-user-id' ||
       state.user?.email === 'demo@boshqar.uz' ||
       (state.token?.startsWith('demo-session') ?? false),
+    isSubscriptionExpired: (state): boolean => {
+      if (state.user?.isSuperAdmin) return false;
+      if (!state.activeBusiness) return false;
+      if (state.activeBusiness.plan === 'Free') return false;
+      return !!state.activeBusiness.isSubscriptionExpired || !!state.activeBusiness.subscription?.isExpired;
+    },
   },
   actions: {
     async login(loginData: any) {

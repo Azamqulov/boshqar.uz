@@ -152,6 +152,12 @@ export class BusinessesService {
         business: {
           include: {
             branches: true,
+            plan: true,
+            subscriptions: {
+              where: { status: 'active' },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
           },
         },
         role: {
@@ -164,6 +170,8 @@ export class BusinessesService {
         branch: true,
       },
     });
+
+    const now = new Date();
 
     return businessUsers.map((bu) => {
       const perms = bu.role?.rolePermissions?.map((rp) => rp.permission.module) || [];
@@ -180,6 +188,17 @@ export class BusinessesService {
           }
         : extractActionPermissions(bu.role?.rolePermissions || []);
 
+      const activeSub = bu.business.subscriptions?.[0];
+      const isFree = bu.business.plan?.name === 'Free';
+      let daysLeft: number | null = null;
+      let isExpired = false;
+
+      if (!isFree && activeSub?.currentPeriodEnd) {
+        const diffMs = new Date(activeSub.currentPeriodEnd).getTime() - now.getTime();
+        daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        isExpired = daysLeft <= 0;
+      }
+
       return {
         id: bu.business.id,
         name: bu.business.name,
@@ -188,9 +207,20 @@ export class BusinessesService {
         timezone: bu.business.timezone,
         status: bu.business.status,
         role: bu.role.name,
+        plan: bu.business.plan?.name || 'Free',
+        planId: bu.business.planId,
         branches: bu.business.branches,
         allowedModules: allowedModules.length > 0 ? allowedModules : ['pos'],
         actionPermissions,
+        subscription: activeSub
+          ? {
+              status: activeSub.status,
+              currentPeriodEnd: activeSub.currentPeriodEnd,
+              daysLeft,
+              isExpired,
+            }
+          : null,
+        isSubscriptionExpired: isExpired,
       };
     });
   }

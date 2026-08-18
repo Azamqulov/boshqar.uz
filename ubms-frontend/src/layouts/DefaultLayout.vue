@@ -172,7 +172,7 @@
             <!-- Group Items -->
             <div v-for="item in group.items" :key="item.name" class="space-y-1">
               <router-link
-                :to="item.to"
+                :to="isItemLocked(item) ? '/billing' : item.to"
                 @click="isMobileSidebarOpen = false"
                 class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
                 :class="[
@@ -219,11 +219,22 @@
                   />
                 </div>
 
-                <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold">{{ item.label }}</span>
+                <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold" :class="{ 'text-slate-400 dark:text-slate-500': isItemLocked(item) }">
+                  {{ item.label }}
+                </span>
+
+                <!-- 0. Locked Badge when Subscription Expired -->
+                <span
+                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && isItemLocked(item)"
+                  class="ml-auto w-5 h-5 rounded-lg shrink-0 inline-flex items-center justify-center bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20"
+                  title="Obuna muddati tugagan. Bo'lim qulflangan."
+                >
+                  <Lock class="w-3 h-3" />
+                </span>
 
                 <!-- 1. Out of stock (Tugagan) -> RED exact circle badge -->
                 <span
-                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && outOfStockCount > 0"
+                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && outOfStockCount > 0"
                   class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse shadow-2xs"
                   :title="`Omborda ${outOfStockCount} ta mahsulot butunlay tugagan!`"
                 >
@@ -507,6 +518,7 @@ import {
   AlertTriangle,
   AlertCircle,
   ArrowRight,
+  Lock,
 } from 'lucide-vue-next';
 
 const authStore = useAuthStore();
@@ -603,10 +615,18 @@ const isSubscriptionExpiringSoon = computed(() => {
 });
 
 const isSubscriptionExpired = computed(() => {
+  if (authStore.user?.isSuperAdmin) return false;
+  if (authStore.isSubscriptionExpired) return true;
   if (!billingSubscription.value) return false;
   if (billingSubscription.value.planName === 'Free') return false;
   return billingSubscription.value.isExpired || (subscriptionDaysLeft.value !== null && subscriptionDaysLeft.value <= 0);
 });
+
+const isItemLocked = (item: NavItem) => {
+  if (!isSubscriptionExpired.value) return false;
+  const allowed = ['billing', 'settings', 'guide', 'superadmin'];
+  return !allowed.includes(item.name);
+};
 
 watch(() => authStore.activeBusiness?.id, () => {
   fetchBillingStatus();

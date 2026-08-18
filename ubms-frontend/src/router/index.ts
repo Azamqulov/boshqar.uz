@@ -140,12 +140,32 @@ router.beforeEach((to, _from, next) => {
     user?.email === 'demo@boshqar.uz' ||
     (token?.startsWith('demo-session') ?? false);
 
+  const isSubscriptionExpired =
+    !user?.isSuperAdmin &&
+    activeBiz?.plan !== 'Free' &&
+    Boolean(activeBiz?.isSubscriptionExpired || activeBiz?.subscription?.isExpired);
+
+  const allowedWhenExpired = [
+    '/billing',
+    '/settings',
+    '/guide',
+    '/help',
+    '/about',
+    '/legal',
+    '/privacy',
+    '/terms',
+    '/cookies',
+    '/security',
+  ];
+
   if (to.meta.requiresAuth && (!token || !user)) {
     next('/auth/login');
+  } else if (to.meta.requiresAuth && isSubscriptionExpired && !allowedWhenExpired.some((p) => to.path === p || to.path.startsWith(p + '/'))) {
+    next('/billing');
   } else if (to.path.startsWith('/auth') && token && user) {
     // Agar foydalanuvchi demo rejimida bo'lsa, haqiqiy hisob ochishga ruxsat berish
     if (isDemo) {
-      localStorage.removeItem('ubms_access_token');
+      localStorage.removeItem('ubms-access_token');
       localStorage.removeItem('ubms_refresh_token');
       localStorage.removeItem('ubms_user');
       localStorage.removeItem('ubms_businesses');
@@ -153,6 +173,8 @@ router.beforeEach((to, _from, next) => {
       next();
     } else if (!activeBiz && !user.isSuperAdmin) {
       next('/onboarding');
+    } else if (isSubscriptionExpired) {
+      next('/billing');
     } else {
       const role = (activeBiz?.role || '').toLowerCase();
       const isWorker = !user.isSuperAdmin && role !== 'owner' && role !== 'admin';
