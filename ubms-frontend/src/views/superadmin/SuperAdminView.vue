@@ -158,6 +158,36 @@
               </div>
             </label>
           </div>
+
+          <!-- Duration / Period Selector -->
+          <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              Faollashtirish Muddati (Kun):
+            </label>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-xs">
+              <button
+                type="button"
+                v-for="d in [15, 30, 90, 180, 365]"
+                :key="d"
+                @click="selectedDurationDays = d"
+                class="py-2 px-1 rounded-xl font-bold transition text-center border"
+                :class="selectedDurationDays === d ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500'"
+              >
+                {{ d === 15 ? '15 kun (Trial)' : d === 30 ? '1 oy' : d === 90 ? '3 oy' : d === 180 ? '6 oy' : '1 yil' }}
+              </button>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Ixtiyoriy kun soni:</span>
+              <input
+                type="number"
+                v-model.number="selectedDurationDays"
+                min="1"
+                max="3650"
+                class="w-24 px-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
+              />
+              <span class="text-[11px] text-slate-500 font-bold">kun</span>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -303,6 +333,7 @@ const userSearch = ref('');
 const showPlanModal = ref(false);
 const selectedBusiness = ref<any>(null);
 const selectedPlanId = ref('');
+const selectedDurationDays = ref(30);
 
 // Owner Detail & Stats Modal
 const showOwnerModal = ref(false);
@@ -411,10 +442,13 @@ const toggleOwnerStatusAction = async (ownerId: string, currentStatus: string) =
   }
 };
 
-const saveOwnerPlan = async (ownerId: string, planId: string) => {
+const saveOwnerPlan = async (ownerId: string, planId: string, durationDays?: number) => {
   try {
-    await api.patch(`/superadmin/owners/${ownerId}/plan`, { planId });
-    toast.success('Tarif rejasi muvaffaqiyatli yangilandi!', 'Tarif');
+    await api.patch(`/superadmin/owners/${ownerId}/plan`, {
+      planId,
+      durationDays: durationDays || 30,
+    });
+    toast.success(`Tarif rejasi muvaffaqiyatli yangilandi (${durationDays || 30} kunga)!`, 'Tarif');
     loadOwners();
     loadAllData();
   } catch (err) {
@@ -487,6 +521,7 @@ const toggleSuperAdminPrivilege = async (u: any) => {
 const openPlanModal = (b: any) => {
   selectedBusiness.value = b;
   selectedPlanId.value = b.planId || plans.value[0]?.id;
+  selectedDurationDays.value = 30;
   showPlanModal.value = true;
 };
 
@@ -495,9 +530,10 @@ const saveBusinessPlan = async () => {
   try {
     await api.patch(`/superadmin/businesses/${selectedBusiness.value.id}/plan`, {
       planId: selectedPlanId.value,
+      durationDays: selectedDurationDays.value || 30,
     });
     showPlanModal.value = false;
-    toast.success('Biznes tarifi muvaffaqiyatli saqlandi', 'Tarif');
+    toast.success(`Biznes tarifi muvaffaqiyatli saqlandi (${selectedDurationDays.value} kunga faollashtirildi)`, 'Tarif');
     loadAllData();
   } catch (err) {
     toast.error('Tarifni saqlashda xatolik', 'Xatolik');

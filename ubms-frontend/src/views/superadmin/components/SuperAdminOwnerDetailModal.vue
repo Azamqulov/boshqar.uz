@@ -71,7 +71,7 @@
         <!-- Action Controls: Status & Plan -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
           <!-- Change Plan -->
-          <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+          <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
             <label class="font-bold text-slate-900 dark:text-white block">Tarif Rejasini O'zgartirish:</label>
             <div class="flex items-center gap-2">
               <AppSelect
@@ -80,11 +80,28 @@
                 custom-class="flex-1"
               />
               <button
-                @click="$emit('savePlan', ownerDetail.owner.id, ownerDetail.business.planId)"
+                @click="$emit('savePlan', ownerDetail.owner.id, ownerDetail.business.planId, selectedDurationDays)"
                 class="px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25 transition btn-interactive"
               >
                 Saqlash
               </button>
+            </div>
+
+            <!-- Duration Pills -->
+            <div class="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700/60">
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">Muddat:</span>
+              <div class="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  v-for="d in [15, 30, 90, 180, 365]"
+                  :key="d"
+                  @click="selectedDurationDays = d"
+                  class="px-2 py-0.5 rounded-lg text-[10px] font-bold transition border"
+                  :class="selectedDurationDays === d ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'"
+                >
+                  {{ d === 15 ? '15 kun' : d === 30 ? '1 oy' : d === 90 ? '3 oy' : d === 180 ? '6 oy' : '1 yil' }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -113,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { Crown, X, Ban, CheckCircle } from 'lucide-vue-next';
 import AppSelect from '../../../components/AppSelect.vue';
 import { useFormat } from '../../../composables/useFormat';
@@ -124,9 +141,11 @@ const props = defineProps<{
   plans: any[];
 }>();
 
+const selectedDurationDays = ref(30);
+
 defineEmits<{
   (e: 'close'): void;
-  (e: 'savePlan', ownerId: string, planId: string): void;
+  (e: 'savePlan', ownerId: string, planId: string, durationDays?: number): void;
   (e: 'toggleStatus', ownerId: string, currentStatus: string): void;
 }>();
 
