@@ -1,273 +1,223 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import api from '../services/api';
 import { useToast } from './useToast';
 
-export interface OfflineOrder {
-  id: string;
-  offlineId: string;
-  orderNumber: string;
-  createdAt: string;
-  completedAt: string;
-  status: 'completed';
-  orderType: string;
-  tableNumber?: string | null;
+const QUEUE_STORAGE_KEY = 'ubms_offline_orders_queue';
+const CATALOG_STORAGE_KEY = 'ubms_offline_cached_catalog';
+
+export interface OfflineOrderPayload {
+  localId?: string;
+  timestamp?: number;
+  orderType?: string;
+  customerId?: string;
   customer?: any;
+  tableNumber?: string;
+  tableName?: string;
   items: Array<{
-    id: string;
     productId?: string;
+    id?: string;
     serviceId?: string;
     name?: string;
     quantity: number;
-    unitPrice: number;
-    discountAmount: number;
-    total: number;
+    unitPrice?: number;
+    price?: number;
+    discountAmount?: number;
   }>;
-  total: number;
-  discountAmount: number;
+  discountAmount?: number;
   payments: Array<{
-    id: string;
+    paymentMethodId: string;
     amount: number;
-    paymentMethod: {
-      name: string;
-      type: string;
-    };
+    paymentMethodName?: string;
+    paymentMethodType?: string;
   }>;
   cashierName?: string;
-  isOfflineSyncPending: boolean;
+  notes?: string;
 }
 
-const STORAGE_KEY_QUEUE = 'boshqar_offline_orders_queue';
-const STORAGE_KEY_PRODUCTS = 'boshqar_offline_products_cache';
-const STORAGE_KEY_CATEGORIES = 'boshqar_offline_categories_cache';
+export interface CachedCatalog {
+  products: any[];
+  categories: any[];
+}
 
-// Global reactive state
 const isOnline = ref(typeof navigator !== 'undefined' ? navigator.onLine : true);
-const offlineQueue = ref<OfflineOrder[]>([]);
+const offlineQueue = ref<OfflineOrderPayload[]>([]);
 const isSyncing = ref(false);
-
-const loadQueueFromStorage = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_QUEUE);
-    if (raw) {
-      offlineQueue.value = JSON.parse(raw);
-    }
-  } catch (err) {
-    console.error('Failed to load offline queue from localStorage', err);
-    offlineQueue.value = [];
-  }
-};
-
-const saveQueueToStorage = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY_QUEUE, JSON.stringify(offlineQueue.value));
-  } catch (err) {
-    console.error('Failed to save offline queue to localStorage', err);
-  }
-};
-
-// Initialize once
-if (typeof window !== 'undefined') {
-  loadQueueFromStorage();
-}
 
 export function useOfflinePOS() {
   const toast = useToast();
 
-  const pendingCount = computed(() => offlineQueue.value.length);
-  const hasPendingOrders = computed(() => offlineQueue.value.length > 0);
-
-  // Cache catalog for offline usage
-  const cacheCatalog = (products: any[], categories: any[]) => {
+  const loadQueue = () => {
     try {
-      if (products && products.length > 0) {
-        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
+      const stored = localStorage.getItem(QUEUE_STORAGE_KEY);
+      if (stored) {
+        offlineQueue.value = JSON.parse(stored);
       }
-      if (categories && categories.length > 0) {
-        localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
-      }
-    } catch (err) {
-      console.warn('Could not cache products for offline use (storage full)', err);
+    } catch (e) {
+      offlineQueue.value = [];
     }
   };
 
-  const getCachedCatalog = () => {
+  const saveQueue = () => {
     try {
-      const rawProducts = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-      const rawCategories = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-      return {
-        products: rawProducts ? JSON.parse(rawProducts) : [],
-        categories: rawCategories ? JSON.parse(rawCategories) : [],
-      };
-    } catch (err) {
-      return { products: [], categories: [] };
+      localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(offlineQueue.value));
+    } catch (e) {
+      console.error('Failed to save offline queue:', e);
     }
   };
 
-  // Enqueue an order created while offline
-  const enqueueOfflineOrder = (payload: {
-    orderType: string;
-    customerId?: string;
-    customer?: any;
-    tableNumber?: string | null;
-    items: Array<{
-      productId?: string;
-      serviceId?: string;
-      name?: string;
-      quantity: number;
-      unitPrice: number;
-      discountAmount?: number;
-    }>;
-    discountAmount?: number;
-    payments: Array<{
-      paymentMethodId: string;
-      amount: number;
-      paymentMethodName?: string;
-      paymentMethodType?: string;
-    }>;
-    cashierName?: string;
-  }): OfflineOrder => {
-    const timestamp = new Date().toISOString();
-    const shortRandom = Math.floor(1000 + Math.random() * 9000);
-    const offlineId = `OFF-${Date.now().toString().slice(-6)}-${shortRandom}`;
+  const cacheCatalog = (products: any[], categories: any[] = []) => {
+    try {
+      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify({ products, categories }));
+    } catch (e) {
+      console.error('Failed to cache catalog:', e);
+    }
+  };
 
-    const total = payload.items.reduce((sum, i) => {
-      const itemSub = i.quantity * i.unitPrice - (i.discountAmount || 0);
-      return sum + Math.max(0, itemSub);
-    }, 0) - (payload.discountAmount || 0);
+  const getCachedCatalog = (): CachedCatalog => {
+    try {
+      const stored = localStorage.getItem(CATALOG_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return { products: parsed, categories: [] };
+        }
+        return {
+          products: Array.isArray(parsed.products) ? parsed.products : [],
+          categories: Array.isArray(parsed.categories) ? parsed.categories : [],
+        };
+      }
+    } catch (e) {
+      // ignore
+    }
+    return { products: [], categories: [] };
+  };
 
-    const offlineOrder: OfflineOrder = {
-      id: offlineId,
-      offlineId,
-      orderNumber: `#${offlineId}`,
-      createdAt: timestamp,
-      completedAt: timestamp,
-      status: 'completed',
-      orderType: payload.orderType,
-      tableNumber: payload.tableNumber,
-      customer: payload.customer,
-      items: payload.items.map((i, idx) => ({
-        id: `off-item-${idx}-${Date.now()}`,
-        productId: i.productId,
-        serviceId: i.serviceId,
-        name: i.name,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
-        discountAmount: i.discountAmount || 0,
-        total: i.quantity * i.unitPrice - (i.discountAmount || 0),
-      })),
-      total: Math.max(0, total),
-      discountAmount: payload.discountAmount || 0,
-      payments: payload.payments.map((p, idx) => ({
-        id: `off-pay-${idx}-${Date.now()}`,
-        amount: p.amount,
-        paymentMethod: {
-          name: p.paymentMethodName || 'Naqd pul (Offline)',
-          type: p.paymentMethodType || 'cash',
-        },
-      })),
-      cashierName: payload.cashierName || 'Kassir',
-      isOfflineSyncPending: true,
+  const enqueueOfflineOrder = (order: OfflineOrderPayload) => {
+    const payload: OfflineOrderPayload = {
+      ...order,
+      localId: 'offline-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+      timestamp: Date.now(),
     };
 
-    offlineQueue.value.push(offlineOrder);
-    saveQueueToStorage();
+    loadQueue();
+    offlineQueue.value.push(payload);
+    saveQueue();
 
-    return offlineOrder;
+    // Create a mock order response for immediate POS receipt printing
+    return {
+      id: payload.localId,
+      orderNumber: 'OFF-' + Math.floor(1000 + Math.random() * 9000),
+      status: 'completed',
+      orderType: payload.orderType || 'pos',
+      items: payload.items,
+      total: payload.payments.reduce((acc, p) => acc + (p.amount || 0), 0),
+      discountAmount: payload.discountAmount || 0,
+      payments: payload.payments,
+      createdAt: new Date().toISOString(),
+      isOffline: true,
+    };
   };
 
-  // Sync offline orders to backend API
-  const syncOfflineOrders = async (apiInstance: any) => {
-    if (isSyncing.value || offlineQueue.value.length === 0 || !navigator.onLine) {
+  const syncOfflineOrders = async (customApi?: any) => {
+    loadQueue();
+    if (!isOnline.value || isSyncing.value || offlineQueue.value.length === 0) {
       return;
     }
 
+    const client = customApi || api;
     isSyncing.value = true;
-    const initialCount = offlineQueue.value.length;
-    let syncedCount = 0;
-    const remainingQueue: OfflineOrder[] = [];
+    let successCount = 0;
+    const remainingQueue: OfflineOrderPayload[] = [];
 
     for (const order of offlineQueue.value) {
       try {
-        await apiInstance.post('/orders', {
-          orderType: order.orderType,
-          customerId: order.customer?.id,
+        await client.post('/orders', {
+          orderType: order.orderType || 'pos',
+          customerId: order.customerId,
           tableNumber: order.tableNumber,
-          tableName: order.tableNumber,
           items: order.items.map((i) => ({
-            productId: i.productId,
+            productId: i.productId || i.id,
             serviceId: i.serviceId,
             quantity: i.quantity,
-            unitPrice: i.unitPrice,
-            discountAmount: i.discountAmount,
+            unitPrice: i.unitPrice || i.price,
+            discountAmount: i.discountAmount || 0,
           })),
-          discountAmount: order.discountAmount,
+          discountAmount: order.discountAmount || 0,
           payments: order.payments.map((p) => ({
+            paymentMethodId: p.paymentMethodId,
             amount: p.amount,
           })),
+          notes: (order.notes ? order.notes + ' ' : '') + `[Oflayn Chek: ${order.timestamp ? new Date(order.timestamp).toLocaleTimeString('uz-UZ') : ''}]`,
         });
-        syncedCount++;
-      } catch (err: any) {
-        console.error(`Failed to sync offline order ${order.offlineId}`, err);
-        // Keep in queue to retry later
+        successCount++;
+      } catch (err) {
+        console.error('Failed to sync offline order:', order.localId, err);
         remainingQueue.push(order);
       }
     }
 
     offlineQueue.value = remainingQueue;
-    saveQueueToStorage();
+    saveQueue();
     isSyncing.value = false;
 
-    if (syncedCount > 0) {
-      toast.success(
-        `${syncedCount} ta offline savdo serverga muvaffaqiyatli sinxronizatsiya qilindi!`,
-        'Offline Sinxronizatsiya'
-      );
+    if (successCount > 0) {
+      toast.success(`✅ ${successCount} ta oflayn chek bazaga muvaffaqiyatli yuklandi!`);
+      window.dispatchEvent(new CustomEvent('ubms:offline-orders-synced', { detail: { count: successCount } }));
     }
 
     if (remainingQueue.length > 0) {
-      toast.warning(
-        `${remainingQueue.length} ta savdoni sinxronlashda xatolik yuz berdi. Keyingi urinishda qayta yuboriladi.`,
-        'Sinxronizatsiya'
-      );
+      toast.warning(`⚠️ ${remainingQueue.length} ta chekni yuklashda xatolik bo'ldi, qayta uriniladi.`);
     }
   };
 
-  // Setup online/offline listeners
-  const setupListeners = (apiInstance?: any) => {
-    const handleOnline = () => {
-      isOnline.value = true;
-      toast.info('Internet aloqasi tiklandi!', 'Tarmoq');
-      if (apiInstance && offlineQueue.value.length > 0) {
-        syncOfflineOrders(apiInstance);
-      }
-    };
+  const handleOnline = (customApi?: any) => {
+    isOnline.value = true;
+    toast.info('🌐 Internet aloqasi tiklandi! Oflayn ma\'lumotlar sinxronizatsiya qilinmoqda...');
+    syncOfflineOrders(customApi);
+  };
 
-    const handleOffline = () => {
-      isOnline.value = false;
-      toast.warning(
-        'Internet aloqasi uzildi! Kassa avtomatik Offline rejimga o\'tkazildi. Savdolar xavfsiz davom etaveradi.',
-        'Offline Rejim'
-      );
-    };
+  const handleOffline = () => {
+    isOnline.value = false;
+    toast.warning('📴 Internet uzildi. Kassa avtomatik oflayn rejimga o\'tdi (Savdo qilaverishingiz mumkin).');
+  };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+  const setupListeners = (customApi?: any) => {
+    loadQueue();
+    const onOnline = () => handleOnline(customApi);
+    const onOffline = () => handleOffline();
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+
+    if (navigator.onLine && offlineQueue.value.length > 0) {
+      syncOfflineOrders(customApi);
+    }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
     };
   };
+
+  const pendingCount = computed(() => {
+    loadQueue();
+    return offlineQueue.value.length;
+  });
 
   return {
     isOnline,
     isSyncing,
     offlineQueue,
     pendingCount,
-    hasPendingOrders,
+    loadQueue,
     cacheCatalog,
     getCachedCatalog,
     enqueueOfflineOrder,
     syncOfflineOrders,
+    handleOnline,
+    handleOffline,
     setupListeners,
   };
 }
+
+export const useOfflinePos = useOfflinePOS;

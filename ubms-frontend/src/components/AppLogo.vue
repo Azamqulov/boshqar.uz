@@ -1,5 +1,5 @@
 <template>
-  <router-link to="/dashboard" class="inline-flex items-center gap-2 select-none transition-transform duration-200 hover:scale-[1.02] cursor-pointer">
+  <router-link :to="targetRoute" class="inline-flex items-center gap-2 select-none transition-transform duration-200 hover:scale-[1.02] cursor-pointer">
     <!-- Green Brand Icon -->
     <img
       src="/favicon.png"
@@ -18,15 +18,24 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useAuthStore } from '../stores/auth.store';
 
 const props = withDefaults(
   defineProps<{
     size?: 'sm' | 'md' | 'lg' | 'xl';
+    to?: string;
   }>(),
   {
     size: 'md',
   }
 );
+
+const authStore = useAuthStore();
+
+const targetRoute = computed(() => {
+  if (props.to) return props.to;
+  return authStore.token && authStore.user ? '/dashboard' : '/';
+});
 
 const iconSizeClass = computed(() => {
   switch (props.size) {

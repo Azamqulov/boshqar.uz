@@ -143,5 +143,44 @@ export class SuperAdminController {
   ) {
     return this.superAdminService.toggleBusinessType(type, isEnabled);
   }
+
+  // 11. Demo Leads Management
+  @Get('demo-leads')
+  @ApiOperation({ summary: 'Barcha Demo ochgan qiziquvchi mijozlar (Leadlar) ro\'yxati' })
+  getDemoLeads(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.superAdminService.getDemoLeads(
+      search,
+      status,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+    );
+  }
+
+  @Patch('demo-leads/:id')
+  @ApiOperation({ summary: 'Demo lead holatini va izohini yangilash' })
+  updateDemoLead(
+    @Param('id') id: string,
+    @Body() dto: { status?: string; notes?: string },
+  ) {
+    return this.superAdminService.updateDemoLead(id, dto);
+  }
+
+  @Delete('demo-leads/:id')
+  @ApiOperation({ summary: 'Demo leadni o\'chirish' })
+  deleteDemoLead(@Param('id') id: string) {
+    return this.superAdminService.deleteDemoLead(id);
+  }
+
+  // 12. Real-time Live Activity
+  @Get('live-activity')
+  @ApiOperation({ summary: 'Jonli platforma monitoringi (so\'nggi 24 soatdagi buyurtmalar, ro\'yxatdan o\'tganlar va demo leadlar)' })
+  getLivePlatformActivity() {
+    return this.superAdminService.getLivePlatformActivity();
+  }
 }
 

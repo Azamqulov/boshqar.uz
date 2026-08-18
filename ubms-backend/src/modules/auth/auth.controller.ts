@@ -17,11 +17,18 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 urinish / daqiqa (brute-force himoyasi)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Post('demo-guest')
+  @HttpCode(HttpStatus.OK)
+  demoGuest(@Body() dto: { companyName?: string; phone?: string; businessType?: string }) {
+    return this.authService.demoGuestSession(dto);
   }
 
   @Public()

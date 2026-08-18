@@ -556,5 +556,143 @@ export class SuperAdminService {
   async toggleBusinessType(type: string, isEnabled?: boolean) {
     return toggleBusinessTypeConfig(type, isEnabled);
   }
+
+  // 11. Demo Leads Monitoring
+  async getDemoLeads(search?: string, status?: string, page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const where: Prisma.DemoLeadWhereInput = {};
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+        { businessType: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [leads, total, stats] = await Promise.all([
+      this.prisma.demoLead.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.demoLead.count({ where }),
+      this.prisma.demoLead.groupBy({
+        by: ['status'],
+        _count: { id: true },
+      }),
+    ]);
+
+    const statsMap: Record<string, number> = {
+      new: 0,
+      contacted: 0,
+      converted: 0,
+      rejected: 0,
+      total: 0,
+    };
+
+    let allTotal = 0;
+    stats.forEach((s) => {
+      statsMap[s.status] = s._count.id;
+      allTotal += s._count.id;
+    });
+    statsMap.total = allTotal;
+
+    return {
+      leads,
+      total,
+      stats: statsMap,
+      page,
+      limit,
+    };
+  }
+
+  async updateDemoLead(id: string, dto: { status?: string; notes?: string }) {
+    const lead = await this.prisma.demoLead.findUnique({ where: { id } });
+    if (!lead) {
+      throw new NotFoundException('Demo lead topilmadi');
+    }
+
+    return this.prisma.demoLead.update({
+      where: { id },
+      data: {
+        ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+      },
+    });
+  }
+
+  async deleteDemoLead(id: string) {
+    const lead = await this.prisma.demoLead.findUnique({ where: { id } });
+    if (!lead) {
+      throw new NotFoundException('Demo lead topilmadi');
+    }
+
+    await this.prisma.demoLead.delete({ where: { id } });
+    return { success: true, message: 'Demo lead muvaffaqiyatli o\'chirildi' };
+  }
+
+  // 12. Real-time Live Platform Activity
+  async getLivePlatformActivity() {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const [
+      recentDemoLeads,
+      recentBusinesses,
+      recentUsers,
+      recentOrders,
+      todayOrdersSum,
+    ] = await Promise.all([
+      this.prisma.demoLead.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.business.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          owner: { select: { id: true, fullName: true, phone: true } },
+          plan: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.user.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, fullName: true, phone: true, email: true, createdAt: true, status: true },
+      }),
+      this.prisma.order.findMany({
+        where: { createdAt: { gte: oneDayAgo } },
+        take: 15,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          business: { select: { id: true, name: true, businessType: true } },
+        },
+      }),
+      this.prisma.order.aggregate({
+        where: {
+          status: 'completed',
+          createdAt: { gte: oneDayAgo },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    return {
+      recentDemoLeads,
+      recentBusinesses,
+      recentUsers,
+      recentOrders,
+      last24Hours: {
+        ordersCount: todayOrdersSum._count.id,
+        revenueSum: Number(todayOrdersSum._sum.total || 0),
+      },
+    };
+  }
 }
 

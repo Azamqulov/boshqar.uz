@@ -8,6 +8,16 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          @click="openExcelImportModal"
+          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+        >
+          <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
+          <span>Excel / 1C Import</span>
+          <span class="px-1.5 py-0.2 rounded-md bg-amber-400/20 text-amber-600 dark:text-amber-300 text-[9px] font-black uppercase">PRO</span>
+        </button>
+
         <router-link
           to="/categories"
           class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
@@ -129,6 +139,15 @@
       @confirm="executeDeleteProduct"
       @cancel="isDeleteModalOpen = false"
     />
+
+    <!-- PRO Upgrade Modal for Demo Limit & Excel Import -->
+    <ProUpgradeModal
+      :is-open="showProModal"
+      :title="proModalTitle"
+      :subtitle="proModalSubtitle"
+      :feature-title="proModalFeature"
+      @close="showProModal = false"
+    />
   </div>
 </template>
 
@@ -136,7 +155,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
-import { Plus, Search, FolderTree } from 'lucide-vue-next';
+import { Plus, Search, FolderTree, FileSpreadsheet } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
@@ -144,6 +163,7 @@ import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
+import ProUpgradeModal from '../../components/ProUpgradeModal.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -163,6 +183,18 @@ const dataStore = useDataStore();
 const authStore = useAuthStore();
 const { formatCurrency } = useFormat();
 const { canCreate } = usePermissions();
+
+const showProModal = ref(false);
+const proModalTitle = ref('');
+const proModalSubtitle = ref('');
+const proModalFeature = ref('');
+
+const openExcelImportModal = () => {
+  proModalTitle.value = "Excel & 1C Import Faqat PRO Tarifda!";
+  proModalSubtitle.value = "Minglab tovarlarni 1 ta tugma bilan Excel orqali tizimga yuklang va 1C bazangiz bilan sinxronlang.";
+  proModalFeature.value = "1C & Excel Sinxronizatsiya";
+  showProModal.value = true;
+};
 
 const viewMode = usePersistentViewMode('products', 'table');
 const loading = ref(false);
@@ -440,6 +472,14 @@ watch([searchQuery, selectedCategoryId], () => {
 });
 
 const openCreateModal = () => {
+  if (authStore.isDemo && products.value.length >= 15) {
+    proModalTitle.value = "Demoda Mahsulotlar Limiti (15 ta) To'lgan!";
+    proModalSubtitle.value = "Jonli demo hisobda maksimal 15 ta tovar sinash uchun berilgan. Cheksiz tovarlar va ko'p omborli tarmoq uchun 14 kunlik bepul sinovni boshlang.";
+    proModalFeature.value = "Cheksiz Mahsulotlar & Sklad";
+    showProModal.value = true;
+    return;
+  }
+
   editingId.value = null;
   imageInputMode.value = 'upload';
   if (fileInputRef.value) fileInputRef.value.value = '';

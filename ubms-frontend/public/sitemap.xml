@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Asosiy Bosh Sahifa (Landing Page) -->
+  <url>
+    <loc>https://boshqar.uz/</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- 14 Kun Bepul Ro'yxatdan O'tish -->
+  <url>
+    <loc>https://boshqar.uz/auth/register</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Tizimga Kirish -->
+  <url>
+    <loc>https://boshqar.uz/auth/login</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Qo'llanma va Yo'riqnomalar -->
+  <url>
+    <loc>https://boshqar.uz/guide</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Xavfsizlik Siyosati -->
+  <url>
+    <loc>https://boshqar.uz/security</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Maxfiylik Siyosati (Privacy) -->
+  <url>
+    <loc>https://boshqar.uz/privacy</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Cookie Siyosati -->
+  <url>
+    <loc>https://boshqar.uz/cookies</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Foydalanish Shartlari (Terms) -->
+  <url>
+    <loc>https://boshqar.uz/terms</loc>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

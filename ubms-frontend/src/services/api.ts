@@ -40,6 +40,27 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !error.config?._retry && !isAuthRoute) {
       error.config._retry = true;
+
+      // Demo rejimida bo'lsa, foydalanuvchini loginga haydama!
+      const userStr = localStorage.getItem('ubms_user');
+      const token = localStorage.getItem('ubms_access_token');
+      let isDemoUser = false;
+      try {
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (u.id === 'demo-user-id' || u.phone === '+998900000000' || u.email === 'demo@boshqar.uz') {
+            isDemoUser = true;
+          }
+        }
+      } catch (e) {}
+      if (token && (token.startsWith('demo-session') || isDemoUser)) {
+        return Promise.reject(error);
+      }
+
+      // Public sahifalarda turganda loginga haydama!
+      const publicPaths = ['/', '/landing', '/legal', '/privacy', '/cookies', '/security', '/terms', '/guide', '/about', '/auth/login', '/auth/register'];
+      const isPublicPath = publicPaths.some(p => window.location.pathname === p || window.location.pathname.startsWith('/auth'));
+
       const refreshToken = localStorage.getItem('ubms_refresh_token');
       if (refreshToken) {
         try {
@@ -54,13 +75,13 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem('ubms_access_token');
           localStorage.removeItem('ubms_refresh_token');
-          if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/auth/register') {
+          if (!isPublicPath) {
             window.location.href = '/auth/login';
           }
         }
       } else {
         localStorage.removeItem('ubms_access_token');
-        if (window.location.pathname !== '/auth/login' && window.location.pathname !== '/auth/register') {
+        if (!isPublicPath) {
           window.location.href = '/auth/login';
         }
       }

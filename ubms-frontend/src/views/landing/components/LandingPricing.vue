@@ -83,16 +83,15 @@
             </ul>
           </div>
 
-          <button
-            type="button"
-            @click="$emit('openDemo')"
-            class="w-full py-3 rounded-xl font-bold text-center text-xs transition cursor-pointer active:scale-98"
+          <router-link
+            to="/auth/register"
+            class="w-full py-3.5 rounded-2xl font-bold text-center text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
             :class="plan.isPopular
-              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md hover:scale-[1.02]'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-lg shadow-emerald-600/25 hover:scale-[1.02]'
               : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 hover:scale-102'"
           >
-            {{ plan.buttonText }}
-          </button>
+            <span>{{ plan.buttonText }}</span>
+          </router-link>
         </div>
       </div>
     </div>

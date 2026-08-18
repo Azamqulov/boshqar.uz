@@ -55,9 +55,14 @@
       </button>
     </div>
 
-    <!-- TAB 1: OWNERS MONITORING -->
+    <!-- TAB 1: DEMO LEADS & PROSPECTS -->
+    <SuperAdminLeadsTab
+      v-if="activeTab === 'leads'"
+    />
+
+    <!-- TAB 2: OWNERS MONITORING -->
     <SuperAdminOwnersTab
-      v-if="activeTab === 'owners'"
+      v-else-if="activeTab === 'owners'"
       :owners="owners"
       v-model:search="ownerSearch"
       v-model:plan-filter="ownerPlanFilter"
@@ -67,7 +72,7 @@
       @open-detail-modal="openOwnerDetailModal"
     />
 
-    <!-- TAB 2: BUSINESSES -->
+    <!-- TAB 3: BUSINESSES -->
     <SuperAdminBusinessesTab
       v-else-if="activeTab === 'businesses'"
       :businesses="businesses"
@@ -78,7 +83,7 @@
       @toggle-status="toggleBusinessStatus"
     />
 
-    <!-- TAB 3: USERS -->
+    <!-- TAB 4: USERS -->
     <SuperAdminUsersTab
       v-else-if="activeTab === 'users'"
       :users="users"
@@ -88,7 +93,7 @@
       @toggle-status="toggleUserStatus"
     />
 
-    <!-- TAB 4: AUDIT LOGS -->
+    <!-- TAB 5: AUDIT LOGS -->
     <SuperAdminAuditTab
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
@@ -184,6 +189,7 @@ import AppSelect from '../../components/AppSelect.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import SuperAdminHeaderStats from './components/SuperAdminHeaderStats.vue';
+import SuperAdminLeadsTab from './components/SuperAdminLeadsTab.vue';
 import SuperAdminOwnersTab from './components/SuperAdminOwnersTab.vue';
 import SuperAdminBusinessesTab from './components/SuperAdminBusinessesTab.vue';
 import SuperAdminUsersTab from './components/SuperAdminUsersTab.vue';
@@ -209,6 +215,7 @@ import {
   Pill,
   Wrench,
   ShoppingBag,
+  Target,
 } from 'lucide-vue-next';
 
 import { usePersistentTab } from '../../composables/usePersistentTab';
@@ -219,10 +226,10 @@ const route = useRoute();
 const router = useRouter();
 const { formatCurrency, formatDate } = useFormat();
 
-const validTabs = ['owners', 'businesses', 'users', 'billing', 'audit', 'businessTypes', 'backups'] as const;
+const validTabs = ['leads', 'owners', 'businesses', 'users', 'billing', 'audit', 'businessTypes', 'backups'] as const;
 type SuperAdminTab = typeof validTabs[number];
 
-const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'owners', validTabs);
+const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'leads', validTabs);
 
 const tabRefs = reactive<Record<string, HTMLElement>>({});
 const isMounted = ref(false);
@@ -247,6 +254,7 @@ const pillStyle = computed(() => {
 });
 
 const adminTabs = computed(() => [
+  { id: 'leads' as const, label: '🎯 Demo & Leadlar', icon: Target },
   { id: 'owners' as const, label: 'Egalar (Owners)', icon: Crown },
   { id: 'businesses' as const, label: `Bizneslar (${businesses.value.length})`, icon: Building2 },
   { id: 'users' as const, label: `Foydalanuvchilar (${users.value.length})`, icon: Users },

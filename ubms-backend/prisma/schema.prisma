@@ -970,3 +970,18 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+model DemoLead {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyName  String   @map("company_name") @db.VarChar(150)
+  phone        String   @db.VarChar(50)
+  businessType String   @default("shop") @map("business_type") @db.VarChar(50)
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.Text
+  status       String   @default("new") @db.VarChar(30) // new, contacted, converted, rejected
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("demo_leads")
+}

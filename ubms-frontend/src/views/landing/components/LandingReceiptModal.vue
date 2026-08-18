@@ -24,7 +24,7 @@
         <div class="bg-slate-100 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 font-mono text-[11px] space-y-2 text-slate-700 dark:text-slate-300">
           <div class="text-center pb-2 border-b border-dashed border-slate-300 dark:border-slate-800">
             <h4 class="font-bold text-sm text-slate-900 dark:text-white">"Boshqar.uz" Savdo Markazi</h4>
-            <p class="text-[10px] text-slate-500">Tel: +998 (90) 123-45-67</p>
+            <p class="text-[10px] text-slate-500">Tel: +998 (77) 040-46-24</p>
             <p class="text-[9px] text-slate-400">{{ currentTime }}</p>
           </div>
 

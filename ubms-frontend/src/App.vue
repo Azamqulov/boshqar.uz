@@ -1,4 +1,5 @@
 <template>
+  <OfflineStatusBar />
   <router-view v-slot="{ Component }">
     <transition name="page" mode="out-in">
       <component :is="Component" />
@@ -6,23 +7,31 @@
   </router-view>
   <FloatingStockAlert />
   <ToastContainer />
+  <CookieConsentBanner />
+  <PwaInstallPrompt />
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import ToastContainer from './components/ToastContainer.vue';
 import FloatingStockAlert from './components/FloatingStockAlert.vue';
-import { applyGlobalScript, useLanguage } from './composables/useLanguage';
+import CookieConsentBanner from './components/CookieConsentBanner.vue';
+import OfflineStatusBar from './components/OfflineStatusBar.vue';
+import PwaInstallPrompt from './components/PwaInstallPrompt.vue';
 
-const { scriptMode } = useLanguage();
-
-// Sahifa yuklanganda saqlangan til rejimini butun DOM ga qo'llash
 onMounted(() => {
-  if (scriptMode.value === 'cyrillic') {
-    // Kichik kechikish bilan — DOM to'liq render bo'lgandan keyin
-    setTimeout(() => {
-      applyGlobalScript('cyrillic');
-    }, 100);
+  // Register Service Worker for PWA Offline caching
+  if ('serviceWorker' in navigator && typeof window !== 'undefined') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          console.log('[PWA] Service Worker registered successfully:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+    });
   }
 });
 </script>

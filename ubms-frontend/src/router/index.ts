@@ -24,6 +24,7 @@ const GuideView = () => import('../views/guide/GuideView.vue');
 const AboutView = () => import('../views/about/AboutView.vue');
 const SuperAdminView = () => import('../views/superadmin/SuperAdminView.vue');
 const LandingView = () => import('../views/landing/LandingView.vue');
+const LegalView = () => import('../views/legal/LegalView.vue');
 const NotFoundView = () => import('../views/errors/NotFoundView.vue');
 
 const routes: RouteRecordRaw[] = [
@@ -34,6 +35,26 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/landing',
     component: LandingView,
+  },
+  {
+    path: '/legal',
+    component: LegalView,
+  },
+  {
+    path: '/privacy',
+    component: LegalView,
+  },
+  {
+    path: '/cookies',
+    component: LegalView,
+  },
+  {
+    path: '/security',
+    component: LegalView,
+  },
+  {
+    path: '/terms',
+    component: LegalView,
   },
   {
     path: '/auth',
@@ -88,10 +109,22 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  // Check invalid section hash on landing page (e.g. #faqasdsadfgsdfg -> 404)
-  const validLandingHashes = ['', '#about', '#features', '#pricing', '#faq', '#demo'];
+  // Check invalid section hash on landing page
+  const validLandingHashes = [
+    '',
+    '#about',
+    '#features',
+    '#pricing',
+    '#faq',
+    '#demo',
+    '#telegram',
+    '#sectors',
+    '#calculator',
+    '#compare',
+    '#testimonials',
+  ];
   if (to.path === '/' && to.hash && !validLandingHashes.includes(to.hash)) {
-    return next('/404');
+    return next();
   }
 
   const token = localStorage.getItem('ubms_access_token');
@@ -101,10 +134,24 @@ router.beforeEach((to, _from, next) => {
   const user = userStr ? JSON.parse(userStr) : null;
   const activeBiz = activeBizStr ? JSON.parse(activeBizStr) : null;
 
+  const isDemo =
+    user?.phone === '+998900000000' ||
+    user?.id === 'demo-user-id' ||
+    user?.email === 'demo@boshqar.uz' ||
+    (token?.startsWith('demo-session') ?? false);
+
   if (to.meta.requiresAuth && (!token || !user)) {
     next('/auth/login');
   } else if (to.path.startsWith('/auth') && token && user) {
-    if (!activeBiz && !user.isSuperAdmin) {
+    // Agar foydalanuvchi demo rejimida bo'lsa, haqiqiy hisob ochishga ruxsat berish
+    if (isDemo) {
+      localStorage.removeItem('ubms_access_token');
+      localStorage.removeItem('ubms_refresh_token');
+      localStorage.removeItem('ubms_user');
+      localStorage.removeItem('ubms_businesses');
+      localStorage.removeItem('ubms_active_business');
+      next();
+    } else if (!activeBiz && !user.isSuperAdmin) {
       next('/onboarding');
     } else {
       const role = (activeBiz?.role || '').toLowerCase();
@@ -129,6 +176,27 @@ router.beforeEach((to, _from, next) => {
   } else {
     next();
   }
+});
+
+router.afterEach((to) => {
+  const titles: Record<string, string> = {
+    '/': 'Boshqar.uz — O\'zbekistondagi №1 Savdo, Restoran va Do\'kon Boshqaruv Tizimi (POS Kassa)',
+    '/landing': 'Boshqar.uz — Savdo va Biznes Boshqaruv Platformasi',
+    '/guide': 'Boshqar.uz Qo\'llanma — POS Kassa va Tizimdan Foydalanish',
+    '/security': 'Xavfsizlik Siyosati — Boshqar.uz',
+    '/privacy': 'Maxfiylik Siyosati — Boshqar.uz',
+    '/cookies': 'Cookie Siyosati — Boshqar.uz',
+    '/terms': 'Foydalanish Shartlari — Boshqar.uz',
+    '/auth/login': 'Tizimga Kirish — Boshqar.uz',
+    '/auth/register': '14 Kun Bepul Ro\'yxatdan O\'tish — Boshqar.uz',
+    '/dashboard': 'Boshqaruv Paneli — Boshqar.uz',
+    '/pos': 'Tezkor Kassa (POS) — Boshqar.uz',
+    '/products': 'Mahsulotlar va Sklad — Boshqar.uz',
+    '/finance': 'Moliya va Hisobotlar — Boshqar.uz',
+    '/billing': 'Tariflar va Obuna — Boshqar.uz',
+  };
+
+  document.title = titles[to.path] || 'Boshqar.uz — Universal Biznes Boshqaruv Tizimi';
 });
 
 export default router;

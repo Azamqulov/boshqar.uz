@@ -258,16 +258,21 @@
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <!-- DEMO WORKSPACE WATERMARK BANNER -->
-        <div v-if="authStore.user?.id === 'demo-user-id'" class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white px-4 py-2 text-xs font-bold flex flex-wrap items-center justify-between gap-2 shadow-md shrink-0 z-20">
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-md bg-white text-emerald-800 text-[10px] font-black uppercase">Demo Rejim</span>
-            <span>Siz <strong>{{ authStore.activeBusiness?.name }}</strong> demo hisobidasiz. 15 ta mahsulot va barcha funksiyalar to'liq ishlaydi!</span>
+        <!-- DEMO WORKSPACE WATERMARK BANNER (CLICKABLE DIRECTLY TO REGISTER) -->
+        <div
+          v-if="authStore.isDemo"
+          @click="goToRegister"
+          class="bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 text-white px-4 py-2 text-xs font-bold flex items-center justify-between gap-3 shadow-md shrink-0 z-20 hover:brightness-105 transition group cursor-pointer"
+        >
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shrink-0">Demo Rejim</span>
+            <span class="truncate">
+              Tizimni haqiqiy biznesingizda ishlatish, Telegram AI Bot va barcha PRO imkoniyatlarni ochish uchun ro'yxatdan o'ting.
+            </span>
           </div>
-          <div class="flex items-center gap-2">
-            <router-link to="/auth/register" class="px-3 py-1 rounded-xl bg-slate-950 text-emerald-300 hover:text-white hover:bg-slate-900 text-[11px] font-extrabold shadow-sm transition">
-              Haqiqiy Hisob Ochish (14 Kun Bepul) →
-            </router-link>
+          <div class="shrink-0 flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-white text-emerald-800 group-hover:bg-emerald-50 text-[11px] font-black shadow-sm transition">
+            <Sparkles class="w-3.5 h-3.5 text-amber-500" />
+            <span>14 Kun Bepul Boshlash →</span>
           </div>
         </div>
 
@@ -439,6 +444,18 @@ const router = useRouter();
 const route = useRoute();
 const isMobileSidebarOpen = ref(false);
 const isSidebarCollapsed = ref(false);
+
+const goToRegister = () => {
+  localStorage.removeItem('ubms_access_token');
+  localStorage.removeItem('ubms_refresh_token');
+  localStorage.removeItem('ubms_user');
+  localStorage.removeItem('ubms_businesses');
+  localStorage.removeItem('ubms_active_business');
+  authStore.token = null;
+  authStore.user = null;
+  authStore.activeBusiness = null;
+  router.push('/auth/register');
+};
 
 watch(() => route.path, () => {
   isMobileSidebarOpen.value = false;

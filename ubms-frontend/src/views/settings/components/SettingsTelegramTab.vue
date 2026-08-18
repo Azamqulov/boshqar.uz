@@ -1,7 +1,38 @@
 <template>
-  <div class="space-y-6">
+  <div class="relative space-y-6">
+    <!-- DEMO BLUR OVERLAY -->
+    <div
+      v-if="authStore.isDemo"
+      @click="showProModal = true"
+      class="absolute inset-0 z-30 bg-slate-950/45 backdrop-blur-[5px] rounded-3xl flex flex-col items-center justify-center p-6 text-center cursor-pointer group transition-all"
+    >
+      <div class="w-14 h-14 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-xl shadow-emerald-500/25 mb-3.5 group-hover:scale-110 transition-transform">
+        <Lock class="w-7 h-7" />
+      </div>
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-black uppercase tracking-wider mb-2 border border-amber-400/30">
+        <Crown class="w-3.5 h-3.5" />
+        <span>Raqobatchilarda Yo'q Eksklyuziv Funksiya</span>
+      </div>
+      <h3 class="text-xl sm:text-2xl font-black text-white leading-tight">
+        Telegram AI Bot & Avto-chek Xizmati Faqat PRO Tarifda Ochiq!
+      </h3>
+      <p class="text-xs sm:text-sm text-slate-200 max-w-lg mt-2 mb-4">
+        Har bir savdo chekini mijozlarga avtomatik yuborish, qarzdorlik eslatmalari va xo'jayinga kunlik maxfiy hisobotlarni Telegramda olish uchun 14 kunlik bepul sinovni boshlang.
+      </p>
+      <button
+        type="button"
+        class="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center gap-2 transition cursor-pointer"
+      >
+        <Sparkles class="w-4 h-4" />
+        <span>14 Kun Bepul Sinashni Boshlash (Haqiqiy Hisob)</span>
+      </button>
+    </div>
+
     <!-- Header Banner: Pure Emerald Brand Theme, No Emojis, 100% Lucide Icons -->
-    <div class="p-4 sm:p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div
+      class="p-4 sm:p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+      :class="{ 'filter blur-[4px] pointer-events-none select-none': authStore.isDemo }"
+    >
       <div class="flex items-start gap-3.5">
         <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/25">
           <Bot class="w-6 h-6" />
@@ -593,6 +624,15 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- PRO UPGRADE MODAL -->
+    <ProUpgradeModal
+      :is-open="showProModal"
+      title="Telegram AI Bot & Avtomatlashtirish Faqat PRO Tarifda!"
+      subtitle="Har bir xarid chekini mijozlarga avto-yuborish, qarzdorlik eslatmalari va xo'jayinga kunlik yashirin hisobotlar faqat PRO tarifda ishlaydi."
+      feature-title="Telegram Bot & AI Avtomatizatsiya"
+      @close="showProModal = false"
+    />
   </div>
 </template>
 
@@ -620,12 +660,18 @@ import {
   Sparkles,
   Plus,
   Trash2,
+  Lock,
+  Crown,
 } from 'lucide-vue-next';
 import api from '../../../services/api';
 import { useToast } from '../../../composables/useToast';
+import { useAuthStore } from '../../../stores/auth.store';
 import TimePickerSelect from '../../../components/TimePickerSelect.vue';
+import ProUpgradeModal from '../../../components/ProUpgradeModal.vue';
 
 const toast = useToast();
+const authStore = useAuthStore();
+const showProModal = ref(false);
 
 const timeOptions = [
   { value: '18:00', label: '18:00 (Kechki boshlanish)' },

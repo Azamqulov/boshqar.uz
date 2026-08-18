@@ -35,6 +35,11 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token && !!state.user,
     hasBusiness: (state) => !!state.activeBusiness,
     businessType: (state) => state.activeBusiness?.businessType || 'shop',
+    isDemo: (state) =>
+      state.user?.phone === '+998900000000' ||
+      state.user?.id === 'demo-user-id' ||
+      state.user?.email === 'demo@boshqar.uz' ||
+      (state.token?.startsWith('demo-session') ?? false),
   },
   actions: {
     async login(loginData: any) {
@@ -142,7 +147,21 @@ export const useAuthStore = defineStore('auth', {
         console.error('Fetch businesses failed:', e);
       }
     },
-    startDemoWorkspace(companyName: string, phone: string, businessType: string) {
+    async startDemoWorkspace(companyName: string, phone: string, businessType: string) {
+      try {
+        const { data } = await api.post('/auth/demo-guest', {
+          companyName: companyName || 'Baraka Market',
+          phone: phone || '+998901234567',
+          businessType: businessType || 'shop',
+        });
+        if (data && data.accessToken) {
+          this.setAuthData(data);
+          return data;
+        }
+      } catch (err) {
+        console.warn('Backend demo-guest offline, using local demo workspace fallback:', err);
+      }
+
       const demoUser: UserProfile = {
         id: 'demo-user-id',
         fullName: companyName || 'Demo Tadbirkor',
@@ -155,7 +174,7 @@ export const useAuthStore = defineStore('auth', {
         name: companyName || 'Boshqar.uz Demo Korxona',
         businessType: businessType || 'shop',
         currency: 'UZS',
-        role: 'owner',
+        role: 'Owner',
         allowedModules: ['all'],
       };
 

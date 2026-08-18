@@ -529,4 +529,171 @@ export class AuthService {
       expiresIn: 7 * 24 * 60 * 60,
     };
   }
+
+  async demoGuestSession(dto: { companyName?: string; phone?: string; businessType?: string }) {
+    const demoPhone = '+998900000000';
+    const compName = dto.companyName?.trim() || 'Baraka Market';
+    const bType = (dto.businessType as any) || 'shop';
+    const realPhone = dto.phone?.trim() || '+998 (Noma\'lum)';
+
+    // 🎯 SuperAdmin uchun har bir demo hisob ochuvchini DemoLead sifatida saqlash
+    try {
+      await this.prisma.demoLead.create({
+        data: {
+          companyName: compName,
+          phone: realPhone,
+          businessType: bType,
+          status: 'new',
+        },
+      });
+    } catch (e) {
+      console.warn('DemoLead saqlashda xatolik:', e);
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: { phone: demoPhone },
+      include: {
+        businessUsers: {
+          include: {
+            business: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      const passwordHash = await bcrypt.hash('DemoPass123!', 10);
+      user = await this.prisma.user.create({
+        data: {
+          fullName: compName,
+          phone: demoPhone,
+          email: 'demo@boshqar.uz',
+          passwordHash,
+          status: 'active',
+        },
+        include: {
+          businessUsers: {
+            include: {
+              business: true,
+              role: true,
+            },
+          },
+        },
+      });
+    }
+
+    let activeBusiness = user.businessUsers[0];
+
+    if (!activeBusiness) {
+      const defaultPlan = await this.prisma.plan.findFirst();
+      const planId = defaultPlan?.id || '';
+
+      let ownerRole = await this.prisma.role.findFirst({
+        where: { name: 'Owner' },
+      });
+
+      const newBiz = await this.prisma.business.create({
+        data: {
+          name: compName,
+          businessType: bType,
+          ownerId: user.id,
+          planId: planId,
+          currency: 'UZS',
+          timezone: 'Asia/Tashkent',
+          status: 'trial',
+        },
+      });
+
+      const mainBranch = await this.prisma.branch.create({
+        data: {
+          businessId: newBiz.id,
+          name: 'Asosiy Filial',
+          isMain: true,
+          status: 'active',
+        },
+      });
+
+      if (!ownerRole) {
+        ownerRole = await this.prisma.role.create({
+          data: {
+            businessId: newBiz.id,
+            name: 'Owner',
+          },
+        });
+      }
+
+      const bu = await this.prisma.businessUser.create({
+        data: {
+          userId: user.id,
+          businessId: newBiz.id,
+          branchId: mainBranch.id,
+          roleId: ownerRole.id,
+        },
+        include: {
+          business: true,
+          role: true,
+        },
+      });
+
+      activeBusiness = bu;
+    } else {
+      await this.prisma.business.update({
+        where: { id: activeBusiness.businessId },
+        data: {
+          name: compName,
+          businessType: bType,
+        },
+      });
+      activeBusiness.business.name = compName;
+      activeBusiness.business.businessType = bType;
+    }
+
+    const tokens = await this.generateTokens(
+      user.id,
+      activeBusiness.businessId,
+      activeBusiness.branchId || undefined,
+      activeBusiness.roleId,
+    );
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        email: user.email,
+        fullName: compName,
+        isSuperAdmin: false,
+      },
+      activeBusiness: {
+        id: activeBusiness.business.id,
+        name: compName,
+        businessType: bType,
+        currency: activeBusiness.business.currency || 'UZS',
+        role: 'Owner',
+        branchId: activeBusiness.branchId,
+        allowedModules: ['all'],
+        actionPermissions: {
+          pos: { create: true, edit: true, delete: true },
+          products: { create: true, edit: true, delete: true },
+          inventory: { create: true, edit: true, delete: true },
+          customers: { create: true, edit: true, delete: true },
+          suppliers: { create: true, edit: true, delete: true },
+          finance: { create: true, edit: true, delete: true },
+        },
+      },
+      businesses: [
+        {
+          id: activeBusiness.business.id,
+          name: compName,
+          businessType: bType,
+          currency: activeBusiness.business.currency || 'UZS',
+          role: 'Owner',
+          branchId: activeBusiness.branchId,
+          allowedModules: ['all'],
+        },
+      ],
+    };
+  }
 }
+

@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+Allow: /guide
+Allow: /security
+Allow: /privacy
+Allow: /cookies
+Allow: /terms
+Allow: /auth/login
+Allow: /auth/register
+
+# Disallow private application views from search crawlers
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /products
+Disallow: /inventory
+Disallow: /restaurant/
+Disallow: /appointments
+Disallow: /customers
+Disallow: /suppliers
+Disallow: /finance
+Disallow: /billing
+Disallow: /settings
+Disallow: /superadmin
+Disallow: /onboarding
+Disallow: /api/
+
+Sitemap: https://boshqar.uz/sitemap.xml

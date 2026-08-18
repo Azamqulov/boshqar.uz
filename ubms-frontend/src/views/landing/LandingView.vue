@@ -21,21 +21,42 @@
       @open-receipt="handleOpenReceipt"
     />
 
-    <!-- 4. ABOUT US SECTION -->
-    <LandingAbout />
+    <!-- 4. SECTOR-SPECIFIC SHOWCASE (6 SECTORS) -->
+    <LandingSectorsShowcase
+      @open-demo="openDemoModal"
+    />
 
     <!-- 5. FEATURES / MODULES SECTION -->
     <LandingFeatures />
 
-    <!-- 6. PRICING SECTION -->
+    <!-- 6. REAL INTERACTIVE TELEGRAM BOT SIMULATOR -->
+    <LandingTelegramSimulator />
+
+    <!-- 7. ROI / BUSINESS SAVINGS CALCULATOR -->
+    <LandingRoiCalculator
+      @open-demo="openDemoModal"
+    />
+
+    <!-- 8. CLEAR COMPARISON MATRIX (EXCEL vs LEGACY vs BOSHQAR.UZ) -->
+    <LandingComparison
+      @open-demo="openDemoModal"
+    />
+
+    <!-- 9. ABOUT US SECTION -->
+    <LandingAbout />
+
+    <!-- 10. PRICING SECTION -->
     <LandingPricing
       @open-demo="openDemoModal"
     />
 
-    <!-- 7. FAQ SECTION -->
+    <!-- 11. REVIEWS & TESTIMONIALS (SOCIAL PROOF) -->
+    <LandingTestimonials />
+
+    <!-- 12. FAQ SECTION -->
     <LandingFAQ />
 
-    <!-- 8. FOOTER -->
+    <!-- 13. FOOTER -->
     <LandingFooter />
 
     <!-- MODAL: ON-DEMAND CUSTOM DEMO ACCOUNT GENERATOR -->
@@ -71,9 +92,14 @@ import { ShoppingBag, UtensilsCrossed, Coffee, Pill, Scissors, Wrench } from 'lu
 import LandingHeader from './components/LandingHeader.vue';
 import LandingHero from './components/LandingHero.vue';
 import LandingInteractiveDemo from './components/LandingInteractiveDemo.vue';
-import LandingAbout from './components/LandingAbout.vue';
+import LandingSectorsShowcase from './components/LandingSectorsShowcase.vue';
 import LandingFeatures from './components/LandingFeatures.vue';
+import LandingTelegramSimulator from './components/LandingTelegramSimulator.vue';
+import LandingRoiCalculator from './components/LandingRoiCalculator.vue';
+import LandingComparison from './components/LandingComparison.vue';
+import LandingAbout from './components/LandingAbout.vue';
 import LandingPricing from './components/LandingPricing.vue';
+import LandingTestimonials from './components/LandingTestimonials.vue';
 import LandingFAQ from './components/LandingFAQ.vue';
 import LandingFooter from './components/LandingFooter.vue';
 import LandingDemoModal from './components/LandingDemoModal.vue';
@@ -88,7 +114,19 @@ const isAuthenticated = computed(() => {
 });
 
 // Valid anchor hashes on landing page
-const validLandingHashes = ['', '#about', '#features', '#pricing', '#faq', '#demo'];
+const validLandingHashes = [
+  '',
+  '#telegram',
+  '#sectors',
+  '#calculator',
+  '#compare',
+  '#about',
+  '#features',
+  '#pricing',
+  '#reviews',
+  '#faq',
+  '#demo',
+];
 
 const checkHashValidity = () => {
   const hash = window.location.hash;
@@ -120,19 +158,18 @@ const handleResize = () => {
 
 onMounted(async () => {
   window.scrollTo(0, 0);
-  // Check if initial hash is invalid (e.g. #faqasdsadfgsdfg) -> redirect to 404
   checkHashValidity();
   window.addEventListener('hashchange', checkHashValidity);
   window.addEventListener('resize', handleResize);
 
   await nextTick();
 
-  // Initialize AOS (Animate on Scroll) with reliable SPA configuration
+  // Initialize AOS (Animate on Scroll) optimized for high performance & silky smooth scrolling
   AOS.init({
-    duration: 700,
+    duration: 450,
     once: true,
     offset: 20,
-    easing: 'ease-out-cubic',
+    easing: 'ease-out-quad',
     disableMutationObserver: false,
     mirror: false,
   });
@@ -140,12 +177,8 @@ onMounted(async () => {
   AOS.refreshHard();
 
   setTimeout(() => {
-    AOS.refreshHard();
-  }, 100);
-
-  setTimeout(() => {
     AOS.refresh();
-  }, 400);
+  }, 150);
 
   try {
     const { data } = await api.get('/businesses/types');
@@ -164,7 +197,7 @@ onMounted(async () => {
       }
     }
   } catch (err) {
-    // If backend endpoint is not yet loaded or offline, defaults remain active
+    // If backend endpoint is offline, defaults remain active
   }
 });
 
@@ -196,10 +229,10 @@ const launchCustomDemo = async (form: { companyName: string; phone: string; busi
     const compPhone = form.phone.trim() || '+998 90 123-45-67';
     const compType = form.businessType || 'shop';
 
-    // 1. Generate local demo workspace
-    authStore.startDemoWorkspace(compName, compPhone, compType);
+    // 1. Generate demo guest session with real backend JWT
+    await authStore.startDemoWorkspace(compName, compPhone, compType);
 
-    // 2. Preload 15 sector products and customer data into dataStore
+    // 2. Preload sector products and customer data into dataStore
     dataStore.loadDemoData(compType);
 
     isDemoModalOpen.value = false;
