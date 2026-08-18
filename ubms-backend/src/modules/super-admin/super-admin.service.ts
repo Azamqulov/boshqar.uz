@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, UserStatus, BusinessStatus } from '@prisma/client';
 import { getBusinessTypesConfig, toggleBusinessTypeConfig } from '../../common/config/business-types.config';
@@ -464,6 +464,10 @@ export class SuperAdminService {
   async updateUserStatus(id: string, status: string | UserStatus) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('Foydalanuvchi topilmadi');
+
+    if (user.isSuperAdmin && (status === 'blocked' || status === 'suspended')) {
+      throw new BadRequestException("SuperAdmin akkauntini bloklash taqiqlanadi! Tizim boshqaruvsiz qolmasligi uchun SuperAdmin doim faol bo'lishi shart.");
+    }
 
     return this.prisma.user.update({
       where: { id },

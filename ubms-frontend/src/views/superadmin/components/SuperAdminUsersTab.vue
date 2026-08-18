@@ -78,10 +78,14 @@
                   <ShieldCheck class="w-3.5 h-3.5" />
                 </button>
                 <button
-                  @click="$emit('toggleStatus', u)"
+                  @click="!u.isSuperAdmin && $emit('toggleStatus', u)"
+                  :disabled="u.isSuperAdmin"
                   class="p-1.5 rounded-lg transition"
-                  :class="u.status === 'active' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'"
-                  :title="u.status === 'active' ? 'Bloklash' : 'Faollashtirish'"
+                  :class="[
+                    u.isSuperAdmin ? 'opacity-30 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400' :
+                    u.status === 'active' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                  ]"
+                  :title="u.isSuperAdmin ? 'SuperAdmin bloklanmaydi' : (u.status === 'active' ? 'Bloklash' : 'Faollashtirish')"
                 >
                   <Ban v-if="u.status === 'active'" class="w-3.5 h-3.5" />
                   <CheckCircle v-else class="w-3.5 h-3.5" />
@@ -169,9 +173,14 @@
               <span>{{ u.isSuperAdmin ? 'Adminni olish' : 'SuperAdmin' }}</span>
             </button>
             <button
-              @click="$emit('toggleStatus', u)"
+              @click="!u.isSuperAdmin && $emit('toggleStatus', u)"
+              :disabled="u.isSuperAdmin"
               class="py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 btn-interactive"
-              :class="u.status === 'active' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'"
+              :class="[
+                u.isSuperAdmin ? 'opacity-30 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400' :
+                u.status === 'active' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+              ]"
+              :title="u.isSuperAdmin ? 'SuperAdmin bloklanmaydi' : (u.status === 'active' ? 'Bloklash' : 'Faollashtirish')"
             >
               <Ban v-if="u.status === 'active'" class="w-3.5 h-3.5" />
               <CheckCircle v-else class="w-3.5 h-3.5" />
