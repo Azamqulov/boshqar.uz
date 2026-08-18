@@ -74,6 +74,36 @@
 
     <!-- Main Full-Width Content Area -->
     <main class="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/70 dark:bg-slate-950 relative z-50">
+      <!-- Full Screen Subscription Expired Blocking Guard Overlay for Workers -->
+      <div
+        v-if="isSubscriptionExpired && !authStore.user?.isSuperAdmin"
+        class="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+      >
+        <div class="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-rose-500/30 shadow-2xl text-center space-y-5">
+          <div class="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center mx-auto">
+            <AlertTriangle class="w-8 h-8 animate-bounce" />
+          </div>
+
+          <div class="space-y-2">
+            <h3 class="text-xl font-black text-slate-900 dark:text-white">
+              Korxona Obunasi Yakunlandi
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Hurmatli xodim, siz ishlayotgan <strong class="text-slate-800 dark:text-slate-200">{{ authStore.activeBusiness?.name }}</strong> korxonasining dastur obuna muddati tugagan. Iltimos, do'kon rahbari bilan bog'laning.
+            </p>
+          </div>
+
+          <div class="pt-2">
+            <button
+              @click="handleLogout"
+              class="w-full py-3 px-4 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition"
+            >
+              Hisobdan Chiqish
+            </button>
+          </div>
+        </div>
+      </div>
+
       <router-view />
     </main>
   </div>
@@ -357,7 +387,48 @@
         </header>
 
         <!-- Main Router View -->
-        <main class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 bg-slate-100/70 dark:bg-slate-950 pb-20 md:pb-6">
+        <main class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 bg-slate-100/70 dark:bg-slate-950 pb-20 md:pb-6 relative">
+          <!-- Full Screen Subscription Expired Blocking Guard Overlay -->
+          <div
+            v-if="isSubscriptionExpired && !authStore.user?.isSuperAdmin && $route.path !== '/billing' && $route.path !== '/guide'"
+            class="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div class="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-rose-500/30 shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
+              <div class="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center mx-auto shadow-inner">
+                <AlertTriangle class="w-8 h-8 animate-bounce" />
+              </div>
+
+              <div class="space-y-2">
+                <h3 class="text-xl font-black text-slate-900 dark:text-white">
+                  Obuna Muddati Yakunlandi
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Hurmatli tadbirkor, sizning <strong class="text-slate-800 dark:text-slate-200">{{ authStore.activeBusiness?.name }}</strong> korxonangiz uchun <strong class="text-emerald-500">Boshqar.uz</strong> obuna muddati tugadi. Ma'lumotlaringiz xavfsiz saqlanmoqda. Tizimdan to'liq foydalanishni davom ettirish uchun tarifni faollashtiring.
+                </p>
+              </div>
+
+              <div class="space-y-2.5 pt-2">
+                <router-link
+                  to="/billing"
+                  class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2"
+                >
+                  <CreditCard class="w-4 h-4" />
+                  <span>Obunani Faollashtirish (Tariflar)</span>
+                  <ArrowRight class="w-4 h-4" />
+                </router-link>
+
+                <a
+                  href="https://t.me/Boshqar_uzbot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                >
+                  <span>Menejer bilan bog'lanish (Telegram)</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
           <router-view />
         </main>
       </div>
