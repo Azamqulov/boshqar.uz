@@ -463,11 +463,17 @@ const toggleOwnerStatusAction = async (ownerId: string, currentStatus: string) =
 
 const saveOwnerPlan = async (ownerId: string, planId: string, durationDays?: number) => {
   try {
+    const days = durationDays !== undefined && durationDays !== null ? durationDays : 30;
+    const isExpiring = days === 0;
     await api.patch(`/superadmin/owners/${ownerId}/plan`, {
       planId,
-      durationDays: durationDays || 30,
+      durationDays: days,
     });
-    toast.success(`Tarif rejasi muvaffaqiyatli yangilandi (${durationDays || 30} kunga)!`, 'Tarif');
+    if (isExpiring) {
+      toast.warning('Firma egasining obuna muddati darhol tugatildi!', 'Obuna Tugatildi');
+    } else {
+      toast.success(`Tarif rejasi muvaffaqiyatli yangilandi (${days} kunga)!`, 'Tarif');
+    }
     loadOwners();
     loadAllData();
   } catch (err) {

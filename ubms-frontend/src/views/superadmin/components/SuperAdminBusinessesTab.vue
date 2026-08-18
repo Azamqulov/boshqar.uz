@@ -177,6 +177,16 @@
                   {{ b.plan }}
                 </span>
               </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">Obuna holati:</span>
+                <span v-if="b.plan !== 'Free' && (b.subscription?.isExpired || b.subscription?.daysLeft === 0)" class="text-rose-500 font-black text-[11px] flex items-center gap-1">
+                  <AlertTriangle class="w-3 h-3" /> Muddati tugagan
+                </span>
+                <span v-else-if="b.plan !== 'Free' && b.subscription?.daysLeft !== null" class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1">
+                  <Clock class="w-3 h-3 text-slate-400" /> {{ b.subscription.daysLeft }} kun qoldi
+                </span>
+                <span v-else class="text-slate-400 text-[11px] font-mono">Cheksiz (Start)</span>
+              </div>
             </div>
 
             <!-- Quick Counter pill -->

@@ -295,7 +295,9 @@ export class SuperAdminService {
     if (!plan) throw new NotFoundException('Tarif rejasi topilmadi');
 
     const now = new Date();
-    const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    const periodEnd = durationDays <= 0
+      ? new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      : new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.business.updateMany({
@@ -308,8 +310,8 @@ export class SuperAdminService {
           data: {
             businessId: b.id,
             planId,
-            status: 'active',
-            currentPeriodStart: now,
+            status: durationDays <= 0 ? 'past_due' : 'active',
+            currentPeriodStart: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
             currentPeriodEnd: periodEnd,
             cancelAtPeriodEnd: false,
           },
