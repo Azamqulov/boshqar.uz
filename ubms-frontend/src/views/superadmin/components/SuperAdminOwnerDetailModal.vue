@@ -93,6 +93,14 @@
               <div class="flex flex-wrap gap-1">
                 <button
                   type="button"
+                  @click="selectedDurationDays = 0"
+                  class="px-2 py-0.5 rounded-lg text-[10px] font-bold transition border"
+                  :class="selectedDurationDays === 0 ? 'bg-rose-500 text-white border-rose-500' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'"
+                >
+                  0 kun (Tugatish)
+                </button>
+                <button
+                  type="button"
                   v-for="d in [15, 30, 90, 180, 365]"
                   :key="d"
                   @click="selectedDurationDays = d"

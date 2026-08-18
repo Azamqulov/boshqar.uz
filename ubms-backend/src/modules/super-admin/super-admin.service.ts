@@ -411,7 +411,7 @@ export class SuperAdminService {
     });
   }
 
-  // 4. Update Business Plan (Upgrade / Downgrade)
+  // 4. Update Business Plan (Upgrade / Downgrade / Expire)
   async updateBusinessPlan(id: string, planId: string, durationDays = 30) {
     const business = await this.prisma.business.findUnique({ where: { id } });
     if (!business) throw new NotFoundException('Biznes topilmadi');
@@ -420,7 +420,10 @@ export class SuperAdminService {
     if (!plan) throw new NotFoundException('Tarif rejasi topilmadi');
 
     const now = new Date();
-    const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    // Agar durationDays <= 0 bo'lsa, muddatni o'tmishga qo'yib darhol expire qilamiz
+    const periodEnd = durationDays <= 0
+      ? new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      : new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     return this.prisma.$transaction(async (tx) => {
       const updatedBusiness = await tx.business.update({
@@ -434,7 +437,7 @@ export class SuperAdminService {
           businessId: id,
           planId,
           status: 'active',
-          currentPeriodStart: now,
+          currentPeriodStart: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
           currentPeriodEnd: periodEnd,
           cancelAtPeriodEnd: false,
         },

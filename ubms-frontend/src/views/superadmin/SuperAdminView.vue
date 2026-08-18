@@ -161,10 +161,28 @@
 
           <!-- Duration / Period Selector -->
           <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-              Faollashtirish Muddati (Kun):
-            </label>
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Faollashtirish Muddati:
+              </label>
+              <button
+                type="button"
+                @click="selectedDurationDays = 0"
+                class="text-[11px] font-bold px-2 py-0.5 rounded-lg transition"
+                :class="selectedDurationDays === 0 ? 'bg-rose-500 text-white' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20'"
+              >
+                0 kun (Tugatish)
+              </button>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-xs">
+              <button
+                type="button"
+                @click="selectedDurationDays = 0"
+                class="py-2 px-1 rounded-xl font-bold transition text-center border"
+                :class="selectedDurationDays === 0 ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:border-rose-500'"
+              >
+                0 kun
+              </button>
               <button
                 type="button"
                 v-for="d in [15, 30, 90, 180, 365]"
@@ -181,7 +199,7 @@
               <input
                 type="number"
                 v-model.number="selectedDurationDays"
-                min="1"
+                min="0"
                 max="3650"
                 class="w-24 px-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
               />
@@ -199,9 +217,10 @@
           </button>
           <button
             @click="saveBusinessPlan"
-            class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 transition btn-interactive"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition btn-interactive"
+            :class="selectedDurationDays === 0 ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/25' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'"
           >
-            Saqlash
+            {{ selectedDurationDays === 0 ? 'Tarifni Tugatish (Expire)' : 'Saqlash' }}
           </button>
         </div>
       </div>
@@ -528,12 +547,17 @@ const openPlanModal = (b: any) => {
 const saveBusinessPlan = async () => {
   if (!selectedBusiness.value || !selectedPlanId.value) return;
   try {
+    const isExpiring = selectedDurationDays.value === 0;
     await api.patch(`/superadmin/businesses/${selectedBusiness.value.id}/plan`, {
       planId: selectedPlanId.value,
-      durationDays: selectedDurationDays.value || 30,
+      durationDays: selectedDurationDays.value ?? 30,
     });
     showPlanModal.value = false;
-    toast.success(`Biznes tarifi muvaffaqiyatli saqlandi (${selectedDurationDays.value} kunga faollashtirildi)`, 'Tarif');
+    if (isExpiring) {
+      toast.warning(`«${selectedBusiness.value.name}» biznesining obuna muddati darhol tugatildi!`, 'Obuna Tugatildi');
+    } else {
+      toast.success(`Biznes tarifi muvaffaqiyatli saqlandi (${selectedDurationDays.value} kunga faollashtirildi)`, 'Tarif');
+    }
     loadAllData();
   } catch (err) {
     toast.error('Tarifni saqlashda xatolik', 'Xatolik');
