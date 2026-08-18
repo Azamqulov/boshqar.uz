@@ -147,7 +147,7 @@
                 class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
                 :class="[
                   isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
-                  $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
+                  isItemActive(item)
                     ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 ]"
@@ -159,7 +159,7 @@
                     class="w-5 h-5 transition-colors shrink-0"
                     :class="[
                       isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
-                      $route.path === item.to || ($route.path.startsWith(item.to + '/') && item.to !== '/')
+                      isItemActive(item)
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
                     ]"
@@ -702,6 +702,27 @@ const visibleNavItems = computed(() => {
   }
   return items;
 });
+
+const isItemActive = (item: NavItem) => {
+  if (route.path === item.to) return true;
+
+  // Agar boshqa aniqroq nav item mavjud bo'lsa (masalan /appointments/services),
+  // /appointments ochilmagan bo'lsa, /appointments ni active qilmaslik
+  const allItemTos = allNavGroups.flatMap((g) => g.items.map((i) => i.to));
+  const hasMoreSpecificSibling = allItemTos.some(
+    (to) => to !== item.to && to.startsWith(item.to + '/') && (route.path === to || route.path.startsWith(to + '/'))
+  );
+
+  if (hasMoreSpecificSibling) {
+    return false;
+  }
+
+  if (item.to !== '/' && route.path.startsWith(item.to + '/')) {
+    return true;
+  }
+
+  return false;
+};
 
 const handleLogout = () => {
   dataStore.clearAll();
