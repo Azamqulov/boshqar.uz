@@ -77,7 +77,7 @@
                     {{ b.plan }}
                   </span>
                   <div v-if="b.plan !== 'Free' && b.subscription" class="text-[10px] font-mono">
-                    <span v-if="b.subscription.isExpired" class="text-rose-500 font-black flex items-center gap-1">
+                    <span v-if="b.subscription.isExpired || b.subscription.daysLeft === 0" class="text-rose-500 font-black flex items-center gap-1">
                       <AlertTriangle class="w-3 h-3" />
                       <span>Muddati tugagan</span>
                     </span>

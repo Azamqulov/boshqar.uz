@@ -44,13 +44,14 @@ export class SuperAdminController {
   }
 
   @Patch('owners/:id/plan')
-  @ApiOperation({ summary: 'Firma egasining (Owner) tarif rejasini o\'zgartirish' })
+  @ApiOperation({ summary: "Firma egasining bizneslariga tarif rejasini biriktirish" })
   updateOwnerPlan(
     @Param('id') id: string,
     @Body('planId') planId: string,
     @Body('durationDays') durationDays?: number,
   ) {
-    return this.superAdminService.updateOwnerPlan(id, planId, durationDays ? Number(durationDays) : 30);
+    const days = durationDays !== undefined && durationDays !== null ? Number(durationDays) : 30;
+    return this.superAdminService.updateOwnerPlan(id, planId, days);
   }
 
   @Get('businesses')
@@ -78,7 +79,8 @@ export class SuperAdminController {
     @Body('planId') planId: string,
     @Body('durationDays') durationDays?: number,
   ) {
-    return this.superAdminService.updateBusinessPlan(id, planId, durationDays ? Number(durationDays) : 30);
+    const days = durationDays !== undefined && durationDays !== null ? Number(durationDays) : 30;
+    return this.superAdminService.updateBusinessPlan(id, planId, days);
   }
 
   @Get('users')

@@ -344,7 +344,6 @@ export class SuperAdminService {
           select: { id: true, name: true, priceMonthly: true },
         },
         subscriptions: {
-          where: { status: 'active' },
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
@@ -370,8 +369,8 @@ export class SuperAdminService {
 
       if (!isFree && activeSub?.currentPeriodEnd) {
         const diffMs = new Date(activeSub.currentPeriodEnd).getTime() - now.getTime();
-        daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        isExpired = daysLeft <= 0;
+        daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        isExpired = diffMs <= 0 || activeSub.status === 'past_due' || activeSub.status === 'cancelled';
       }
 
       return {
@@ -436,7 +435,7 @@ export class SuperAdminService {
         data: {
           businessId: id,
           planId,
-          status: 'active',
+          status: durationDays <= 0 ? 'past_due' : 'active',
           currentPeriodStart: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
           currentPeriodEnd: periodEnd,
           cancelAtPeriodEnd: false,
