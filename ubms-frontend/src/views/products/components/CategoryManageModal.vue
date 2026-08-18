@@ -34,7 +34,7 @@
           <form @submit.prevent="$emit('saveCategory')" class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-3.5 text-xs">
             <div class="flex items-center justify-between">
               <span class="font-black text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>{{ editingCatId ? '✏️ Kategoriyani Tahrirlash' : '✨ Yangi Kategoriya Yaratish' }}</span>
+                <span>{{ editingCatId ? 'Kategoriyani Tahrirlash' : 'Yangi Kategoriya Yaratish' }}</span>
               </span>
               <button
                 v-if="editingCatId"

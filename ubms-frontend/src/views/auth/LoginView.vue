@@ -32,7 +32,7 @@
       <div class="flex-1">
         <p>{{ errorMessage }}</p>
         <span v-if="attemptsLeft !== null && attemptsLeft > 0" class="inline-block mt-1 font-bold text-[11px] px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-700 dark:text-rose-300">
-          ⚠️ Qolgan urinishlar: {{ attemptsLeft }} ta
+          Qolgan urinishlar: {{ attemptsLeft }} ta
         </span>
       </div>
     </div>

@@ -254,7 +254,7 @@ const pillStyle = computed(() => {
 });
 
 const adminTabs = computed(() => [
-  { id: 'leads' as const, label: '🎯 Demo & Leadlar', icon: Target },
+  { id: 'leads' as const, label: 'Demo & Leadlar', icon: Target },
   { id: 'owners' as const, label: 'Egalar (Owners)', icon: Crown },
   { id: 'businesses' as const, label: `Bizneslar (${businesses.value.length})`, icon: Building2 },
   { id: 'users' as const, label: `Foydalanuvchilar (${users.value.length})`, icon: Users },

@@ -26,14 +26,17 @@
     <div v-if="isRestaurant && enabledServiceTypes.length > 0" class="my-2.5 p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-2 shrink-0">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Xizmat turi:</span>
-        <span v-if="orderType === 'dine_in'" class="text-[10px] font-black px-2 py-0.5 rounded-md" :class="currentTableDisplayName ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white animate-pulse'">
-          🍽️ {{ currentTableDisplayName || 'Stol tanlanmagan!' }}
+        <span v-if="orderType === 'dine_in'" class="text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1" :class="currentTableDisplayName ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white animate-pulse'">
+          <UtensilsCrossed class="w-3 h-3" />
+          <span>{{ currentTableDisplayName || 'Stol tanlanmagan!' }}</span>
         </span>
-        <span v-else-if="orderType === 'takeaway'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950">
-          🥡 Saboy (Olib ketish)
+        <span v-else-if="orderType === 'takeaway'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 flex items-center gap-1">
+          <ShoppingBag class="w-3 h-3" />
+          <span>Saboy (Olib ketish)</span>
         </span>
-        <span v-else-if="orderType === 'delivery'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-sky-500 text-white">
-          🛵 Yetkazib berish
+        <span v-else-if="orderType === 'delivery'" class="text-[10px] font-black px-2 py-0.5 rounded-md bg-sky-500 text-white flex items-center gap-1">
+          <Truck class="w-3 h-3" />
+          <span>Yetkazib berish</span>
         </span>
       </div>
 
@@ -46,7 +49,7 @@
           class="py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1"
           :class="orderType === 'dine_in' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          <span>🍽️</span>
+          <UtensilsCrossed class="w-3.5 h-3.5" />
           <span>Zalda</span>
         </button>
         <button
@@ -56,7 +59,7 @@
           class="py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1"
           :class="orderType === 'takeaway' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          <span>🥡</span>
+          <ShoppingBag class="w-3.5 h-3.5" />
           <span>Saboy</span>
         </button>
         <button
@@ -66,7 +69,7 @@
           class="py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1"
           :class="orderType === 'delivery' ? 'bg-sky-500 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          <span>🛵</span>
+          <Truck class="w-3.5 h-3.5" />
           <span>Dostavka</span>
         </button>
       </div>
@@ -288,6 +291,8 @@ import {
   Tag,
   Percent,
   X,
+  UtensilsCrossed,
+  Truck,
 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 

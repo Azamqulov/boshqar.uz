@@ -122,15 +122,15 @@
               <span class="text-slate-500 dark:text-slate-400 font-semibold">Xizmat turi:</span>
               <div class="flex items-center gap-1.5">
                 <span v-if="orderType === 'dine_in'" class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span>🍽️</span>
+                  <UtensilsCrossed class="w-3.5 h-3.5" />
                   <span>Zalda</span>
                 </span>
                 <span v-else-if="orderType === 'takeaway'" class="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <span>🥡</span>
+                  <ShoppingBag class="w-3.5 h-3.5" />
                   <span>Saboy (Olib ketish)</span>
                 </span>
                 <span v-else-if="orderType === 'delivery'" class="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
-                  <span>🛵</span>
+                  <Truck class="w-3.5 h-3.5" />
                   <span>Yetkazib berish (Dostavka)</span>
                 </span>
               </div>
@@ -139,8 +139,9 @@
             <!-- Table Selection in Checkout Modal if Zalda -->
             <div v-if="orderType === 'dine_in'" class="pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="font-bold" :class="currentTableDisplayName ? 'text-slate-700 dark:text-slate-300' : 'text-rose-500 font-extrabold'">
-                  🍽️ Qaysi stol band qilindi? *
+                <span class="font-bold flex items-center gap-1" :class="currentTableDisplayName ? 'text-slate-700 dark:text-slate-300' : 'text-rose-500 font-extrabold'">
+                  <UtensilsCrossed class="w-3.5 h-3.5" />
+                  <span>Qaysi stol band qilindi? *</span>
                 </span>
                 <span v-if="currentTableDisplayName" class="font-black text-emerald-600 dark:text-emerald-400">
                   {{ currentTableDisplayName }}
@@ -401,7 +402,10 @@
 
             <div v-if="selectedCustomer" class="p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 text-xs space-y-1">
               <div class="flex items-center justify-between">
-                <span class="font-bold text-slate-900 dark:text-white">👤 {{ selectedCustomer.fullName }}</span>
+                <span class="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                  <Users class="w-3.5 h-3.5 text-slate-400" />
+                  <span>{{ selectedCustomer.fullName }}</span>
+                </span>
                 <span class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{{ selectedCustomer.phone || 'Tel yo\'q' }}</span>
               </div>
               <div v-if="Number(selectedCustomer.debt || 0) > 0" class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center justify-between">
@@ -447,6 +451,9 @@ import {
   Tag,
   QrCode,
   Coins,
+  UtensilsCrossed,
+  ShoppingBag,
+  Truck,
 } from 'lucide-vue-next';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';

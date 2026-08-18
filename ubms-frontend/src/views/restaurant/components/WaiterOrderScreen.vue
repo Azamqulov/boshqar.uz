@@ -7,14 +7,16 @@
         class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
         :class="mobileWaiterTab === 'menu' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
       >
-        <span>🍕 Taomnoma ({{ filteredMenu.length }})</span>
+        <UtensilsCrossed class="w-3.5 h-3.5" />
+        <span>Taomnoma ({{ filteredMenu.length }})</span>
       </button>
       <button
         @click="mobileWaiterTab = 'cart'"
         class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
         :class="mobileWaiterTab === 'cart' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'"
       >
-        <span>🍽️ Stol Savati ({{ existingItems.length + newItems.length }})</span>
+        <ShoppingCart class="w-3.5 h-3.5" />
+        <span>Stol Savati ({{ existingItems.length + newItems.length }})</span>
         <span v-if="orderTotalSum > 0" class="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
           {{ formatCurrency(orderTotalSum) }}
         </span>

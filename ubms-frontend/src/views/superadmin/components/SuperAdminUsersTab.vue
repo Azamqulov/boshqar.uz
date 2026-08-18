@@ -136,7 +136,7 @@
                 class="px-2 py-0.5 rounded font-bold text-[10px]"
                 :class="u.isSuperAdmin ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
               >
-                {{ u.isSuperAdmin ? '👑 SuperAdmin' : 'Oddiy User' }}
+                {{ u.isSuperAdmin ? 'SuperAdmin' : 'Oddiy User' }}
               </span>
               <span class="text-[11px] text-slate-400 font-mono flex items-center gap-1">
                 <Calendar class="w-3 h-3 text-slate-400" />

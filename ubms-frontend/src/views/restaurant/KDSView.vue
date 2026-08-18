@@ -195,7 +195,7 @@
               @click="changeStatus(kOrder.id, 'served')"
               class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 btn-interactive"
             >
-              <span>Zalga Yetkazildi 🍽️</span>
+              <span>Zalga Yetkazildi</span>
             </button>
           </div>
         </div>

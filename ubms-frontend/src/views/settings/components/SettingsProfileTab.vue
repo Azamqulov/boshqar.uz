@@ -233,7 +233,7 @@
           <!-- Mode 2: Custom (Manual Override) View -->
           <div v-else class="space-y-3 pt-3 border-t border-amber-500/20">
             <p class="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <span>✍️ O'zingiz kiritgan tijorat/bozor kursi bo'yicha hisoblanadi:</span>
+              <span>O'zingiz kiritgan tijorat/bozor kursi bo'yicha hisoblanadi:</span>
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">

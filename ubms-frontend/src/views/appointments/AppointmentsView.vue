@@ -78,8 +78,9 @@
             <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Scissors class="w-5 h-5" />
             </div>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
-              ⏱️ {{ service.durationMinutes || 30 }} daqiqa
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono flex items-center gap-1">
+              <Clock class="w-3 h-3 text-slate-400" />
+              <span>{{ service.durationMinutes || 30 }} daqiqa</span>
             </span>
           </div>
 
@@ -181,7 +182,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
-import { Plus, Calendar, Scissors, X } from 'lucide-vue-next';
+import { Plus, Calendar, Scissors, X, Clock } from 'lucide-vue-next';
 import AppButton from '../../components/AppButton.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
