@@ -584,10 +584,10 @@ const allNavGroups: NavGroup[] = [
     id: 'ombor',
     title: 'OMBOR',
     items: [
-      { name: 'products', label: 'Mahsulotlar', to: '/products', icon: Package, types: ['shop', 'restaurant', 'cafe', 'pharmacy', 'confectionery', 'other'] },
-      { name: 'categories', label: 'Kategoriyalar', to: '/categories', icon: FolderTree, types: ['shop', 'restaurant', 'cafe', 'pharmacy', 'confectionery', 'other'] },
-      { name: 'inventory', label: 'Omborxona', to: '/inventory', icon: Boxes, types: ['shop', 'restaurant', 'cafe', 'pharmacy', 'confectionery', 'other'] },
-      { name: 'suppliers', label: 'Ta\'minotchilar', to: '/suppliers', icon: Truck, types: ['shop', 'restaurant', 'pharmacy', 'confectionery', 'other'] },
+      { name: 'products', label: 'Mahsulotlar', to: '/products', icon: Package, types: ['all'] },
+      { name: 'categories', label: 'Kategoriyalar', to: '/categories', icon: FolderTree, types: ['all'] },
+      { name: 'inventory', label: 'Omborxona', to: '/inventory', icon: Boxes, types: ['all'] },
+      { name: 'suppliers', label: 'Ta\'minotchilar', to: '/suppliers', icon: Truck, types: ['all'] },
     ],
   },
   {
