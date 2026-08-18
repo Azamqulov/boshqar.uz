@@ -25,7 +25,7 @@
     "label": "Sartaroshxona",
     "desc": "Ustalarning bandlik jadvali",
     "iconName": "Scissors",
-    "isEnabled": false
+    "isEnabled": true
   },
   {
     "type": "pharmacy",
