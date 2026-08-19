@@ -16,6 +16,10 @@ export class RegisterDto {
   @IsString()
   @MinLength(4, { message: 'Parol kamida 4 ta belgidan iborat bo\'lishi shart' })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  otp?: string;
 }
 
 export class LoginDto {

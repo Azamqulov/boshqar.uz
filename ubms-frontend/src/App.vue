@@ -1,4 +1,5 @@
 <template>
+  <MaintenanceOverlay />
   <OfflineStatusBar />
   <router-view v-slot="{ Component }">
     <transition name="page" mode="out-in">
@@ -13,6 +14,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import MaintenanceOverlay from './components/MaintenanceOverlay.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import FloatingStockAlert from './components/FloatingStockAlert.vue';
 import CookieConsentBanner from './components/CookieConsentBanner.vue';

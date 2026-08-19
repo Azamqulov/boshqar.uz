@@ -37,7 +37,13 @@ import {
   Package,
   Store,
   Users,
+  Truck,
   DollarSign,
+  Clock,
+  UtensilsCrossed,
+  Calendar,
+  LayoutDashboard,
+  Bot,
   Settings,
 } from 'lucide-vue-next';
 import { GUIDE_MODULES } from './guideData';
@@ -50,89 +56,110 @@ const searchQuery = ref('');
 const viewMode = ref<'guides' | 'ai'>('guides');
 const selectedTopic = ref<any>(null);
 
-const guideTopics = [
-  {
-    id: 'pos',
-    title: 'Kassa (POS)',
-    desc: 'Savdo qilish, chek chiqarish, to‘lov turlari va hisob-kitoblar.',
-    count: 12,
-    icon: ShoppingCart,
-    iconBg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    route: '/pos',
-    steps: GUIDE_MODULES.find((m) => m.id === 'pos')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'pos')?.faq || [],
+const iconMap: Record<string, any> = {
+  pos: ShoppingCart,
+  products: Package,
+  inventory: Store,
+  customers: Users,
+  suppliers: Truck,
+  finance: DollarSign,
+  shifts: Clock,
+  restaurant: UtensilsCrossed,
+  appointments: Calendar,
+  dashboard: LayoutDashboard,
+  telegram: Bot,
+  settings: Settings,
+};
+
+const iconStyleMap: Record<string, { bg: string; color: string }> = {
+  pos: {
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
+    color: 'text-emerald-600 dark:text-emerald-400',
   },
-  {
-    id: 'products',
-    title: 'Mahsulotlar',
-    desc: 'Yangi mahsulot qo‘shish, tahrirlash, narx va shtrix-kodlar.',
-    count: 8,
-    icon: Package,
-    iconBg: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    route: '/products',
-    steps: GUIDE_MODULES.find((m) => m.id === 'products')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'products')?.faq || [],
+  products: {
+    bg: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400',
+    color: 'text-blue-600 dark:text-blue-400',
   },
-  {
-    id: 'inventory',
-    title: 'Omborxona',
-    desc: 'Qabul qilish, qoldiqni ko‘rish, omborlar va harakatlar.',
-    count: 7,
-    icon: Store,
-    iconBg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    route: '/inventory',
-    steps: GUIDE_MODULES.find((m) => m.id === 'inventory')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'inventory')?.faq || [],
+  inventory: {
+    bg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
+    color: 'text-amber-600 dark:text-amber-400',
   },
-  {
-    id: 'customers',
-    title: 'Mijozlar (CRM)',
-    desc: 'Mijozlarni boshqarish, qarzlar, nasiyalar va tarix.',
-    count: 6,
-    icon: Users,
-    iconBg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
-    iconColor: 'text-purple-600 dark:text-purple-400',
-    route: '/customers',
-    steps: GUIDE_MODULES.find((m) => m.id === 'customers')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'customers')?.faq || [],
+  customers: {
+    bg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
+    color: 'text-purple-600 dark:text-purple-400',
   },
-  {
-    id: 'finance',
-    title: 'Moliya & Hisobot',
-    desc: 'Kirim-chiqimlar, foyda, xarajatlar va moliyaviy hisobotlar.',
-    count: 10,
-    icon: DollarSign,
-    iconBg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-500',
-    iconColor: 'text-amber-600 dark:text-amber-500',
-    route: '/finance',
-    steps: GUIDE_MODULES.find((m) => m.id === 'finance')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'finance')?.faq || [],
+  suppliers: {
+    bg: 'bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600 dark:text-cyan-400',
+    color: 'text-cyan-600 dark:text-cyan-400',
   },
-  {
-    id: 'settings',
-    title: 'Sozlamalar',
-    desc: 'Tizim sozlamalari, foydalanuvchilar, huquqlar va boshqa.',
-    count: 9,
-    icon: Settings,
-    iconBg: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
-    iconColor: 'text-slate-600 dark:text-slate-400',
-    route: '/settings',
-    steps: GUIDE_MODULES.find((m) => m.id === 'settings')?.steps || [],
-    faq: GUIDE_MODULES.find((m) => m.id === 'settings')?.faq || [],
+  finance: {
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
+    color: 'text-emerald-600 dark:text-emerald-400',
   },
-];
+  shifts: {
+    bg: 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400',
+    color: 'text-orange-600 dark:text-orange-400',
+  },
+  restaurant: {
+    bg: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
+    color: 'text-rose-600 dark:text-rose-400',
+  },
+  appointments: {
+    bg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
+    color: 'text-purple-600 dark:text-purple-400',
+  },
+  dashboard: {
+    bg: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400',
+    color: 'text-indigo-600 dark:text-indigo-400',
+  },
+  telegram: {
+    bg: 'bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400',
+    color: 'text-sky-600 dark:text-sky-400',
+  },
+  settings: {
+    bg: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+    color: 'text-slate-600 dark:text-slate-400',
+  },
+};
+
+const guideTopics = computed(() => {
+  return GUIDE_MODULES.map((m) => {
+    const style = iconStyleMap[m.id] || {
+      bg: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+      color: 'text-slate-600 dark:text-slate-400',
+    };
+    return {
+      id: m.id,
+      title: m.title,
+      desc: m.shortDesc,
+      count: m.steps.length + m.faq.length,
+      icon: iconMap[m.id] || Settings,
+      iconBg: style.bg,
+      iconColor: style.color,
+      route: m.route,
+      steps: m.steps,
+      faq: m.faq,
+    };
+  });
+});
 
 const filteredTopics = computed(() => {
   const q = searchQuery.value.toLowerCase().trim();
-  if (!q) return guideTopics;
-  return guideTopics.filter(
+  if (!q) return guideTopics.value;
+  return guideTopics.value.filter(
     (t) =>
       t.title.toLowerCase().includes(q) ||
       t.desc.toLowerCase().includes(q) ||
-      t.steps.some((s) => s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+      t.steps.some(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q)
+      ) ||
+      t.faq.some(
+        (f) =>
+          f.q.toLowerCase().includes(q) ||
+          f.a.toLowerCase().includes(q)
+      )
   );
 });
 

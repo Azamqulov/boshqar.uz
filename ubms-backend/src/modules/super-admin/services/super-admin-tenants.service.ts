@@ -578,4 +578,41 @@ export class SuperAdminTenantsService {
     invalidateTenantsCache();
     return toggleBusinessTypeConfig(type, isEnabled);
   }
+
+  getMaintenanceStatus() {
+    return getMaintenanceConfig();
+  }
+
+  updateMaintenanceStatus(dto: Partial<MaintenanceConfig>) {
+    return setMaintenanceConfig(dto);
+  }
+}
+
+export interface MaintenanceConfig {
+  isMaintenance: boolean;
+  title: string;
+  message: string;
+  estimatedEndTime?: string;
+  updatedAt: string;
+}
+
+let maintenanceState: MaintenanceConfig = {
+  isMaintenance: false,
+  title: 'Texnik profilaktika ishlari olib borilmoqda',
+  message: 'Tizimni yangilash va optimallashtirish ishlari ketmoqda. Tez orada barcha xizmatlar to\'liq quvvatda ishga tushadi.',
+  estimatedEndTime: '20 daqiqadan so\'ng',
+  updatedAt: new Date().toISOString(),
+};
+
+export function getMaintenanceConfig(): MaintenanceConfig {
+  return maintenanceState;
+}
+
+export function setMaintenanceConfig(dto: Partial<MaintenanceConfig>): MaintenanceConfig {
+  maintenanceState = {
+    ...maintenanceState,
+    ...dto,
+    updatedAt: new Date().toISOString(),
+  };
+  return maintenanceState;
 }

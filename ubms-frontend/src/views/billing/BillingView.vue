@@ -323,6 +323,7 @@ const loadBillingStatus = async (silent = false) => {
       requisites.value = data.requisites;
       pendingRequest.value = data.pendingRequest;
       saveToStorage('billing_status', data);
+      window.dispatchEvent(new Event('billing-updated'));
     }
   } catch (err: any) {
     console.error('Billing status error:', err);

@@ -237,28 +237,106 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- 1. Nasiya (Debt) -->
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <Users class="w-5 h-5" />
+        <!-- 1. Nasiya (Qarzga sotish) & Qarz Limiti (md:col-span-2) -->
+        <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 md:col-span-2 space-y-4 transition-all duration-300">
+          <!-- Asosiy Switch -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <Users class="w-5 h-5" />
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Nasiya (Qarzga sotish)</span>
+                  <span
+                    v-if="isFeatureDisabled('customer_loyalty')"
+                    class="text-[10px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold"
+                  >Tarifda o'chirilgan</span>
+                  <span
+                    v-else-if="posSettings.allowDebt"
+                    class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold"
+                  >Yoqilgan</span>
+                  <span
+                    v-else
+                    class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold"
+                  >O'chirilgan</span>
+                </h4>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">To'lov usullarida Nasiya tugmasi va mijozga qarz yozish imkoniyati</p>
+              </div>
             </div>
-            <div>
-              <h4 class="font-bold text-xs text-slate-900 dark:text-white">Nasiya (Qarzga sotish)</h4>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400">To'lov usullarida Nasiya tugmasi chiqadi</p>
+            <button
+              type="button"
+              :disabled="isFeatureDisabled('customer_loyalty')"
+              @click="$emit('togglePosSetting', 'allowDebt')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+              :class="posSettings.allowDebt && !isFeatureDisabled('customer_loyalty') ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.allowDebt && !isFeatureDisabled('customer_loyalty') ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <!-- Nasiyaga bog'langan Qarz Limiti (Sub-section) -->
+          <div
+            class="pt-3 border-t border-slate-200/80 dark:border-slate-700/80 transition-all duration-300"
+            :class="posSettings.allowDebt ? 'opacity-100' : 'opacity-40 pointer-events-none select-none'"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 dark:bg-slate-900/40 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <ShieldAlert class="w-4 h-4" />
+                </div>
+                <div>
+                  <h5 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Mijoz Qarz Limiti</span>
+                    <span v-if="!posSettings.allowDebt" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold">Nasiya o'chiq</span>
+                    <span v-else-if="posSettings.maxDebtLimit > 0" class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">Limitli</span>
+                    <span v-else class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold">Cheksiz</span>
+                  </h5>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400">Bitta mijozga yozilishi mumkin bo'lgan maksimal qarz miqdori (0 = cheksiz)</p>
+                </div>
+              </div>
+
+              <!-- Input + Saqlash -->
+              <div class="flex items-center gap-2 shrink-0">
+                <div class="w-40 sm:w-44">
+                  <CurrencyInput
+                    :model-value="debtLimitInput"
+                    :disabled="!posSettings.allowDebt"
+                    @update:model-value="debtLimitInput = $event"
+                    placeholder="0 = cheksiz"
+                    :input-class="posSettings.maxDebtLimit > 0 && posSettings.allowDebt ? 'text-rose-600 dark:text-rose-400 font-bold' : ''"
+                  />
+                </div>
+                <button
+                  type="button"
+                  :disabled="!posSettings.allowDebt"
+                  @click="$emit('setDebtLimit', debtLimitInput)"
+                  class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white transition shadow-sm hover:shadow-md active:scale-95"
+                >Saqlash</button>
+                <button
+                  v-if="posSettings.maxDebtLimit > 0 && posSettings.allowDebt"
+                  type="button"
+                  @click="debtLimitInput = 0; $emit('setDebtLimit', 0)"
+                  class="px-2.5 py-2.5 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
+                >Bekor</button>
+              </div>
+            </div>
+
+            <!-- Hozirgi limit ko'rinishi -->
+            <div v-if="posSettings.allowDebt && posSettings.maxDebtLimit > 0" class="mt-2.5 px-1 flex items-center gap-2 text-[11px]">
+              <ShieldAlert class="w-3.5 h-3.5 text-rose-500 shrink-0" />
+              <span class="text-slate-600 dark:text-slate-300">
+                Mijozlar bir vaqtda
+                <strong class="text-rose-600 dark:text-rose-400 font-mono font-black">
+                  {{ formatCurrency(posSettings.maxDebtLimit) }}
+                </strong>
+                dan ko'p qarz yoza olmaydi.
+              </span>
             </div>
           </div>
-          <button
-            type="button"
-            @click="$emit('togglePosSetting', 'allowDebt')"
-            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-            :class="posSettings.allowDebt ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
-          >
-            <span
-              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
-              :class="posSettings.allowDebt ? 'translate-x-5' : 'translate-x-0'"
-            />
-          </button>
         </div>
 
         <!-- 2. Chegirma (Discounts) -->
@@ -334,7 +412,7 @@
         </div>
 
         <!-- 5. Kassa Tezkor Tugmalari (Hotkeys) -->
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between md:col-span-2">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <Keyboard class="w-5 h-5" />
@@ -344,7 +422,7 @@
                 <span>Kassa tezkor tugmalari (Hotkeys)</span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">F1 — F10</span>
               </h4>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400">Sichqonchasiz tezkor kassa boshqaruvi: F2 (Qidiruv), F4 (Chegirma), F8 (Kutish), F10 (To'lov), Enter (Tasdiqlash)</p>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400">Sichqonchasiz tezkor kassa boshqaruvi: F2, F4, F8, F10</p>
             </div>
           </div>
           <button
@@ -358,60 +436,6 @@
               :class="posSettings.enableHotkeys !== false ? 'translate-x-5' : 'translate-x-0'"
             />
           </button>
-        </div>
-
-        <!-- 6. Qarz Limiti -->
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 md:col-span-2">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div class="flex items-center gap-3 flex-1">
-              <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                <ShieldAlert class="w-5 h-5" />
-              </div>
-              <div>
-                <h4 class="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Mijoz Qarz Limiti (Nasiya)</span>
-                  <span v-if="posSettings.maxDebtLimit > 0" class="text-[10px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">Faol</span>
-                  <span v-else class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-500 font-bold">Cheksiz</span>
-                </h4>
-                <p class="text-[10px] text-slate-500 dark:text-slate-400">Mijozning nasiya / qarzi shu summadan oshsa, yangi qarz yozib bo'lmaydi. 0 = cheksiz</p>
-              </div>
-            </div>
-
-            <!-- Limit input + saqlash -->
-            <div class="flex items-center gap-2 shrink-0">
-              <div class="w-44">
-                <CurrencyInput
-                  :model-value="debtLimitInput"
-                  @update:model-value="debtLimitInput = $event"
-                  placeholder="0 = cheksiz"
-                  :input-class="posSettings.maxDebtLimit > 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : ''"
-                />
-              </div>
-              <button
-                type="button"
-                @click="$emit('setDebtLimit', debtLimitInput)"
-                class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white transition shadow-sm hover:shadow-md active:scale-95"
-              >Saqlash</button>
-              <button
-                v-if="posSettings.maxDebtLimit > 0"
-                type="button"
-                @click="debtLimitInput = 0; $emit('setDebtLimit', 0)"
-                class="px-2.5 py-2.5 rounded-xl text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
-              >Bekor</button>
-            </div>
-          </div>
-
-          <!-- Hozirgi limit ko'rinishi -->
-          <div v-if="posSettings.maxDebtLimit > 0" class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 text-[11px]">
-            <ShieldAlert class="w-3.5 h-3.5 text-rose-500 shrink-0" />
-            <span class="text-slate-600 dark:text-slate-300">
-              Mijozlar bir vaqtda
-              <strong class="text-rose-600 dark:text-rose-400 font-mono font-black">
-                {{ formatCurrency(posSettings.maxDebtLimit) }}
-              </strong>
-              dan ko'p qarz yoza olmaydi.
-            </span>
-          </div>
         </div>
       </div>
     </div>
@@ -437,9 +461,11 @@ import {
 } from 'lucide-vue-next';
 import { useThemeStore } from '../../../stores/theme.store';
 import { useFormat } from '../../../composables/useFormat';
+import { usePlanFeatures } from '../../../composables/usePlanFeatures';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 
 const { formatCurrency } = useFormat();
+const { isFeatureDisabled } = usePlanFeatures();
 
 const props = defineProps<{
   posSettings: {

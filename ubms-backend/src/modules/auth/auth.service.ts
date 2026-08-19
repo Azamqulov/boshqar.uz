@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TelegramService } from '../telegram/telegram.service';
 import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, VerifyOtpDto, ResetPasswordDto } from './dto/auth.dto';
 import { mapPermModulesToUiModules, extractActionPermissions } from '../employees/employees.service';
 import * as bcrypt from 'bcrypt';
@@ -24,6 +25,14 @@ interface LoginAttemptRecord {
   lockedUntil: number | null;
 }
 
+interface RegisterOtpRecord {
+  phone: string;
+  otp: string;
+  expiresAt: number;
+}
+
+const registerOtpStore = new Map<string, RegisterOtpRecord>();
+
 @Injectable()
 export class AuthService {
   private loginAttempts = new Map<string, LoginAttemptRecord>();
@@ -31,6 +40,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private telegramService: TelegramService,
   ) {}
 
   private getLockoutDurationMinutes(lockoutCount: number): number {
@@ -39,6 +49,43 @@ export class AuthService {
     if (lockoutCount === 3) return 10;
     if (lockoutCount === 4) return 15;
     return 15 + (lockoutCount - 4) * 5;
+  }
+
+  async sendRegisterOtp(phone: string) {
+    const cleanPhone = normalizePhone(phone);
+    const last9 = cleanPhone.replace(/\D/g, '').slice(-9);
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanPhone },
+          { phone: { endsWith: last9 } },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException({
+        code: 'USER_EXISTS',
+        message: 'Ushbu telefon raqam bilan allaqachon hisob ochilgan. Iltimos, Kirish tugmasi orqali kiring.',
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    registerOtpStore.set(cleanPhone, {
+      phone: cleanPhone,
+      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 mins
+    });
+
+    const tgRes = await this.telegramService.sendVerificationCode(cleanPhone, otp, 'register');
+
+    return {
+      success: true,
+      message: 'Tasdiqlash kodi Telegram botga yuborildi',
+      botUsername: tgRes.botUsername || 'Boshqar_uzbot',
+      devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined,
+    };
   }
 
   async register(dto: RegisterDto) {
@@ -60,6 +107,18 @@ export class AuthService {
         code: 'USER_EXISTS',
         message: 'Ushbu telefon raqam bilan allaqachon hisob ochilgan. Iltimos, Kirish tugmasi orqali kiring.',
       });
+    }
+
+    // OTP validation if OTP was requested
+    if (dto.otp) {
+      const cached = registerOtpStore.get(cleanPhone);
+      if (!cached || cached.expiresAt < Date.now() || cached.otp !== dto.otp.trim()) {
+        throw new BadRequestException({
+          code: 'INVALID_OTP',
+          message: 'Telegram orqali yuborilgan tasdiqlash kodi noto\'g\'ri yoki muddati tugagan',
+        });
+      }
+      registerOtpStore.delete(cleanPhone);
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -308,11 +367,12 @@ export class AuthService {
       },
     });
 
-    console.log(`[SMS-AUTH] Parolni tiklash kodi (${user.phone}): ${resetOtp}`);
+    const tgRes = await this.telegramService.sendVerificationCode(user.phone, resetOtp, 'forgot_password');
 
     return {
       success: true,
-      message: 'Parolni tiklash kodi SMS orqali yuborildi',
+      message: 'Parolni tiklash kodi Telegram bot orqali yuborildi',
+      botUsername: tgRes.botUsername || 'Boshqar_uzbot',
       devOtp: process.env.NODE_ENV !== 'production' ? resetOtp : undefined,
     };
   }

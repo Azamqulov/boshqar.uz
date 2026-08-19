@@ -309,4 +309,94 @@ export class TelegramService implements OnModuleInit {
   dispatchScheduledDailySummaries(): Promise<TelegramDailyDispatchResult> {
     return this.notificationService.dispatchScheduledDailySummaries();
   }
+
+  async sendVerificationCode(
+    phone: string,
+    code: string,
+    type: 'register' | 'forgot_password',
+  ): Promise<{ sent: boolean; message?: string; botUsername?: string }> {
+    const rawDigits = phone.replace(/\D/g, '');
+    const last9 = rawDigits.length >= 9 ? rawDigits.slice(-9) : rawDigits;
+
+    let targetChatId: string | null = null;
+
+    // 1. Find user by phone in Prisma
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: phone },
+          { phone: `+${rawDigits}` },
+          { phone: { contains: last9 } },
+        ],
+      },
+      include: {
+        businessUsers: {
+          include: {
+            business: true,
+          },
+        },
+      },
+    });
+
+    if (user?.businessUsers?.length) {
+      for (const bu of user.businessUsers) {
+        const pos = bu.business?.posSettings as any;
+        if (pos?.telegram?.accounts?.length) {
+          targetChatId = pos.telegram.accounts[0].chatId;
+          break;
+        } else if (pos?.telegram?.chatId) {
+          targetChatId = String(pos.telegram.chatId);
+          break;
+        }
+      }
+    }
+
+    // 2. If not found, search all businesses for this phone
+    if (!targetChatId) {
+      const businesses = await this.prisma.business.findMany({
+        select: { id: true, posSettings: true },
+      });
+      for (const b of businesses) {
+        const accounts = this.accountService.getBusinessAccounts(b.posSettings as any);
+        const match = accounts.find(
+          (a) => a.phone && a.phone.replace(/\D/g, '').includes(last9),
+        );
+        if (match?.chatId) {
+          targetChatId = String(match.chatId);
+          break;
+        }
+      }
+    }
+
+    const text =
+      type === 'forgot_password'
+        ? `🔐 <b>Boshqar.uz — Parolni Tiklash Xabarnomasi</b>\n\n` +
+          `Hurmatli foydalanuvchi, sizning hisobingiz uchun parolni tiklash so'raldi.\n\n` +
+          `Sizning 6 xonali tasdiqlash kodingiz:\n\n` +
+          `👉 <b><code>${code}</code></b> 👈\n\n` +
+          `⏳ <i>Ushbu kod 10 daqiqa davomida amal qiladi. Agar siz ushbu so'rovni yubormagan bo'lsangiz, xabarga e'tibor bermang.</i>\n\n` +
+          `🌐 <a href="https://boshqar.uz">boshqar.uz</a>`
+        : `🚀 <b>Boshqar.uz — Ro'yxatdan O'tish Kodi</b>\n\n` +
+          `Sizning 6 xonali tasdiqlash kodingiz:\n\n` +
+          `👉 <b><code>${code}</code></b> 👈\n\n` +
+          `⏳ <i>Ushbu kod 10 daqiqa davomida amal qiladi. Kodni saytga kiriting!</i>\n\n` +
+          `🌐 <a href="https://boshqar.uz">boshqar.uz</a>`;
+
+    if (targetChatId) {
+      try {
+        await this.sendMessage(targetChatId, text);
+        this.logger.log(`✅ Telegram OTP sent successfully to ChatID: ${targetChatId} (${phone})`);
+        return { sent: true, botUsername: this.botUsername };
+      } catch (e) {
+        this.logger.warn(`Could not send Telegram OTP to chatId ${targetChatId}: ${e}`);
+      }
+    }
+
+    this.logger.log(`[AUTH-OTP] Telegram OTP for ${phone}: ${code} (No active chat linked yet)`);
+    return {
+      sent: Boolean(targetChatId),
+      botUsername: this.botUsername,
+      message: targetChatId ? undefined : 'Botga ulanmagan yoki kod konsolga chiqarildi',
+    };
+  }
 }

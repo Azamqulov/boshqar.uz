@@ -82,5 +82,13 @@ export class ApiService {
   static async dispatchDailySummaries() {
     return axios.post(`${BOT_CONFIG.API_URL}/telegram/dispatch-daily-summaries`);
   }
+
+  static async requestRegisterOtp(phone: string) {
+    return axios.post(`${BOT_CONFIG.API_URL}/auth/send-register-otp`, { phone });
+  }
+
+  static async requestForgotPasswordOtp(phone: string) {
+    return axios.post(`${BOT_CONFIG.API_URL}/auth/forgot-password`, { login: phone });
+  }
 }
 

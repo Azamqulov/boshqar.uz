@@ -172,7 +172,7 @@
             <!-- Group Items -->
             <div v-for="item in group.items" :key="item.name" class="space-y-1">
               <router-link
-                :to="isItemLocked(item) ? '/billing' : item.to"
+                :to="item.to"
                 @click="isMobileSidebarOpen = false"
                 class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
                 :class="[
@@ -399,48 +399,41 @@
 
         <!-- Main Router View -->
         <main class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 bg-slate-100/70 dark:bg-slate-950 pb-20 md:pb-6 relative">
-          <!-- Full Screen Subscription Expired Blocking Guard Overlay -->
+          <!-- Full Screen Feature / Subscription Expired Blur & Lock Overlay -->
           <div
-            v-if="isSubscriptionExpired && !authStore.user?.isSuperAdmin && $route.path !== '/billing' && $route.path !== '/guide'"
-            class="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+            v-if="isCurrentRouteLocked"
+            class="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 rounded-2xl animate-fade-in"
           >
-            <div class="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-rose-500/30 shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-200">
-              <div class="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center mx-auto shadow-inner">
-                <AlertTriangle class="w-8 h-8 animate-bounce" />
+            <div class="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-2xl text-center space-y-4 animate-in zoom-in-95 duration-200">
+              <div class="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto shadow-inner">
+                <Lock class="w-8 h-8 text-amber-500" />
               </div>
 
-              <div class="space-y-2">
-                <h3 class="text-xl font-black text-slate-900 dark:text-white">
-                  Obuna Muddati Yakunlandi
+              <div>
+                <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {{ currentDisabledFeature ? `«${currentDisabledFeature.label}» xizmati o'chirilgan` : "Obunangiz muddati tugagan" }}
                 </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Hurmatli tadbirkor, sizning <strong class="text-slate-800 dark:text-slate-200">{{ authStore.activeBusiness?.name }}</strong> korxonangiz uchun <strong class="text-emerald-500">Boshqar.uz</strong> obuna muddati tugadi. Ma'lumotlaringiz xavfsiz saqlanmoqda. Tizimdan to'liq foydalanishni davom ettirish uchun tarifni faollashtiring.
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  {{ currentDisabledFeature ? "Ushbu xizmat sizning joriy tarifingizda faollashtirilmagan. Foydalanish uchun tarif parametrlarini yoqing yoki tarifni yangilang." : "Dasturdan to'liq foydalanishni davom ettirish uchun obunani yangilang. Faqat Obuna, Qo'llanma va Sozlamalar bo'limlari ochiq." }}
                 </p>
               </div>
 
-              <div class="space-y-2.5 pt-2">
+              <div class="pt-2">
                 <router-link
                   to="/billing"
-                  class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2"
+                  class="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 transition transform active:scale-98 btn-interactive"
                 >
-                  <CreditCard class="w-4 h-4" />
-                  <span>Obunani Faollashtirish (Tariflar)</span>
-                  <ArrowRight class="w-4 h-4" />
+                  <CreditCard class="w-5 h-5" />
+                  <span>{{ currentDisabledFeature ? "Tariflarni Ko'rish" : "Obunani Yangilash" }}</span>
                 </router-link>
-
-                <a
-                  href="https://t.me/Boshqar_uzbot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
-                >
-                  <span>Menejer bilan bog'lanish (Telegram)</span>
-                </a>
               </div>
             </div>
           </div>
 
-          <router-view />
+          <!-- Page Content with Smooth Blur when Locked -->
+          <div :class="{ 'filter blur-[5px] pointer-events-none select-none opacity-60 transition-all duration-300': isCurrentRouteLocked }">
+            <router-view />
+          </div>
         </main>
       </div>
     </div>
@@ -472,7 +465,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth.store';
 import { useDataStore } from '../stores/data.store';
@@ -542,6 +535,7 @@ const goToRegister = () => {
 
 watch(() => route.path, () => {
   isMobileSidebarOpen.value = false;
+  fetchBillingStatus();
 });
 
 const businessType = computed(() => authStore.businessType);
@@ -579,8 +573,9 @@ const lowStockCount = computed(() => {
   }).length;
 });
 
-// Subscription Expiration Tracking for Sidebar & Header Reminder
+// Subscription & Plan Features Tracking
 const billingSubscription = ref<any>(null);
+const billingStatusData = ref<any>(null);
 
 const fetchBillingStatus = async () => {
   if (!authStore.isAuthenticated) return;
@@ -588,13 +583,15 @@ const fetchBillingStatus = async () => {
     const cached = localStorage.getItem('ubms_cache_billing_status');
     if (cached) {
       const parsed = JSON.parse(cached);
+      billingStatusData.value = parsed;
       billingSubscription.value = parsed.subscription;
     }
   } catch (e) {}
 
   try {
     const { data } = await api.get('/billing/status');
-    if (data?.subscription) {
+    if (data) {
+      billingStatusData.value = data;
       billingSubscription.value = data.subscription;
       localStorage.setItem('ubms_cache_billing_status', JSON.stringify(data));
     }
@@ -602,6 +599,64 @@ const fetchBillingStatus = async () => {
     // silently fail
   }
 };
+
+const activePlanFeatures = computed<Record<string, boolean>>(() => {
+  const data = billingStatusData.value;
+  // 1. From active business plan features
+  if (data?.business?.plan?.features && typeof data.business.plan.features === 'object') {
+    return data.business.plan.features;
+  }
+  // 2. From matching plan in plans list
+  if (data?.plans && Array.isArray(data.plans)) {
+    const planName = billingSubscription.value?.planName || data?.business?.plan?.name || authStore.activeBusiness?.plan;
+    if (planName) {
+      const matched = data.plans.find(
+        (p: any) => p.name?.toLowerCase() === planName.toLowerCase()
+      );
+      if (matched?.features && typeof matched.features === 'object') {
+        return matched.features;
+      }
+    }
+  }
+  return {
+    pos: true,
+    inventory: true,
+    finance: true,
+    customer_loyalty: true,
+    suppliers: true,
+    telegram_bot: true,
+    ai_assistant: true,
+    export_reports: true,
+    vip_support: true,
+    cloud_backup: true,
+  };
+});
+
+const getDisabledFeatureForPath = (path: string): { key: string; label: string } | null => {
+  const feats = activePlanFeatures.value;
+  if (!feats) return null;
+
+  if ((path === '/pos' || path.startsWith('/restaurant')) && feats.pos === false) {
+    return { key: 'pos', label: 'POS Kassa & Chek chiqarish' };
+  }
+  if ((path.startsWith('/products') || path.startsWith('/categories') || path === '/inventory') && feats.inventory === false) {
+    return { key: 'inventory', label: 'Omborxona & Mahsulotlar nazorati' };
+  }
+  if (path.startsWith('/finance') && feats.finance === false) {
+    return { key: 'finance', label: 'Moliya & Kunlik hisobotlar' };
+  }
+  if (path.startsWith('/customers') && feats.customer_loyalty === false) {
+    return { key: 'customer_loyalty', label: 'Mijozlar bazasi va Nasiya (CRM)' };
+  }
+  if (path.startsWith('/suppliers') && feats.suppliers === false) {
+    return { key: 'suppliers', label: 'Ta\'minotchilar & Xaridlar' };
+  }
+  return null;
+};
+
+const currentDisabledFeature = computed(() => {
+  return getDisabledFeatureForPath(route.path);
+});
 
 const subscriptionDaysLeft = computed(() => {
   if (!billingSubscription.value) return null;
@@ -615,18 +670,50 @@ const isSubscriptionExpiringSoon = computed(() => {
 });
 
 const isSubscriptionExpired = computed(() => {
-  if (authStore.user?.isSuperAdmin) return false;
   if (authStore.isSubscriptionExpired) return true;
   if (!billingSubscription.value) return false;
   if (billingSubscription.value.planName === 'Free') return false;
-  return billingSubscription.value.isExpired || (subscriptionDaysLeft.value !== null && subscriptionDaysLeft.value <= 0);
+  return Boolean(
+    billingSubscription.value.isExpired ||
+    (subscriptionDaysLeft.value !== null && subscriptionDaysLeft.value <= 0) ||
+    billingSubscription.value.status === 'cancelled' ||
+    billingSubscription.value.status === 'expired'
+  );
 });
 
 const isItemLocked = (item: NavItem) => {
-  if (!isSubscriptionExpired.value) return false;
-  const allowed = ['billing', 'settings', 'guide', 'superadmin'];
-  return !allowed.includes(item.name);
+  if (isSubscriptionExpired.value) {
+    const allowed = ['billing', 'settings', 'guide', 'superadmin'];
+    return !allowed.includes(item.name);
+  }
+  const feats = activePlanFeatures.value;
+  if (item.name === 'pos' && feats.pos === false) return true;
+  if ((item.name === 'inventory' || item.name === 'products') && feats.inventory === false) return true;
+  if (item.name === 'finance' && feats.finance === false) return true;
+  if (item.name === 'customers' && feats.customer_loyalty === false) return true;
+  if (item.name === 'suppliers' && feats.suppliers === false) return true;
+  return false;
 };
+
+const isAllowedExpiredRoute = computed(() => {
+  const currentPath = route.path;
+  return (
+    currentPath.startsWith('/billing') ||
+    currentPath.startsWith('/settings') ||
+    currentPath.startsWith('/guide') ||
+    currentPath.startsWith('/superadmin')
+  );
+});
+
+const isCurrentRouteLocked = computed(() => {
+  if (isSubscriptionExpired.value && !isAllowedExpiredRoute.value) {
+    return true;
+  }
+  if (currentDisabledFeature.value) {
+    return true;
+  }
+  return false;
+});
 
 watch(() => authStore.activeBusiness?.id, () => {
   fetchBillingStatus();
@@ -637,6 +724,13 @@ onMounted(() => {
     dataStore.fetchProducts();
     fetchBillingStatus();
   }
+  window.addEventListener('billing-updated', fetchBillingStatus);
+  window.addEventListener('storage', fetchBillingStatus);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('billing-updated', fetchBillingStatus);
+  window.removeEventListener('storage', fetchBillingStatus);
 });
 
 interface NavSubItem {

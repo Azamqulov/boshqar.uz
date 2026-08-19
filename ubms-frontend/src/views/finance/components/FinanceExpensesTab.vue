@@ -30,49 +30,92 @@
         </div>
       </div>
 
-      <!-- 3.1 TABLE VIEW -->
-      <div v-if="viewMode === 'table'" class="overflow-x-auto max-w-full w-full">
-        <table class="w-full text-left text-xs border-collapse min-w-[550px]">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold whitespace-nowrap">
-            <tr>
-              <th class="py-3 px-4">Sana</th>
-              <th class="py-3 px-4">Kategoriya</th>
-              <th class="py-3 px-4">Tavsif / Izoh</th>
-              <th class="py-3 px-4 text-right">Summa</th>
-              <th class="py-3 px-4 text-center">Harakat</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="!loading && filteredExpenses.length === 0">
-              <td colspan="5" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                <TrendingDown class="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <span>Xarajatlar mavjud emas</span>
-              </td>
-            </tr>
-            <tr v-for="exp in pagination.paginatedItems.value" :key="exp.id"
-              class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">{{ formatDate(exp.recordedAt) }}</td>
-              <td class="py-3.5 px-4 font-bold uppercase text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                <span class="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 border border-rose-500/20 whitespace-nowrap">
-                  {{ getCategoryLabel(exp.category) }}
-                </span>
-              </td>
-              <td class="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap max-w-xs truncate">{{ exp.description || '-' }}</td>
-              <td class="py-3.5 px-4 text-right font-black text-rose-600 dark:text-rose-400 font-mono whitespace-nowrap">
+      <!-- 3.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
+      <div v-if="viewMode === 'table'" class="w-full">
+        <!-- Mobile cards on small screens (< md) -->
+        <div class="block md:hidden space-y-3">
+          <div v-if="!loading && filteredExpenses.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
+            <TrendingDown class="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <span>Xarajatlar mavjud emas</span>
+          </div>
+
+          <div
+            v-for="exp in pagination.paginatedItems.value"
+            :key="exp.id"
+            class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs"
+          >
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                {{ getCategoryLabel(exp.category) }}
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">
+                {{ formatDate(exp.recordedAt) }}
+              </span>
+            </div>
+
+            <p class="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2">
+              {{ exp.description || 'Izoh ko\'rsatilmadi' }}
+            </p>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                @click="$emit('deleteExpense', exp)"
+                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition flex items-center gap-1 btn-interactive"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>O'chirish</span>
+              </button>
+              <span class="font-black text-rose-600 dark:text-rose-400 font-mono text-base">
                 -{{ formatCurrency(exp.amount) }}
-              </td>
-              <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                <button
-                  @click="$emit('deleteExpense', exp)"
-                  class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                  title="Xarajatni o'chirish"
-                >
-                  <Trash2 class="w-3.5 h-3.5" />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table View (>= md) -->
+        <div class="hidden md:block overflow-x-auto max-w-full w-full">
+          <table class="w-full text-left text-xs border-collapse min-w-[550px]">
+            <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold whitespace-nowrap">
+              <tr>
+                <th class="py-3 px-4">Sana</th>
+                <th class="py-3 px-4">Kategoriya</th>
+                <th class="py-3 px-4">Tavsif / Izoh</th>
+                <th class="py-3 px-4 text-right">Summa</th>
+                <th class="py-3 px-4 text-center">Harakat</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
+              <tr v-if="!loading && filteredExpenses.length === 0">
+                <td colspan="5" class="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <TrendingDown class="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <span>Xarajatlar mavjud emas</span>
+                </td>
+              </tr>
+              <tr v-for="exp in pagination.paginatedItems.value" :key="exp.id"
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">{{ formatDate(exp.recordedAt) }}</td>
+                <td class="py-3.5 px-4 font-bold uppercase text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 border border-rose-500/20 whitespace-nowrap">
+                    {{ getCategoryLabel(exp.category) }}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap max-w-xs truncate">{{ exp.description || '-' }}</td>
+                <td class="py-3.5 px-4 text-right font-black text-rose-600 dark:text-rose-400 font-mono whitespace-nowrap">
+                  -{{ formatCurrency(exp.amount) }}
+                </td>
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                  <button
+                    @click="$emit('deleteExpense', exp)"
+                    class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                    title="Xarajatni o'chirish"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 3.2 CARD / GRID VIEW -->
@@ -118,16 +161,16 @@
         </div>
       </div>
       </div>
-
-      <!-- Pagination -->
-      <AppPagination
-        v-if="!loading"
-        v-model:current-page="pagination.currentPage.value"
-        v-model:page-size="pagination.pageSize.value"
-        :total-items="filteredExpenses.length"
-        item-name="xarajat"
-      />
     </div>
+
+    <!-- Pagination (cleanly placed outside the table card) -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredExpenses.length"
+      item-name="xarajat"
+    />
   </div>
 </template>
 

@@ -144,6 +144,7 @@ import { getCategoryIcon } from '../../composables/useCategoryIcon';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
 import { usePagination } from '../../composables/usePagination';
+import { usePlanFeatures } from '../../composables/usePlanFeatures';
 
 import ProductStatsCards from './components/ProductStatsCards.vue';
 import ProductFilterBar from './components/ProductFilterBar.vue';
@@ -155,6 +156,7 @@ const toast = useToast();
 const dataStore = useDataStore();
 const authStore = useAuthStore();
 const { canCreate } = usePermissions();
+const { isFeatureDisabled } = usePlanFeatures();
 
 const showProModal = ref(false);
 const proModalTitle = ref('');
@@ -163,23 +165,23 @@ const proModalFeature = ref('');
 const isExcelImportOpen = ref(false);
 
 const openExcelImportModal = () => {
-  const plan = (authStore.activeBusiness?.plan || '').toLowerCase();
-  const isPaid =
-    authStore.user?.isSuperAdmin ||
-    plan.includes('pro') ||
-    plan.includes('biznes') ||
-    plan.includes('business') ||
-    plan.includes('enterprise') ||
-    (!authStore.isSubscriptionExpired && !authStore.isDemo);
+  if (isFeatureDisabled('export_reports')) {
+    proModalTitle.value = "Excel & 1C Import Tarifingizda O'chirilgan!";
+    proModalSubtitle.value = "Ushbu xizmatdan foydalanish uchun «Excel / PDF Hisobotlar va Import» xizmatini yoqing yoki tarifni yangilang.";
+    proModalFeature.value = "Excel & 1C Sinxronizatsiya";
+    showProModal.value = true;
+    return;
+  }
 
-  if (isPaid) {
-    isExcelImportOpen.value = true;
-  } else {
+  if (authStore.isDemo || authStore.isSubscriptionExpired) {
     proModalTitle.value = "Excel & 1C Import Faqat PRO Tarifda!";
     proModalSubtitle.value = "Minglab tovarlarni 1 ta tugma bilan Excel orqali tizimga yuklang va 1C bazangiz bilan sinxronlang.";
     proModalFeature.value = "1C & Excel Sinxronizatsiya";
     showProModal.value = true;
+    return;
   }
+
+  isExcelImportOpen.value = true;
 };
 
 const viewMode = usePersistentViewMode('products', 'table');

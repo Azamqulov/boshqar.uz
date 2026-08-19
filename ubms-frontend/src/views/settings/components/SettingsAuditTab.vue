@@ -573,7 +573,34 @@ const getEntityIcon = (entity: string) => {
 };
 
 const formatFieldLabel = (key: string) => {
+  const lastKey = key.includes('.') ? key.split('.').pop()! : key;
+
   const map: Record<string, string> = {
+    // POS Settings
+    allowDebt: 'Nasiya (Qarzga sotish)',
+    showQrCode: 'Chekda QR-kod chiqarish',
+    allowDineIn: 'Zalda xizmat (Dine-in)',
+    allowTakeaway: 'Saboy (Olib ketish)',
+    allowDelivery: 'Dostavka (Yetkazib berish)',
+    enableHotkeys: 'Kassa tezkor tugmalari (Hotkeys)',
+    showItemCount: 'Tovarlar sonini ko\'rsatish',
+    allowDiscounts: 'Chegirmalarga ruxsat berish',
+    receiptAddress: 'Chekdagi manzil',
+    receiptPhone: 'Chekdagi telefon raqam',
+    receiptWidth: 'Chek qog\'oz kengligi',
+    receiptHeaderTitle: 'Chek sarlavhasi',
+    receiptFooterMessage: 'Chek ostidagi tilak',
+    autoShowReceipt: 'To\'lovdan so\'ng chekni avto-ko\'rsatish',
+    showCashierName: 'Chekda kassir ismini ko\'rsatish',
+    autoPrintReceipt: 'To\'lovdan so\'ng chekni avto-chop etish',
+    currencyRateMode: 'Valyuta kursi rejimi',
+    allowZeroStockSale: 'Omborda tugagan tovarlarni sotish',
+    showCurrencyTicker: 'Header valyuta kursi vidjeti',
+    enableReceiptPrinting: 'Chek printerini yoqish',
+    maxDebtLimit: 'Maksimal qarz limiti',
+    quickBarcode: 'Tezkor shtrix-kod skaner',
+
+    // Business & Profile
     amount: 'Summa',
     fullName: 'F.I.SH (Ism)',
     name: 'Nomi',
@@ -586,37 +613,90 @@ const formatFieldLabel = (key: string) => {
     barcode: 'Shtrix-kod',
     role: 'Lavozim',
     categoryId: 'Kategoriya',
-    businessId: 'Biznes ID',
     status: 'Holat',
     email: 'Email',
-    paymentMethod: "To'lov turi",
+    paymentMethod: 'To\'lov turi',
     discount: 'Chegirma',
     totalPrice: 'Jami summa',
+
+    // Currency & Rates
+    USD: 'AQSH Dollari ($)',
+    RUB: 'Rossiya Rubli (₽)',
+    EUR: 'Yevro (€)',
+    customRates: 'Maxsus valyuta kurslari',
+
+    // Features
+    pos: 'POS Kassa xizmati',
+    inventory: 'Omborxona xizmati',
+    finance: 'Moliya xizmati',
+    customer_loyalty: 'Mijozlar & CRM xizmati',
+    suppliers: 'Ta\'minotchilar xizmati',
+    telegram_bot: 'Telegram Bot xizmati',
+    ai_assistant: 'AI Yordamchisi',
+    export_reports: 'Excel/PDF hisobotlar',
   };
-  return map[key] || key;
+
+  return map[lastKey] || map[key] || lastKey;
 };
 
 const formatFieldValue = (val: any, key?: string) => {
   if (val === null || val === undefined) return '—';
   if (typeof val === 'boolean') return val ? 'Ha (Yoqilgan)' : "Yo'q (O'chirilgan)";
   if (typeof val === 'number') {
-    if (key && (key.toLowerCase().includes('amount') || key.toLowerCase().includes('price') || key.toLowerCase().includes('debt') || key.toLowerCase().includes('cost'))) {
+    if (key && (key.toLowerCase().includes('amount') || key.toLowerCase().includes('price') || key.toLowerCase().includes('debt') || key.toLowerCase().includes('cost') || key.toLowerCase().includes('rate') || key.toLowerCase().includes('limit'))) {
       return `${val.toLocaleString('uz-UZ')} so'm`;
     }
     return val.toLocaleString('uz-UZ');
   }
-  if (typeof val === 'object') return JSON.stringify(val);
+  if (typeof val === 'object') {
+    if (Array.isArray(val)) {
+      return val.join(', ');
+    }
+    return JSON.stringify(val);
+  }
   return String(val);
 };
 
-const flattenPayload = (obj: any): Record<string, any> => {
-  if (!obj || typeof obj !== 'object') return {};
-  const res: Record<string, any> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    // skip internal redundant fields
-    if (['password', 'hash', 'token'].includes(k)) continue;
-    res[k] = v;
+const flattenPayload = (obj: any, prefix = ''): Record<string, any> => {
+  if (!obj) return {};
+
+  if (typeof obj === 'string') {
+    try {
+      const parsed = JSON.parse(obj);
+      if (parsed && typeof parsed === 'object') {
+        return flattenPayload(parsed, prefix);
+      }
+    } catch (e) {}
+    return prefix ? { [prefix]: obj } : { qiymat: obj };
   }
+
+  if (typeof obj !== 'object') {
+    return prefix ? { [prefix]: obj } : { qiymat: obj };
+  }
+
+  const res: Record<string, any> = {};
+
+  for (const [k, v] of Object.entries(obj)) {
+    if (['password', 'hash', 'token', 'businessId'].includes(k)) continue;
+
+    const newKey = prefix ? `${prefix}.${k}` : k;
+
+    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      const nested = flattenPayload(v, newKey);
+      Object.assign(res, nested);
+    } else if (Array.isArray(v)) {
+      if (v.length === 0) {
+        res[newKey] = 'Bo\'sh';
+      } else if (v.every(item => typeof item !== 'object')) {
+        res[newKey] = v.join(', ');
+      } else {
+        res[newKey] = `${v.length} ta element`;
+      }
+    } else {
+      res[newKey] = v;
+    }
+  }
+
   return res;
 };
 

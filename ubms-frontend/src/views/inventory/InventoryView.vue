@@ -26,7 +26,7 @@
 
     <!-- Search, Filter Tabs and View Toggle -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-      <div class="w-full sm:w-80">
+      <div class="w-full sm:w-80 shrink-0">
         <AppInput
           v-model="searchQuery"
           placeholder="Mahsulot nomi yoki SKU bo'yicha qidiruv..."
@@ -34,13 +34,13 @@
         />
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 max-w-full overflow-hidden">
         <!-- Status Filter Tabs -->
-        <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+        <div class="flex-1 sm:flex-initial flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs overflow-x-auto scrollbar-none">
           <button
             type="button"
             @click="activeStatusFilter = 'all'"
-            class="px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
+            class="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive text-center"
             :class="activeStatusFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
           >
             Barchasi
@@ -48,7 +48,7 @@
           <button
             type="button"
             @click="activeStatusFilter = 'low'"
-            class="px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center gap-1 btn-interactive"
+            class="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center justify-center gap-1 btn-interactive"
             :class="activeStatusFilter === 'low' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'"
           >
             <AlertTriangle class="w-3.5 h-3.5" />
@@ -56,8 +56,8 @@
           </button>
         </div>
 
-        <!-- View Mode Toggle -->
-        <AppViewToggle v-model="viewMode" />
+        <!-- View Mode Toggle (Hidden on mobile < sm) -->
+        <AppViewToggle class="hidden sm:inline-flex shrink-0" v-model="viewMode" />
       </div>
     </div>
 

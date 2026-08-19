@@ -549,7 +549,7 @@ const keyboardShortcuts = [
 const defaultWelcomeMessage: ChatMessage = {
   id: 'welcome',
   sender: 'bot',
-  text: `Assalomu alaykum! Men **Boshqar AI** aqlli yordamchingiz. 🤖✨\n\nBoshqar.uz tizimidan foydalanishda (Kassa, Ombor, Moliya, Nasiya, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, menga bemalol yozing!`,
+  text: `Assalomu alaykum! Men **Boshqar AI** aqlli yordamchingiz.\n\nBoshqar.uz tizimidan foydalanishda (Kassa, Ombor, Moliya, Nasiya, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, menga bemalol yozing!`,
   timestamp: new Date(),
 };
 
@@ -567,9 +567,17 @@ const getStepIcon = (idx: number) => {
   return icons[idx % icons.length];
 };
 
+const stripRawEmojis = (str: string) => {
+  if (!str) return '';
+  return str
+    .replace(/[0-9]️⃣/g, '')
+    .replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2300}-\u{23FF}\u{2B50}\u{200D}\u{FE0F}]/gu, '')
+    .trim();
+};
+
 const parseStructuredSteps = (text: string) => {
-  // If the text contains step-by-step numbers like "1.", "2."
-  const lines = text.split('\n').filter((l) => l.trim().length > 0);
+  const cleanText = stripRawEmojis(text);
+  const lines = cleanText.split('\n').filter((l) => l.trim().length > 0);
   const stepLines = lines.filter((l) => /^\d+\.|\(step\)/i.test(l.trim()));
 
   if (stepLines.length >= 2) {
@@ -588,7 +596,7 @@ const parseStructuredSteps = (text: string) => {
         description: '',
       };
     });
-    return { intro: intro.replace(/\*\*/g, ''), steps };
+    return { intro: intro.replace(/\*\*/g, '').replace(/[:*]+$/, ''), steps };
   }
   return null;
 };
@@ -614,7 +622,10 @@ const scrollToBottom = async () => {
 };
 
 const formatMessage = (text: string) => {
-  let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-emerald-600 dark:text-emerald-400">$1</strong>');
+  const clean = stripRawEmojis(text);
+  let formatted = clean
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-extrabold text-emerald-600 dark:text-emerald-400">$1</strong>')
+    .replace(/•\s*(.*?)(?=\n|$)/g, '<div class="flex items-start gap-2 my-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0"></span><span>$1</span></div>');
   return formatted;
 };
 
@@ -650,23 +661,25 @@ const speakText = (text: string) => {
   window.speechSynthesis.speak(utterance);
 };
 
+const stemUzbek = (word: string): string => {
+  return word
+    .toLowerCase()
+    .replace(/(larimizga|larimizdan|larimizda|larimizning|larimizni|larimiz|laringiz|lariga|larida|laridan|larining|larini|larga|larda|lardan|larning|lar)/g, '')
+    .replace(/(imizga|imizdan|imizda|imizning|imizni|imiz|ingizga|ingizdan|ingizda|ingizning|ingizni|ingiz)/g, '')
+    .replace(/(iga|ida|idan|ining|ini|imga|imdan|imda|imning|imni|siga|sida|sidan|sining|sini)/g, '')
+    .replace(/(ga|ka|qa|da|ta|dan|tan|ning|ni|siz|masmi|mi|chi|dir)/g, '');
+};
+
 const findBestAnswer = (query: string) => {
   const normalized = query.toLowerCase().trim();
-  const queryTokens = normalized.split(/\s+/).filter((w) => w.length > 1);
-
-  if (normalized.includes('tovar') || normalized.includes('mahsulot')) {
-    return {
-      text: `Yangi mahsulot qo‘shish uchun quyidagi amallarni bajaring:\n1. Mahsulotlar bo‘limiga kiring - Chap menyudan "Mahsulotlar" bo‘limini tanlang.\n2. Yangi mahsulot tugmasini bosing - Yuqori o‘ng burchakdagi "+ Mahsulot qo‘shish" tugmasini bosing.\n3. Ma‘lumotlarni kiriting - Mahsulot nomi, shtrix-kod, narxi, o‘lchov birligi, qoldiq miqdori va boshqa zarur maydonlarni to‘ldiring.\n4. Saqlash tugmasini bosing - Kiritilgan ma‘lumotlarni tekshirib chiqib, "Saqlash" tugmasini bosing.`,
-      actionRoute: '/products',
-      actionText: 'Mahsulotlar bo‘limiga o‘tish',
-    };
-  }
+  const queryTokens = normalized.split(/[\s,?.!;:—]+/).filter((w) => w.length > 1);
+  const stemmedQueryTokens = queryTokens.map(stemUzbek).filter((w) => w.length > 1);
 
   // 1. Check for Greetings & Conversational queries
-  const greetingKeywords = ['salom', 'assalom', 'assalomu', 'privet', 'hello', 'hey', 'qalesiz', 'qalaysiz', 'kimsan', 'yordamchi'];
+  const greetingKeywords = ['salom', 'assalom', 'assalomu', 'privet', 'hello', 'hey', 'qalesiz', 'qalaysiz', 'kimsan', 'yordamchi', 'nima qila olasan'];
   if (greetingKeywords.some((g) => normalized.includes(g))) {
     return {
-      text: `**Assalomu alaykum!** Men **Boshqar AI** aqlli yordamchisiman. 🤖✨\n\nBoshqar.uz tizimidan foydalanish bo‘yicha (Kassa, Omborxona, Moliya, Nasiya/Mijozlar, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, bemalol yozing!`,
+      text: `**Assalomu alaykum!** Men **Boshqar AI** aqlli yordamchisiman.\n\nBoshqar.uz tizimidan foydalanish bo‘yicha (Kassa, Omborxona, Moliya, Nasiya/Mijozlar, Ta'minotchilar, Smenalar, Restoran, Xizmatlar, Obuna yoki Sozlamalar) istalgan savolingizni bering!`,
       actionRoute: '/pos',
       actionText: 'Kassa (POS) ga o‘tish',
     };
@@ -695,11 +708,23 @@ const findBestAnswer = (query: string) => {
     let score = 0;
     for (const kw of item.keywords) {
       const kwLower = kw.toLowerCase();
+      const kwStemmed = stemUzbek(kwLower);
+
+      // Exact phrase match in query
       if (normalized.includes(kwLower)) {
-        score += kwLower.split(/\s+/).length * 4;
-      } else {
-        const tokenHits = queryTokens.filter((t) => kwLower.includes(t) || t.includes(kwLower)).length;
-        score += tokenHits * 2;
+        score += kwLower.split(/\s+/).length * 8;
+      }
+
+      // Stemmed keyword matching
+      if (stemmedQueryTokens.includes(kwStemmed)) {
+        score += 5;
+      }
+
+      // Token inclusion matching
+      for (const st of stemmedQueryTokens) {
+        if (kwStemmed.includes(st) || st.includes(kwStemmed)) {
+          score += 3;
+        }
       }
     }
 
@@ -717,9 +742,27 @@ const findBestAnswer = (query: string) => {
     };
   }
 
-  // 4. Fallback smart generic guide
+  // 4. Check in GUIDE_MODULES steps
+  for (const mod of GUIDE_MODULES) {
+    for (const step of mod.steps) {
+      const titleLower = step.title.toLowerCase();
+      const descLower = step.description.toLowerCase();
+      const matchInTitle = stemmedQueryTokens.filter((t) => titleLower.includes(t)).length;
+      const matchInDesc = stemmedQueryTokens.filter((t) => descLower.includes(t)).length;
+
+      if (matchInTitle >= 1 || matchInDesc >= 2) {
+        return {
+          text: `**${mod.title} — ${step.title}**\n\n${step.description}${step.tip ? `\n\n💡 *Maslahat: ${step.tip}*` : ''}`,
+          actionRoute: mod.route,
+          actionText: `${mod.title} sahifasiga o‘tish`,
+        };
+      }
+    }
+  }
+
+  // 5. Fallback smart comprehensive guide
   return {
-    text: `Ushbu savol bo‘yicha to‘liqroq ma’lumot olish uchun **Qo‘llanma** bo‘limidagi modullarni ko‘rib chiqishingiz yoki quyidagi asosiy bo‘limlardan biriga o‘tishingiz mumkin:\n\n• **Kassa (POS)** — Tezkor sotuv va cheklar\n• **Mahsulotlar** — Yangi tovar va kategoriyalar\n• **Moliya** — Kunlik hisobot va xarajatlar\n• **Mijozlar** — Nasiya va qarz daftari\n• **Sozlamalar** — Xodimlar va ruxsatlar`,
+    text: `Ushbu savol bo‘yicha to‘liq ma’lumot olish uchun quyidagi asosiy bo‘limlardan birini tanlashingiz mumkin:\n\n• **Kassa (POS)** — Tezkor sotuv, skaner va cheklar\n• **Mahsulotlar** — Yangi tovar, narxlar va Excel import\n• **Omborxona** — Qoldiqlar, kirim va inventarizatsiya\n• **Mijozlar & Nasiya** — Qarz daftari va to‘lovlar\n• **Ta'minotchilar** — Xaridlar va hisob-kitoblar\n• **Moliya** — Sof foyda va xarajatlar tahlili\n• **Restoran / Kafe** — Stollar va oshxona KDS\n• **Xizmatlar** — Ustalar va bandlovlar taqvimi\n• **Telegram Bot** — Avtomatik savdo xabarlari\n• **Sozlamalar** — Xodimlar va huquqlar (RBAC)`,
     actionRoute: '/guide',
     actionText: 'To‘liq Qo‘llanmani ochish',
   };
@@ -748,7 +791,8 @@ const handleSubmit = async () => {
 
   try {
     const chatHistory = messages.value.slice(-6).map((m) => ({ sender: m.sender, text: m.text }));
-    const endpoint = localStorage.getItem('token') ? '/ai/query' : '/ai/public-query';
+    const token = localStorage.getItem('ubms_access_token');
+    const endpoint = token ? '/ai/query' : '/ai/public-query';
     const { data } = await api.post(endpoint, { query: q, chatHistory });
 
     if (data?.answer) {

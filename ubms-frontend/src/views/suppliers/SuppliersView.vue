@@ -31,7 +31,7 @@
     <!-- Filters & Search Bar -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <!-- Search Input -->
-      <div class="w-full sm:w-80">
+      <div class="w-full sm:w-80 shrink-0">
         <AppInput
           v-model="searchQuery"
           placeholder="Ta'minotchi nomi, firma yoki tel..."
@@ -39,13 +39,13 @@
         />
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 max-w-full overflow-hidden">
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+        <div class="flex-1 sm:flex-initial flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs overflow-x-auto scrollbar-none">
           <button
             type="button"
             @click="activeFilter = 'all'"
-            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
+            class="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive text-center"
             :class="activeFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
           >
             Barchasi ({{ suppliers.length }})
@@ -53,7 +53,7 @@
           <button
             type="button"
             @click="activeFilter = 'debtors'"
-            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center gap-1.5 btn-interactive"
+            class="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap flex items-center justify-center gap-1 btn-interactive"
             :class="activeFilter === 'debtors' ? 'bg-rose-500 text-white shadow-sm' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10'"
           >
             <AlertCircle class="w-3.5 h-3.5" />
@@ -62,15 +62,15 @@
           <button
             type="button"
             @click="activeFilter = 'clear'"
-            class="px-3 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive"
+            class="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-lg font-bold transition whitespace-nowrap btn-interactive text-center"
             :class="activeFilter === 'clear' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
           >
             Qarzsiz (Nol)
           </button>
         </div>
 
-        <!-- View Mode Toggle -->
-        <AppViewToggle v-model="viewMode" />
+        <!-- View Mode Toggle (Hidden on mobile < sm) -->
+        <AppViewToggle class="hidden sm:inline-flex shrink-0" v-model="viewMode" />
       </div>
     </div>
 

@@ -44,37 +44,62 @@
     <!-- 1 & 2. Primary KPI Stat Cards & Payment Breakdown Bar -->
     <FinanceHeaderStats :summary="summary" />
 
-    <!-- 3. Navigation Tabs & Global Controls with Sliding Animation -->
+    <!-- 3. Navigation Tabs & Global Controls with Sliding Animation & Next/Prev Controls -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-      <div class="relative flex items-center space-x-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-        <!-- Animated Sliding Background Pill -->
-        <div
-          v-if="pillStyle"
-          class="absolute rounded-xl bg-emerald-500 shadow-md shadow-emerald-500/20 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
-          :style="pillStyle"
-        ></div>
-
+      <!-- Tabs Container with Prev/Next Navigation Buttons -->
+      <div class="flex items-center gap-1 min-w-0 max-w-full">
+        <!-- Prev Button -->
         <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          :ref="(el) => setTabRef(el, tab.id)"
-          @click="activeTab = tab.id"
-          class="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors duration-300 whitespace-nowrap btn-interactive"
-          :class="[
-            activeTab === tab.id
-              ? 'text-white'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          ]"
+          type="button"
+          @click="selectPrevTab"
+          :disabled="currentTabIndex <= 0"
+          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs"
+          title="Oldingi bo'lim"
         >
-          <component :is="tab.icon" class="w-4 h-4" />
-          <span>{{ tab.label }}</span>
-          <span v-if="tab.badge !== undefined" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors duration-300" :class="[
-            activeTab === tab.id
-              ? 'bg-white/20 text-white'
-              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-          ]">
-            {{ tab.badge }}
-          </span>
+          <ChevronLeft class="w-4 h-4" />
+        </button>
+
+        <div ref="tabsContainerRef" class="relative flex items-center space-x-1.5 overflow-x-auto scrollbar-none pb-1 sm:pb-0 scroll-smooth">
+          <!-- Animated Sliding Background Pill -->
+          <div
+            v-if="pillStyle"
+            class="absolute rounded-xl bg-emerald-500 shadow-md shadow-emerald-500/20 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+            :style="pillStyle"
+          ></div>
+
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            :ref="(el) => setTabRef(el, tab.id)"
+            @click="activeTab = tab.id"
+            class="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors duration-300 whitespace-nowrap btn-interactive"
+            :class="[
+              activeTab === tab.id
+                ? 'text-white'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            ]"
+          >
+            <component :is="tab.icon" class="w-4 h-4" />
+            <span>{{ tab.label }}</span>
+            <span v-if="tab.badge !== undefined" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono transition-colors duration-300" :class="[
+              activeTab === tab.id
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+            ]">
+              {{ tab.badge }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Next Button -->
+        <button
+          type="button"
+          @click="selectNextTab"
+          :disabled="currentTabIndex >= tabs.length - 1"
+          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs"
+          title="Keyingi bo'lim"
+        >
+          <ChevronRight class="w-4 h-4" />
         </button>
       </div>
 
@@ -230,6 +255,8 @@ import {
   Sun,
   Moon,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-vue-next';
 import AppButton from '../../components/AppButton.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
@@ -392,6 +419,41 @@ const tabs = computed(() => [
     icon: PieChart,
   },
 ]);
+
+const tabsContainerRef = ref<HTMLElement | null>(null);
+
+const currentTabIndex = computed(() => {
+  return tabs.value.findIndex((t) => t.id === activeTab.value);
+});
+
+const selectPrevTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx > 0) {
+    activeTab.value = tabs.value[idx - 1].id;
+    scrollActiveTabIntoView();
+  }
+};
+
+const selectNextTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx >= 0 && idx < tabs.value.length - 1) {
+    activeTab.value = tabs.value[idx + 1].id;
+    scrollActiveTabIntoView();
+  }
+};
+
+const scrollActiveTabIntoView = () => {
+  setTimeout(() => {
+    const el = tabRefs[activeTab.value];
+    if (el && tabsContainerRef.value) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 50);
+};
+
+watch(() => activeTab.value, () => {
+  scrollActiveTabIntoView();
+});
 
 const expenseForm = ref({
   category: 'rent',

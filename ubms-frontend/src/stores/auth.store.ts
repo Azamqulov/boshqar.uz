@@ -67,6 +67,19 @@ export const useAuthStore = defineStore('auth', {
         this.isLoading = false;
       }
     },
+    async demoLogin() {
+      this.isLoading = true;
+      try {
+        const { data } = await api.post('/auth/demo-guest', {
+          companyName: 'Baraka Market (Demo)',
+          businessType: 'shop',
+        });
+        this.setAuthData(data);
+        return data;
+      } finally {
+        this.isLoading = false;
+      }
+    },
     async register(registerData: any) {
       this.isLoading = true;
       try {

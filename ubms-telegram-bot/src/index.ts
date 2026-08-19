@@ -78,11 +78,14 @@ bot.on('text', handleTextMessage);
 setupDailyCron(bot);
 
 // 5. Bot Launch
-bot.launch().then(() => {
-  console.log(`🤖 boshqar.uz Telegram Bot started successfully (@${BOT_CONFIG.BOT_USERNAME})`);
-}).catch((err) => {
-  console.error('❌ Failed to launch Telegram Bot:', err);
-});
+console.log(`⏳ Starting @${BOT_CONFIG.BOT_USERNAME}...`);
+bot.launch({ dropPendingUpdates: true })
+  .then(() => {
+    console.log(`🤖 boshqar.uz Telegram Bot started successfully (@${BOT_CONFIG.BOT_USERNAME})`);
+  })
+  .catch((err) => {
+    console.error('❌ Failed to launch Telegram Bot:', err);
+  });
 
 // Graceful Shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));

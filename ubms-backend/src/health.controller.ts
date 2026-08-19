@@ -1,6 +1,7 @@
 import { Controller, Get } from "@nestjs/common";
 import { PrismaService } from "./prisma/prisma.service";
 import { Public } from "./common/decorators/custom.decorator";
+import { getMaintenanceConfig } from "./modules/super-admin/services/super-admin-tenants.service";
 
 @Controller("health")
 export class HealthController {
@@ -38,5 +39,11 @@ export class HealthController {
         nodeVersion: process.version,
       },
     };
+  }
+
+  @Public()
+  @Get("maintenance")
+  getMaintenance() {
+    return getMaintenanceConfig();
   }
 }

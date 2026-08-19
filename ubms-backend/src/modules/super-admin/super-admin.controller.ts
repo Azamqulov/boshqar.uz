@@ -184,5 +184,18 @@ export class SuperAdminController {
   getLivePlatformActivity() {
     return this.superAdminService.getLivePlatformActivity();
   }
+
+  // 13. System Maintenance Mode
+  @Get('maintenance')
+  @ApiOperation({ summary: 'Texnik ishlar rejimi holati' })
+  getMaintenance() {
+    return this.superAdminService.getMaintenanceStatus();
+  }
+
+  @Patch('maintenance')
+  @ApiOperation({ summary: 'Texnik ishlar rejimini yoqish / o\'chirish va xabarni tahrirlash' })
+  updateMaintenance(@Body() dto: any) {
+    return this.superAdminService.updateMaintenanceStatus(dto);
+  }
 }
 

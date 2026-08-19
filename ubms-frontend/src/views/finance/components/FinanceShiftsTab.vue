@@ -30,84 +30,147 @@
         <span>Hozircha smenalar ochilmagan</span>
       </div>
 
-      <!-- 8.1 TABLE VIEW -->
-      <div v-else-if="viewMode === 'table'" class="overflow-x-auto scrollbar-none">
-        <table class="w-full text-left text-xs table-auto">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] font-bold">
-            <tr>
-              <th class="py-2.5 px-3">Smena</th>
-              <th class="py-2.5 px-3">Kassir</th>
-              <th class="py-2.5 px-3">Ochilgan / Yopilgan</th>
-              <th class="py-2.5 px-3">Boshlang'ich</th>
-              <th class="py-2.5 px-3">Naqd Savdo</th>
-              <th class="py-2.5 px-3">Sanalgan</th>
-              <th class="py-2.5 px-3">Tafovut</th>
-              <th class="py-2.5 px-2 text-center">Holati</th>
-              <th class="py-2.5 px-3 text-right">Z-Report</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-for="shift in pagination.paginatedItems.value" :key="shift.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
+      <!-- 8.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
+      <div v-else-if="viewMode === 'table'" class="w-full">
+        <!-- Mobile cards on small screens (< md) -->
+        <div class="block md:hidden space-y-3">
+          <div
+            v-for="shift in pagination.paginatedItems.value"
+            :key="shift.id"
+            class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-bold font-mono text-slate-900 dark:text-white text-sm">
                 #{{ shift.shiftNumber || (shift.id?.startsWith('shift-') ? shift.id.substring(6, 12) : shift.id?.substring(0, 6)) }}
-              </td>
-              <td class="py-2.5 px-3 font-semibold whitespace-nowrap">
-                {{ shift.user?.fullName || shift.user?.name || cashierDefaultName }}
-              </td>
-              <td class="py-2.5 px-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
-                <div>{{ formatDateTime(shift.openedAt) }}</div>
-                <div v-if="shift.closedAt" class="text-slate-400">➔ {{ formatDateTime(shift.closedAt) }}</div>
-              </td>
-              <td class="py-2.5 px-3 font-mono whitespace-nowrap">
-                {{ formatCurrency(shift.startingCash) }}
-              </td>
-              <td class="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                +{{ formatCurrency(shift.cashSales) }}
-              </td>
-              <td class="py-2.5 px-3 font-mono whitespace-nowrap">
-                {{ shift.actualCash !== null ? formatCurrency(shift.actualCash) : 'Kutilmoqda...' }}
-              </td>
-              <td class="py-2.5 px-3 font-mono font-bold whitespace-nowrap">
+              </span>
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+                :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
+              >
+                {{ shift.status === 'open' ? 'Ochiq' : 'Yopilgan' }}
+              </span>
+            </div>
+
+            <div class="text-xs space-y-1.5 p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Kassir:</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200">{{ shift.user?.fullName || shift.user?.name || cashierDefaultName }}</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Naqd savdo:</span>
+                <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400">+{{ formatCurrency(shift.cashSales) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Tafovut:</span>
                 <span
                   v-if="shift.difference !== null"
-                  class="px-2 py-0.5 rounded-md text-[11px]"
-                  :class="Number(shift.difference) === 0 ? 'bg-emerald-500/10 text-emerald-600' : (Number(shift.difference) < 0 ? 'bg-rose-500/10 text-rose-600' : 'bg-blue-500/10 text-blue-600')"
+                  class="font-mono font-bold"
+                  :class="Number(shift.difference) === 0 ? 'text-emerald-600' : (Number(shift.difference) < 0 ? 'text-rose-600' : 'text-blue-600')"
                 >
                   {{ Number(shift.difference) >= 0 ? '+' : '' }}{{ formatCurrency(shift.difference) }}
                 </span>
                 <span v-else class="text-slate-400">-</span>
-              </td>
-              <td class="py-2.5 px-2 text-center whitespace-nowrap">
-                <span
-                  class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase"
-                  :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
-                >
-                  <span class="w-1.5 h-1.5 rounded-full" :class="shift.status === 'open' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
-                  <span>{{ shift.status === 'open' ? 'Ochiq' : 'Yopilgan' }}</span>
-                </span>
-              </td>
-              <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                <div class="flex items-center justify-end gap-1">
-                  <button
-                    @click="$emit('viewReport', shift)"
-                    class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 text-slate-600 hover:text-emerald-600 dark:text-slate-300 transition inline-flex items-center gap-1 text-xs font-bold"
-                    title="Z-Hisobotni ko'rish"
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button
+                @click="$emit('viewReport', shift)"
+                class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 text-slate-700 hover:text-emerald-600 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 btn-interactive"
+              >
+                <Receipt class="w-3.5 h-3.5" />
+                <span>Z-Hisobot</span>
+              </button>
+              <button
+                @click="$emit('deleteShift', shift)"
+                class="p-2 rounded-xl text-rose-500 bg-rose-500/10 transition"
+                title="Smenani o'chirish"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table View (>= md) -->
+        <div class="hidden md:block overflow-x-auto scrollbar-none">
+          <table class="w-full text-left text-xs table-auto">
+            <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] font-bold">
+              <tr>
+                <th class="py-2.5 px-3">Smena</th>
+                <th class="py-2.5 px-3">Kassir</th>
+                <th class="py-2.5 px-3">Ochilgan / Yopilgan</th>
+                <th class="py-2.5 px-3">Boshlang'ich</th>
+                <th class="py-2.5 px-3">Naqd Savdo</th>
+                <th class="py-2.5 px-3">Sanalgan</th>
+                <th class="py-2.5 px-3">Tafovut</th>
+                <th class="py-2.5 px-2 text-center">Holati</th>
+                <th class="py-2.5 px-3 text-right">Z-Report</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
+              <tr v-for="shift in pagination.paginatedItems.value" :key="shift.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                  #{{ shift.shiftNumber || (shift.id?.startsWith('shift-') ? shift.id.substring(6, 12) : shift.id?.substring(0, 6)) }}
+                </td>
+                <td class="py-2.5 px-3 font-semibold whitespace-nowrap">
+                  {{ shift.user?.fullName || shift.user?.name || cashierDefaultName }}
+                </td>
+                <td class="py-2.5 px-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                  <div>{{ formatDateTime(shift.openedAt) }}</div>
+                  <div v-if="shift.closedAt" class="text-slate-400">➔ {{ formatDateTime(shift.closedAt) }}</div>
+                </td>
+                <td class="py-2.5 px-3 font-mono whitespace-nowrap">
+                  {{ formatCurrency(shift.startingCash) }}
+                </td>
+                <td class="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  +{{ formatCurrency(shift.cashSales) }}
+                </td>
+                <td class="py-2.5 px-3 font-mono whitespace-nowrap">
+                  {{ shift.actualCash !== null ? formatCurrency(shift.actualCash) : 'Kutilmoqda...' }}
+                </td>
+                <td class="py-2.5 px-3 font-mono font-bold whitespace-nowrap">
+                  <span
+                    v-if="shift.difference !== null"
+                    class="px-2 py-0.5 rounded-md text-[11px]"
+                    :class="Number(shift.difference) === 0 ? 'bg-emerald-500/10 text-emerald-600' : (Number(shift.difference) < 0 ? 'bg-rose-500/10 text-rose-600' : 'bg-blue-500/10 text-blue-600')"
                   >
-                    <Receipt class="w-3.5 h-3.5" />
-                    <span>Hisobot</span>
-                  </button>
-                  <button
-                    @click="$emit('deleteShift', shift)"
-                    class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                    title="Smenani o'chirish"
+                    {{ Number(shift.difference) >= 0 ? '+' : '' }}{{ formatCurrency(shift.difference) }}
+                  </span>
+                  <span v-else class="text-slate-400">-</span>
+                </td>
+                <td class="py-2.5 px-2 text-center whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase"
+                    :class="shift.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
                   >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                    <span class="w-1.5 h-1.5 rounded-full" :class="shift.status === 'open' ? 'bg-emerald-500' : 'bg-slate-400'"></span>
+                    <span>{{ shift.status === 'open' ? 'Ochiq' : 'Yopilgan' }}</span>
+                  </span>
+                </td>
+                <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      @click="$emit('viewReport', shift)"
+                      class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 text-slate-600 hover:text-emerald-600 dark:text-slate-300 transition inline-flex items-center gap-1 text-xs font-bold"
+                      title="Z-Hisobotni ko'rish"
+                    >
+                      <Receipt class="w-3.5 h-3.5" />
+                      <span>Hisobot</span>
+                    </button>
+                    <button
+                      @click="$emit('deleteShift', shift)"
+                      class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                      title="Smenani o'chirish"
+                    >
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 8.2 CARD / GRID VIEW -->
@@ -178,16 +241,16 @@
           </div>
         </div>
       </div>
-
-      <!-- Pagination -->
-      <AppPagination
-        v-if="!loading"
-        v-model:current-page="pagination.currentPage.value"
-        v-model:page-size="pagination.pageSize.value"
-        :total-items="shifts.length"
-        item-name="smena"
-      />
     </div>
+
+    <!-- Pagination (cleanly placed outside the table card) -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="shifts.length"
+      item-name="smena"
+    />
   </div>
 </template>
 

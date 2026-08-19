@@ -32,15 +32,53 @@
     <!-- Global Stats Cards -->
     <SuperAdminHeaderStats :stats="stats" />
 
-    <!-- Navigation Tabs with Sliding Animated Pill & Scroll Navigation -->
-    <div class="relative flex items-center group/tabnav">
-      <!-- Left scroll arrow button -->
+    <!-- Navigation Tabs: Responsive Mobile Carousel + Desktop Slider -->
+    <!-- 1. MOBILE VIEW (Native App Style Horizontal Scroll with active emerald pills) -->
+    <div class="block sm:hidden w-full -mx-1">
+      <div
+        ref="mobileTabContainerRef"
+        class="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1 snap-x snap-mandatory"
+        style="-webkit-overflow-scrolling: touch;"
+      >
+        <button
+          v-for="tab in adminTabs"
+          :key="'mob-' + tab.id"
+          :ref="(el) => setMobileTabRef(el, tab.id)"
+          @click="selectTab(tab.id)"
+          type="button"
+          class="snap-start shrink-0 px-3.5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all duration-200 active:scale-95 shadow-xs border"
+          :class="activeTab === tab.id
+            ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/25 font-black'
+            : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200/90 dark:border-slate-700/80'"
+        >
+          <component
+            :is="tab.icon"
+            class="w-4 h-4 shrink-0"
+            :class="activeTab === tab.id ? 'text-white' : 'text-emerald-500'"
+          />
+          <span class="whitespace-nowrap">{{ tab.label }}</span>
+          <span
+            v-if="tab.count !== undefined"
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none font-black"
+            :class="activeTab === tab.id
+              ? 'bg-white/20 text-white'
+              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'"
+          >
+            {{ tab.count }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. DESKTOP VIEW (Sliding Animated Pill & Next/Prev Controls) -->
+    <div class="hidden sm:flex items-center gap-1.5 w-full">
+      <!-- Left Prev Button -->
       <button
-        v-if="canScrollLeft"
         type="button"
-        @click="scrollTabs('left')"
-        class="absolute left-1 z-20 p-1.5 rounded-full bg-white/95 dark:bg-slate-800/95 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-500 hover:scale-105 transition"
-        title="Chapga surish"
+        @click="selectPrevTab"
+        :disabled="currentTabIndex <= 0"
+        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs cursor-pointer"
+        title="Oldingi bo'lim"
       >
         <ChevronLeft class="w-4 h-4" />
       </button>
@@ -48,8 +86,7 @@
       <!-- Scrollable container -->
       <div
         ref="tabContainerRef"
-        @scroll="checkScroll"
-        class="relative w-full flex items-center gap-1 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-xs overflow-x-auto scrollbar-none scroll-smooth"
+        class="relative flex-1 flex items-center gap-1 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-xs overflow-x-auto scrollbar-none scroll-smooth"
       >
         <!-- Animated Sliding Background Pill -->
         <div
@@ -64,7 +101,7 @@
           :ref="(el) => setTabRef(el, tab.id)"
           @click="selectTab(tab.id)"
           type="button"
-          class="relative z-10 px-3 py-2 rounded-xl font-bold transition-colors duration-300 flex items-center gap-2 whitespace-nowrap shrink-0 btn-interactive"
+          class="relative z-10 px-3 py-2 rounded-xl font-bold transition-colors duration-300 flex items-center gap-2 whitespace-nowrap shrink-0 btn-interactive cursor-pointer"
           :class="activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
           <component :is="tab.icon" class="w-4 h-4 shrink-0" />
@@ -81,13 +118,13 @@
         </button>
       </div>
 
-      <!-- Right scroll arrow button -->
+      <!-- Right Next Button -->
       <button
-        v-if="canScrollRight"
         type="button"
-        @click="scrollTabs('right')"
-        class="absolute right-1 z-20 p-1.5 rounded-full bg-white/95 dark:bg-slate-800/95 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-500 hover:scale-105 transition"
-        title="O'ngga surish"
+        @click="selectNextTab"
+        :disabled="currentTabIndex >= adminTabs.length - 1"
+        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs cursor-pointer"
+        title="Keyingi bo'lim"
       >
         <ChevronRight class="w-4 h-4" />
       </button>
@@ -159,6 +196,11 @@
     <!-- TAB 8: DATABASE BACKUPS -->
     <SuperAdminBackupsTab
       v-else-if="activeTab === 'backups'"
+    />
+
+    <!-- TAB 9: MAINTENANCE MODE -->
+    <SuperAdminMaintenanceTab
+      v-else-if="activeTab === 'maintenance'"
     />
 
     <!-- OWNER DETAIL & MONITORING MODAL -->
@@ -291,6 +333,7 @@ import SuperAdminAuditTab from './components/SuperAdminAuditTab.vue';
 import SuperAdminBusinessTypesTab from './components/SuperAdminBusinessTypesTab.vue';
 import SuperAdminBillingTab from './components/SuperAdminBillingTab.vue';
 import SuperAdminBackupsTab from './components/SuperAdminBackupsTab.vue';
+import SuperAdminMaintenanceTab from './components/SuperAdminMaintenanceTab.vue';
 import SuperAdminOwnerDetailModal from './components/SuperAdminOwnerDetailModal.vue';
 import {
   ShieldCheck,
@@ -322,42 +365,21 @@ const route = useRoute();
 const router = useRouter();
 const { formatCurrency, formatDate } = useFormat();
 
-const validTabs = ['leads', 'owners', 'businesses', 'users', 'billing', 'audit', 'businessTypes', 'backups'] as const;
+const validTabs = ['leads', 'owners', 'businesses', 'users', 'billing', 'audit', 'businessTypes', 'backups', 'maintenance'] as const;
 type SuperAdminTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'leads', validTabs);
 
-const tabContainerRef = ref<HTMLElement | null>(null);
-const canScrollLeft = ref(false);
-const canScrollRight = ref(false);
-
-const checkScroll = () => {
-  if (!tabContainerRef.value) return;
-  const el = tabContainerRef.value;
-  canScrollLeft.value = el.scrollLeft > 10;
-  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 10;
-};
-
-const scrollTabs = (direction: 'left' | 'right') => {
-  if (!tabContainerRef.value) return;
-  const offset = direction === 'left' ? -250 : 250;
-  tabContainerRef.value.scrollBy({ left: offset, behavior: 'smooth' });
-  setTimeout(checkScroll, 350);
-};
-
-const selectTab = (tabId: SuperAdminTab) => {
-  activeTab.value = tabId;
-  const targetEl = tabRefs[tabId];
-  if (targetEl && tabContainerRef.value) {
-    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-};
-
 const tabRefs = reactive<Record<string, HTMLElement>>({});
+const mobileTabRefs = reactive<Record<string, HTMLElement>>({});
 const isMounted = ref(false);
 
 const setTabRef = (el: any, id: string) => {
   if (el) tabRefs[id] = el;
+};
+
+const setMobileTabRef = (el: any, id: string) => {
+  if (el) mobileTabRefs[id] = el;
 };
 
 const pillStyle = computed(() => {
@@ -380,7 +402,53 @@ const adminTabs = computed(() => [
   { id: 'audit' as const, label: 'Audit Tarixi', icon: ShieldCheck },
   { id: 'businessTypes' as const, label: 'Biznes Turlari', icon: Sliders },
   { id: 'backups' as const, label: 'Baza Zaxiralari', icon: Database },
+  { id: 'maintenance' as const, label: 'Texnik Rejim', icon: Wrench },
 ]);
+
+const tabContainerRef = ref<HTMLElement | null>(null);
+const mobileTabContainerRef = ref<HTMLElement | null>(null);
+
+const currentTabIndex = computed(() => {
+  return adminTabs.value.findIndex((t) => t.id === activeTab.value);
+});
+
+const selectTab = (tabId: SuperAdminTab) => {
+  activeTab.value = tabId;
+  scrollActiveTabIntoView();
+};
+
+const selectPrevTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx > 0) {
+    selectTab(adminTabs.value[idx - 1].id);
+  }
+};
+
+const selectNextTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx >= 0 && idx < adminTabs.value.length - 1) {
+    selectTab(adminTabs.value[idx + 1].id);
+  }
+};
+
+const scrollActiveTabIntoView = () => {
+  setTimeout(() => {
+    // Desktop container scroll
+    const el = tabRefs[activeTab.value];
+    if (el && tabContainerRef.value) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+    // Mobile container scroll
+    const mobEl = mobileTabRefs[activeTab.value];
+    if (mobEl && mobileTabContainerRef.value) {
+      mobEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 50);
+};
+
+watch(() => activeTab.value, () => {
+  scrollActiveTabIntoView();
+});
 
 // Sync with route query tab
 watch(

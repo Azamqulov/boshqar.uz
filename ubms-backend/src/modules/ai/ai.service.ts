@@ -188,11 +188,11 @@ export class AiService {
     ) {
       return {
         answer:
-          `📊 **${ctx.businessName} — Bugungi Savdo Holati:**\n\n` +
-          `💵 **Jami Savdo (Kirim):** **${this.formatMoney(ctx.todaySales, cur)}**\n` +
-          `🧾 **Cheklar soni:** **${ctx.todayOrdersCount} ta**\n` +
-          `📈 **O'rtacha chek:** ${this.formatMoney(ctx.todayOrdersCount ? Math.round(ctx.todaySales / ctx.todayOrdersCount) : 0, cur)}\n` +
-          `🟢 **Faol kassirlar:** ${ctx.openShifts.length > 0 ? ctx.openShifts.join(', ') : 'Ochiq smena yo\'q'}\n\n` +
+          `**${ctx.businessName} — Bugungi Savdo Holati:**\n\n` +
+          `• **Jami Savdo (Kirim):** **${this.formatMoney(ctx.todaySales, cur)}**\n` +
+          `• **Cheklar soni:** **${ctx.todayOrdersCount} ta**\n` +
+          `• **O'rtacha chek:** ${this.formatMoney(ctx.todayOrdersCount ? Math.round(ctx.todaySales / ctx.todayOrdersCount) : 0, cur)}\n` +
+          `• **Faol kassirlar:** ${ctx.openShifts.length > 0 ? ctx.openShifts.join(', ') : 'Ochiq smena yo\'q'}\n\n` +
           `*Savdolarni real vaqtda Kassa yoki Moliya sahifasida to'liq ko'rishingiz mumkin.*`,
         actionRoute: '/finance',
         actionText: 'Moliya hisobotiga o\'tish',
@@ -211,11 +211,11 @@ export class AiService {
     ) {
       return {
         answer:
-          `💎 **${ctx.businessName} — Bugungi Moliyaviy Natija:**\n\n` +
-          `🟢 **Kirim (Savdo):** ${this.formatMoney(ctx.todaySales, cur)}\n` +
-          `🔴 **Chiqim (Xarajatlar):** ${this.formatMoney(ctx.todayExpenseSum, cur)}\n` +
-          `✨ **Sof Foyda:** **${this.formatMoney(ctx.todayProfit, cur)}**\n\n` +
-          `💡 *Eslatma: Xarajatlarni doimiy kiritib borsangiz, hisobotlar 100% aniq sof foydani ko'rsatadi.*`,
+          `**${ctx.businessName} — Bugungi Moliyaviy Natija:**\n\n` +
+          `• **Kirim (Savdo):** ${this.formatMoney(ctx.todaySales, cur)}\n` +
+          `• **Chiqim (Xarajatlar):** ${this.formatMoney(ctx.todayExpenseSum, cur)}\n` +
+          `• **Sof Foyda:** **${this.formatMoney(ctx.todayProfit, cur)}**\n\n` +
+          `*Eslatma: Xarajatlarni doimiy kiritib borsangiz, hisobotlar 100% aniq sof foydani ko'rsatadi.*`,
         actionRoute: '/finance',
         actionText: 'Moliya & Xarajatlar',
         suggestedFollowUps: ['Xarajat qanday kiritiladi?', 'Bugungi savdo qancha?', 'Kassirlar holati'],
@@ -234,9 +234,9 @@ export class AiService {
       if (ctx.lowStockItems.length === 0) {
         return {
           answer:
-            `📦 **Ombor holati a'lo darajada!**\n\n` +
+            `**Ombor holati a'lo darajada!**\n\n` +
             `Jami mahsulotlar soni: **${ctx.productsCount} ta**.\n` +
-            `Hozirda minimal chegaradan kam qolgan yoki tugagan tovarlar yo'q. ✅`,
+            `Hozirda minimal chegaradan kam qolgan yoki tugagan tovarlar yo'q.`,
           actionRoute: '/inventory',
           actionText: 'Omborxonaga o\'tish',
         };
@@ -248,9 +248,9 @@ export class AiService {
 
       return {
         answer:
-          `⚠️ **Omborda kam qolgan tovarlar (${ctx.lowStockItems.length} ta):**\n\n` +
+          `**Omborda kam qolgan tovarlar (${ctx.lowStockItems.length} ta):**\n\n` +
           `${list}\n\n` +
-          `👉 *Ushbu tovarlar tugab qolmasligi uchun ta'minotchilarga buyurtma berish tavsiya etiladi.*`,
+          `*Ushbu tovarlar tugab qolmasligi uchun ta'minotchilarga buyurtma berish tavsiya etiladi.*`,
         actionRoute: '/inventory',
         actionText: 'Omborxona va Kirim',
         suggestedFollowUps: ['Omborga qanday kirim qilaman?', 'Yangi tovar qo\'shish', 'Bugungi savdo'],
@@ -268,8 +268,8 @@ export class AiService {
       if (ctx.debtors.length === 0) {
         return {
           answer:
-            `💳 **Nasiyalar daftari toza!**\n\n` +
-            `Hozirda mijozlar tomonidan to'lanmagan qarzlar mavjud emas. 🎉`,
+            `**Nasiyalar daftari toza!**\n\n` +
+            `Hozirda mijozlar tomonidan to'lanmagan qarzlar mavjud emas.`,
           actionRoute: '/customers',
           actionText: 'Mijozlar bazasi',
         };
@@ -281,10 +281,10 @@ export class AiService {
 
       return {
         answer:
-          `💳 **Nasiyalar va Qarzdorlik Holati:**\n\n` +
-          `📊 **Jami Nasiyalar:** **${this.formatMoney(ctx.totalDebt, cur)}**\n\n` +
-          `👥 **Eng katta qarzdorlar:**\n${debtorsList}\n\n` +
-          `💡 *Mijozlar sahifasiga o'tib, qarz to'lovlarini qabul qilishingiz yoki Telegram orqali eslatma yuborishingiz mumkin.*`,
+          `**Nasiyalar va Qarzdorlik Holati:**\n\n` +
+          `• **Jami Nasiyalar:** **${this.formatMoney(ctx.totalDebt, cur)}**\n\n` +
+          `**Eng katta qarzdorlar:**\n${debtorsList}\n\n` +
+          `*Mijozlar sahifasiga o'tib, qarz to'lovlarini qabul qilishingiz yoki eslatma yuborishingiz mumkin.*`,
         actionRoute: '/customers',
         actionText: 'Nasiyalar Daftari',
         suggestedFollowUps: ['Nasiyaga tovar qanday beriladi?', 'Bugungi savdo qancha?', 'Moliya hisoboti'],
@@ -294,15 +294,15 @@ export class AiService {
     // 5. Cashier / Shift monitoring
     if (q.includes('kassir') || q.includes('smena') || q.includes('kassa ochiq') || q.includes('xodim')) {
       const shiftInfo = ctx.openShifts.length > 0
-        ? `🟢 **Ochiq smenada ishlayotgan kassirlar:** ${ctx.openShifts.join(', ')}`
-        : `⚪️ **Hozirda ochiq smenalar mavjud emas.**`;
+        ? `• **Ochiq smenada ishlayotgan kassirlar:** ${ctx.openShifts.join(', ')}`
+        : `• **Hozirda ochiq smenalar mavjud emas.**`;
 
       return {
         answer:
-          `🏪 **Kassirlar va Smena Holati:**\n\n` +
+          `**Kassirlar va Smena Holati:**\n\n` +
           `${shiftInfo}\n\n` +
-          `🧾 Bugun urilgan cheklar: **${ctx.todayOrdersCount} ta**\n` +
-          `💰 Jami kassa tushumi: **${this.formatMoney(ctx.todaySales, cur)}**`,
+          `• Bugun urilgan cheklar: **${ctx.todayOrdersCount} ta**\n` +
+          `• Jami kassa tushumi: **${this.formatMoney(ctx.todaySales, cur)}**`,
         actionRoute: '/pos',
         actionText: 'Kassa (POS) ga o\'tish',
         suggestedFollowUps: ['Kassa qanday ishlatiladi?', 'Smena qanday yopiladi?', 'Chek chiqarish'],
@@ -326,13 +326,13 @@ export class AiService {
     ) {
       return {
         answer:
-          `📦 **Yangi Tovar Qo'shish Bo'yicha Bosqichma-bosqich Ko'rsatma:**\n\n` +
-          `1️⃣ **Mahsulotlar** bo'limiga o'ting va **"+ Yangi mahsulot"** tugmasini bosing.\n` +
-          `2️⃣ **Nomi, Kategoriya va O'lchov birligi**ni tanlang (dona, kg, litr).\n` +
-          `3️⃣ **Tannarx (Kirim narxi)** va **Sotish narxi**ni kiriting — tizim avtomatik foyda marjasini hisoblaydi.\n` +
-          `4️⃣ **Shtrix-kod**ni skaner qiling yoki avtomatik generatsiya qiling.\n` +
-          `5️⃣ **Minimal qoldiq**ni belgilang (masalan: 5 dona) va **"Saqlash"**ni bosing.\n\n` +
-          `🎉 *Tovar darhol Kassa (POS) va Omborxona ro'yxatida paydo bo'ladi!*`,
+          `**Yangi Tovar Qo'shish Bo'yicha Bosqichma-bosqich Ko'rsatma:**\n\n` +
+          `1. **Mahsulotlar** bo'limiga o'ting va **"+ Yangi mahsulot"** tugmasini bosing.\n` +
+          `2. **Nomi, Kategoriya va O'lchov birligi**ni tanlang (dona, kg, litr).\n` +
+          `3. **Tannarx (Kirim narxi)** va **Sotish narxi**ni kiriting — tizim avtomatik foyda marjasini hisoblaydi.\n` +
+          `4. **Shtrix-kod**ni skaner qiling yoki avtomatik generatsiya qiling.\n` +
+          `5. **Minimal qoldiq**ni belgilang (masalan: 5 dona) va **"Saqlash"**ni bosing.\n\n` +
+          `*Tovar darhol Kassa (POS) va Omborxona ro'yxatida paydo bo'ladi!*`,
         actionRoute: '/products',
         actionText: 'Mahsulotlar bo\'limiga o\'tish',
         suggestedFollowUps: ['Shtrix-kodsiz tovar sotish', 'Omborga kirim qilish', 'Kassada tovar qidirish'],
@@ -349,16 +349,16 @@ export class AiService {
     ) {
       return {
         answer:
-          `🛒 **Kassada Savdo Qilish va Chek Chiqarish:**\n\n` +
-          `1️⃣ **Kassa (POS)** sahifasiga kiring.\n` +
-          `2️⃣ Tovarni shtrix-kod skaner qiling yoki qidiruv qatoriga nomini yozing.\n` +
-          `3️⃣ Savatda mahsulot miqdorini ` +
+          `**Kassada Savdo Qilish va Chek Chiqarish:**\n\n` +
+          `1. **Kassa (POS)** sahifasiga kiring.\n` +
+          `2. Tovarni shtrix-kod skaner qiling yoki qidiruv qatoriga nomini yozing.\n` +
+          `3. Savatda mahsulot miqdorini ` +
           `**"+" / "-"** yoki klaviaturadagi raqamlar orqali o'zgartiring.\n` +
-          `4️⃣ **"To'lov" (F2 / Enter)** tugmasini bosing va to'lov turini tanlang:\n` +
-          `   • **💵 Naqd** — mijoz bergan summani kiritganda, qaytim (sdacha) hisoblanadi.\n` +
-          `   • **💳 Karta / Terminal**\n` +
-          `   • **📝 Nasiya** (Mijozni tanlash shart)\n` +
-          `5️⃣ **"To'lovni tasdiqlash"**ni bosing — chek printerdan avtomatik chiqadi va ombor qoldig'i kamayadi!`,
+          `4. **"To'lov" (F9 / Space)** tugmasini bosing va to'lov turini tanlang:\n` +
+          `   • **Naqd** — mijoz bergan summani kiritganda, qaytim (sdacha) hisoblanadi.\n` +
+          `   • **Karta / Terminal** (Humo, Uzcard)\n` +
+          `   • **Nasiya** (Mijozni tanlash shart)\n` +
+          `5. **"To'lovni tasdiqlash"**ni bosing — chek printerdan avtomatik chiqadi va ombor qoldig'i kamayadi!`,
         actionRoute: '/pos',
         actionText: 'Kassa (POS) ga o\'tish',
         suggestedFollowUps: ['Chekni qaytarish (refund)', 'Nasiyaga tovar berish', 'Smena qanday yopiladi?'],
@@ -375,12 +375,12 @@ export class AiService {
     ) {
       return {
         answer:
-          `🤖 **Telegram Botni 1 Clickda Ulash:**\n\n` +
-          `1️⃣ **Sozlamalar -> Telegram Bot** bo'limiga kiring.\n` +
-          `2️⃣ **"Telegram Botni Ulash"** tugmasini bosing.\n` +
-          `3️⃣ Ochilgan maxsus havolani bosing yoki Telegramda **@Boshqar_uzbot** ga kirib **START** bosing.\n` +
-          `4️⃣ Bot darhol sizning biznesingizga ulanadi va har bir yangi savdo, kam qolgan tovar hamda kunlik hisobotlarni yuborib turadi!\n\n` +
-          `👥 *Bitta biznesga bir nechta xodim yoki direktorning Telegram akkauntini ham ulash mumkin!*`,
+          `**Telegram Botni 1 Clickda Ulash:**\n\n` +
+          `1. **Sozlamalar -> Telegram Bot** bo'limiga kiring.\n` +
+          `2. **"Telegram Botni Ulash"** tugmasini bosing.\n` +
+          `3. Ochilgan maxsus havolani bosing yoki Telegramda **@Boshqar_uzbot** ga kirib **START** bosing.\n` +
+          `4. Bot darhol sizning biznesingizga ulanadi va har bir yangi savdo, kam qolgan tovar hamda kunlik hisobotlarni yuborib turadi!\n\n` +
+          `*Bitta biznesga bir nechta xodim yoki direktorning Telegram akkauntini ham ulash mumkin!*`,
         actionRoute: '/settings',
         actionText: 'Telegram Sozlamalariga o\'tish',
         suggestedFollowUps: ['Botda qaysi buyruqlar bor?', 'Xodim botdan qanday foydalanadi?', 'Kunlik hisobot vaqti'],
@@ -391,12 +391,12 @@ export class AiService {
     if (q.includes('smena') || q.includes('x-hisobot') || q.includes('z-hisobot') || q.includes('kassa yop')) {
       return {
         answer:
-          `🔒 **Kassa Smenasini Ochish va Yopish (X-Z Hisoboti):**\n\n` +
-          `1️⃣ **Kassa (POS)** sahifasiga kirganingizda, agar smena yopiq bo'lsa, **"Smena ochish"** oynasi chiqadi.\n` +
-          `2️⃣ Kassadagi boshlang'ich naqd pulni kiritib, smenani ochasiz.\n` +
-          `3️⃣ Ish kuni tugagach, yuqoridagi **"Smenani yopish"** tugmasini bosing.\n` +
-          `4️⃣ Kassadagi haqiqiy naqd pulni sanab kiriting — tizim avtomatik kassa farqini (kamomad yoki ortiqcha) hisoblaydi va Z-hisobot chekini chiqaradi.\n` +
-          `5️⃣ Smena yopilishi bilan do'kon rahbarining Telegramiga avtomatik to'liq hisobot boradi!`,
+          `**Kassa Smenasini Ochish va Yopish (X-Z Hisoboti):**\n\n` +
+          `1. **Kassa (POS)** sahifasiga kirganingizda, agar smena yopiq bo'lsa, **"Smena ochish"** oynasi chiqadi.\n` +
+          `2. Kassadagi boshlang'ich naqd pulni kiritib, smenani ochasiz.\n` +
+          `3. Ish kuni tugagach, yuqoridagi **"Smenani yopish"** tugmasini bosing.\n` +
+          `4. Kassadagi haqiqiy naqd pulni sanab kiriting — tizim avtomatik kassa farqini (kamomad yoki ortiqcha) hisoblaydi va Z-hisobot chekini chiqaradi.\n` +
+          `5. Smena yopilishi bilan do'kon rahbarining Telegramiga avtomatik to'liq hisobot boradi!`,
         actionRoute: '/pos',
         actionText: 'Kassaga o\'tish',
         suggestedFollowUps: ['Kassada savdo qilish', 'Bugungi savdo qancha?', 'Telegram botni ulash'],
@@ -407,7 +407,7 @@ export class AiService {
     if (q.includes('nasiya') || q.includes('qarz berish') || q.includes('qarzni yop')) {
       return {
         answer:
-          `📝 **Nasiyaga Tovar Berish va Qarzni Qabul Qilish:**\n\n` +
+          `**Nasiyaga Tovar Berish va Qarzni Qabul Qilish:**\n\n` +
           `• **Nasiyaga sotish:** Kassada savat yig'ilgach, **"Mijoz tanlash"** orqali xaridorni tanlang va to'lov usuli sifatida **"Nasiya"**ni bosing.\n` +
           `• **Qarzni yopish / To'lov qabul qilish:** **Mijozlar** bo'limiga o'ting, qarzdor mijozni tanlang va **"Qarz to'lash"** tugmasi orqali to'langan pulni kiriting.\n` +
           `• **Telegram Eslatma:** Qarzdor mijoz yonidagi **"Eslatma"** tugmasi orqali uning Telegramiga to'lov eslatmasini yuborish mumkin!`,
@@ -421,11 +421,11 @@ export class AiService {
     if (q.includes('qaytar') || q.includes('bekor') || q.includes('refund') || q.includes('vozvrat')) {
       return {
         answer:
-          `🔄 **Kassa Chekini Bekor Qilish va Tovarni Qaytarish (Refund):**\n\n` +
-          `1️⃣ **Kassa (POS)** sahifasidagi **"Sotuvlar tarixi (Cheklar)"** tugmasini bosing.\n` +
-          `2️⃣ Qaytarilishi kerak bo'lgan chekni toping va **"Qaytarish (Refund)"** tugmasini bosing.\n` +
-          `3️⃣ Qaytarilayotgan tovarlar miqdorini belgilang va tasdiqlang.\n` +
-          `4️⃣ Tovar avtomatik omborga qaytadi, pul kassadan hisobdan chiqariladi va audit jurnaliga qayd etiladi.`,
+          `**Kassa Chekini Bekor Qilish va Tovarni Qaytarish (Refund):**\n\n` +
+          `1. **Kassa (POS)** sahifasidagi **"Sotuvlar tarixi (Cheklar)"** tugmasini bosing.\n` +
+          `2. Qaytarilishi kerak bo'lgan chekni toping va **"Qaytarish (Refund)"** tugmasini bosing.\n` +
+          `3. Qaytarilayotgan tovarlar miqdorini belgilang va tasdiqlang.\n` +
+          `4. Tovar avtomatik omborga qaytadi, pul kassadan hisobdan chiqariladi va audit jurnaliga qayd etiladi.`,
         actionRoute: '/pos',
         actionText: 'Kassa Tarixiga o\'tish',
       };
@@ -441,7 +441,7 @@ export class AiService {
     if (q.includes('salom') || q.includes('assalom') || q.includes('privet') || q.includes('qalesan') || q.includes('kimsan')) {
       return {
         answer:
-          `Assalomu alaykum! Men **Boshqar AI** — sizning aqlli biznes boshqaruv yordamchingizman. 🤖✨\n\n` +
+          `Assalomu alaykum! Men **Boshqar AI** — sizning aqlli biznes boshqaruv yordamchingizman.\n\n` +
           (ctx ? `Sizning **"${ctx.businessName}"** biznesingizga ulanganman. ` : '') +
           `Mendan savdo ko'rsatkichlari, ombor qoldig'i, nasiyalar, tovar qo'shish yoki tizimdan foydalanish bo'yicha istalgan savolni so'rashingiz mumkin!`,
         suggestedFollowUps: ['Bugungi savdo qancha?', 'Qaysi tovarlar kam qoldi?', 'Yangi tovar qanday qo\'shiladi?'],
@@ -450,19 +450,19 @@ export class AiService {
 
     if (q.includes('rahmat') || q.includes('tashakkur') || q.includes('raxmat') || q.includes('zo\'r')) {
       return {
-        answer: `Arzimaydi! Sizga yordam berganimdan xursandman. 😊 Yana qanday savollaringiz bo'lsa, bemalol bering!`,
+        answer: `Arzimaydi! Sizga yordam berganimdan xursandman. Yana qanday savollaringiz bo'lsa, bemalol bering!`,
       };
     }
 
     return {
       answer:
         `Savolingiz bo'yicha quyidagi asosiy bo'limlarga o'tib ma'lumot olishingiz mumkin:\n\n` +
-        `• **🛒 Kassa (POS)** — Tezkor sotuv, skaner va chek chiqarish\n` +
-        `• **📦 Mahsulotlar** — Tovar qo'shish, shtrix-kod va narxlar\n` +
-        `• **📊 Omborxona** — Tovar zaxirasi va inventarizatsiya\n` +
-        `• **💳 Mijozlar** — Nasiya va qarz daftari\n` +
-        `• **💰 Moliya** — Kunlik hisobot, xarajatlar va sof foyda\n` +
-        `• **🤖 Telegram Bot** — Telefonda real vaqt hisoboti`,
+        `• **Kassa (POS)** — Tezkor sotuv, skaner va chek chiqarish\n` +
+        `• **Mahsulotlar** — Tovar qo'shish, shtrix-kod va narxlar\n` +
+        `• **Omborxona** — Tovar zaxirasi va inventarizatsiya\n` +
+        `• **Mijozlar** — Nasiya va qarz daftari\n` +
+        `• **Moliya** — Kunlik hisobot, xarajatlar va sof foyda\n` +
+        `• **Telegram Bot** — Telefonda real vaqt hisoboti`,
       actionRoute: '/guide',
       actionText: 'Qo\'llanmalar katalogini ochish',
       suggestedFollowUps: ['Bugungi savdo qancha?', 'Yangi tovar qo\'shish', 'Telegram botni ulash'],

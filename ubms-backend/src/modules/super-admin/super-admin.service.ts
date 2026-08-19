@@ -109,4 +109,12 @@ export class SuperAdminService {
   toggleBusinessType(type: string, isEnabled?: boolean) {
     return this.tenantsService.toggleBusinessType(type, isEnabled);
   }
+
+  getMaintenanceStatus() {
+    return this.tenantsService.getMaintenanceStatus();
+  }
+
+  updateMaintenanceStatus(dto: any) {
+    return this.tenantsService.updateMaintenanceStatus(dto);
+  }
 }

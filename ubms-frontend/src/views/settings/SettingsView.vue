@@ -6,37 +6,74 @@
     </div>
 
 
-    <!-- Tabs with Smooth Sliding Animation -->
-    <div class="relative flex items-center space-x-1.5 border-b border-slate-200 dark:border-slate-800 pb-2 text-xs overflow-x-auto scrollbar-none">
-      <!-- Animated Sliding Background Pill -->
-      <div
-        v-if="pillStyle"
-        class="absolute rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
-        :class="activeTab === 'danger' ? 'bg-rose-500 shadow-md shadow-rose-500/25' : 'bg-emerald-500 shadow-md shadow-emerald-500/25'"
-        :style="pillStyle"
-      ></div>
-
+    <!-- Tabs with Smooth Sliding Animation and Next/Prev Navigation -->
+    <div class="flex items-center gap-1.5 w-full border-b border-slate-200 dark:border-slate-800 pb-2">
+      <!-- Left Prev Button -->
       <button
-        v-for="tab in settingsTabs"
-        :key="tab.id"
-        :ref="(el) => setTabRef(el, tab.id)"
         type="button"
-        @click="activeTab = tab.id"
-        class="relative z-10 flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition-colors duration-300 whitespace-nowrap btn-interactive"
-        :class="[
-          activeTab === tab.id
-            ? 'text-white'
-            : tab.id === 'danger'
-            ? 'text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300'
-            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-        ]"
+        @click="selectPrevTab"
+        :disabled="currentTabIndex <= 0"
+        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs"
+        title="Oldingi sozlama"
       >
-        <component
-          :is="tab.icon"
-          class="w-4 h-4 transition-colors duration-300"
-          :class="activeTab === tab.id ? 'text-white' : tab.id === 'danger' ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'"
-        />
-        <span>{{ tab.label }}</span>
+        <ChevronLeft class="w-4 h-4" />
+      </button>
+
+      <!-- Scrollable container -->
+      <div
+        ref="tabContainerRef"
+        class="relative flex-1 flex items-center space-x-1.5 text-xs overflow-x-auto scrollbar-none scroll-smooth"
+      >
+        <!-- Animated Sliding Background Pill -->
+        <div
+          v-if="pillStyle"
+          class="absolute rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+          :class="activeTab === 'danger' ? 'bg-rose-500 shadow-md shadow-rose-500/25' : 'bg-emerald-500 shadow-md shadow-emerald-500/25'"
+          :style="pillStyle"
+        ></div>
+
+        <button
+          v-for="tab in settingsTabs"
+          :key="tab.id"
+          :ref="(el) => setTabRef(el, tab.id)"
+          type="button"
+          @click="selectTab(tab.id)"
+          class="relative z-10 flex items-center space-x-2 px-4 py-2 rounded-xl font-bold transition-colors duration-300 whitespace-nowrap shrink-0 btn-interactive"
+          :class="[
+            activeTab === tab.id
+              ? 'text-white'
+              : tab.id === 'danger'
+              ? 'text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          ]"
+        >
+          <component
+            :is="tab.icon"
+            class="w-4 h-4 transition-colors duration-300"
+            :class="activeTab === tab.id ? 'text-white' : tab.id === 'danger' ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'"
+          />
+          <span>{{ tab.label }}</span>
+          <span
+            v-if="tab.featureKey && isFeatureDisabled(tab.featureKey)"
+            class="ml-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase inline-flex items-center gap-0.5"
+            :class="activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-rose-500/15 text-rose-500 dark:text-rose-400'"
+            title="Tarifingizda o'chirilgan"
+          >
+            <Lock class="w-2.5 h-2.5" />
+            <span>OFF</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Right Next Button -->
+      <button
+        type="button"
+        @click="selectNextTab"
+        :disabled="currentTabIndex >= settingsTabs.length - 1"
+        class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-200 transition shrink-0 btn-interactive shadow-2xs"
+        title="Keyingi sozlama"
+      >
+        <ChevronRight class="w-4 h-4" />
       </button>
     </div>
 
@@ -89,9 +126,34 @@
     />
 
     <!-- Tab 4: Telegram Bot -->
-    <SettingsTelegramTab
-      v-else-if="activeTab === 'telegram'"
-    />
+    <div v-else-if="activeTab === 'telegram'" class="relative">
+      <div
+        v-if="isFeatureDisabled('telegram_bot')"
+        class="glass-card rounded-3xl p-8 sm:p-12 border border-slate-200 dark:border-slate-800 text-center space-y-4 max-w-md mx-auto my-8 shadow-xl"
+      >
+        <div class="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto shadow-inner">
+          <Lock class="w-8 h-8 text-amber-500" />
+        </div>
+        <div>
+          <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+            «Telegram Bot» xizmati o'chirilgan
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+            Telegram bot orqali savdo xabarnomalari va avtomatik hisobotlar olish uchun joriy tarifingizda ushbu xizmatni yoqing yoki yuqoriroq tarifga o'ting.
+          </p>
+        </div>
+        <div class="pt-2">
+          <router-link
+            to="/billing"
+            class="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 transition transform active:scale-98 btn-interactive"
+          >
+            <CreditCard class="w-5 h-5" />
+            <span>Tariflarni Ko'rish</span>
+          </router-link>
+        </div>
+      </div>
+      <SettingsTelegramTab v-else />
+    </div>
 
     <!-- Tab 5: Audit Jurnallari -->
     <SettingsAuditTab
@@ -186,6 +248,7 @@ import ReceiptModal from '../../components/ReceiptModal.vue';
 import { usePosSettings, type PosSettings } from '../../composables/usePosSettings';
 import { usePersistentTab } from '../../composables/usePersistentTab';
 import { useLanguage } from '../../composables/useLanguage';
+import { usePlanFeatures } from '../../composables/usePlanFeatures';
 
 import SettingsProfileTab from './components/SettingsProfileTab.vue';
 import SettingsAppearanceTab from './components/SettingsAppearanceTab.vue';
@@ -214,17 +277,64 @@ import {
   Calendar,
   DollarSign,
   LayoutDashboard,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
 } from 'lucide-vue-next';
+
+const { isFeatureDisabled } = usePlanFeatures();
 
 const settingsTabs = [
   { id: 'my-profile' as const, label: 'Mening Profilim', icon: UserCircle },
   { id: 'appearance' as const, label: "Ko'rinish & Xizmatlar", icon: Palette },
   { id: 'employees' as const, label: 'Xodimlar va Ruxsatlar', icon: Users },
   { id: 'receipt' as const, label: 'Chek & Printer', icon: Printer },
-  { id: 'telegram' as const, label: 'Telegram Bot', icon: Bot },
+  { id: 'telegram' as const, label: 'Telegram Bot', icon: Bot, featureKey: 'telegram_bot' },
   { id: 'audit' as const, label: 'Audit Jurnallari', icon: ScrollText },
   { id: 'danger' as const, label: "O'chirish", icon: Trash2 },
 ];
+
+const validTabs = ['my-profile', 'appearance', 'employees', 'receipt', 'telegram', 'audit', 'danger'] as const;
+type SettingsTab = typeof validTabs[number];
+const activeTab = usePersistentTab<SettingsTab>('settings', 'my-profile', validTabs);
+
+const tabContainerRef = ref<HTMLElement | null>(null);
+
+const currentTabIndex = computed(() => {
+  return settingsTabs.findIndex((t) => t.id === activeTab.value);
+});
+
+const selectTab = (tabId: SettingsTab) => {
+  activeTab.value = tabId;
+  scrollActiveTabIntoView();
+};
+
+const selectPrevTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx > 0) {
+    selectTab(settingsTabs[idx - 1].id);
+  }
+};
+
+const selectNextTab = () => {
+  const idx = currentTabIndex.value;
+  if (idx >= 0 && idx < settingsTabs.length - 1) {
+    selectTab(settingsTabs[idx + 1].id);
+  }
+};
+
+const scrollActiveTabIntoView = () => {
+  setTimeout(() => {
+    const el = tabRefs[activeTab.value];
+    if (el && tabContainerRef.value) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 50);
+};
+
+watch(() => activeTab.value, () => {
+  scrollActiveTabIntoView();
+});
 
 const tabRefs = reactive<Record<string, HTMLElement>>({});
 const isMounted = ref(false);
@@ -341,10 +451,6 @@ const handleSetDebtLimit = (val: number) => {
   }
 };
 
-const validTabs = ['my-profile', 'appearance', 'employees', 'receipt', 'telegram', 'audit', 'danger'] as const;
-type SettingsTab = typeof validTabs[number];
-
-const activeTab = usePersistentTab<SettingsTab>('settings', 'my-profile', validTabs);
 const loading = ref(false);
 const loadingEmployees = ref(true);
 const loadingAudit = ref(true);

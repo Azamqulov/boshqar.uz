@@ -105,6 +105,29 @@
       />
     </div>
 
+    <!-- Mobile Floating Sticky Cart Bar (When in catalog tab and cart has items) -->
+    <div
+      v-if="mobileViewTab === 'catalog' && cartStore.itemCount > 0"
+      class="lg:hidden fixed bottom-3 left-3 right-3 z-30 animate-slide-up"
+    >
+      <button
+        type="button"
+        @click="mobileViewTab = 'cart'"
+        class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-xl shadow-emerald-500/30 flex items-center justify-between transition active:scale-98"
+      >
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[11px] font-mono">
+            {{ cartStore.itemCount }}
+          </span>
+          <span>Savatga o'tish</span>
+        </div>
+        <div class="flex items-center gap-1.5 font-mono text-sm">
+          <span>{{ formatCurrency(cartStore.grandTotal) }}</span>
+          <span>➔</span>
+        </div>
+      </button>
+    </div>
+
     <!-- Checkout Modal -->
     <POSCheckoutModal
       :is-open="isCheckoutOpen"
@@ -129,7 +152,7 @@
       :selected-customer="selectedCustomer"
       :current-nasiya-amount="currentNasiyaAmount"
       :is-processing="isProcessing"
-      :allow-debt="posSettings.allowDebt"
+      :allow-debt="effectiveAllowDebt"
       :allow-discounts="posSettings.allowDiscounts"
       @close="isCheckoutOpen = false"
       @open-new-customer="isNewCustomerModalOpen = true"
@@ -247,6 +270,7 @@ import POSQuickCustomerModal from './components/POSQuickCustomerModal.vue';
 import POSDiscountModal from './components/POSDiscountModal.vue';
 import POSHotkeysModal from './components/POSHotkeysModal.vue';
 import { useOfflinePOS } from '../../composables/useOfflinePOS';
+import { usePlanFeatures } from '../../composables/usePlanFeatures';
 
 const mobileViewTab = ref<'catalog' | 'cart'>('catalog');
 const cartStore = useCartStore();
@@ -255,6 +279,12 @@ const shiftStore = useShiftStore();
 const authStore = useAuthStore();
 const toast = useToast();
 const { formatCurrency, formatDate, formatDateTime } = useFormat();
+const { isFeatureEnabled } = usePlanFeatures();
+
+const isCustomerLoyaltyAllowed = computed(() => isFeatureEnabled('customer_loyalty'));
+const effectiveAllowDebt = computed(() => {
+  return Boolean(posSettings.value?.allowDebt && isCustomerLoyaltyAllowed.value);
+});
 const {
   isOnline,
   isSyncing,
@@ -473,14 +503,14 @@ const completedOrder = ref<any | null>(null);
 const cashReceived = ref<number>(0);
 
 const isNasiyaNeeded = computed(() => {
-  if (!posSettings.value?.allowDebt) return false;
+  if (!effectiveAllowDebt.value) return false;
   if (selectedPaymentMethod.value === '4') return true;
   if (selectedPaymentMethod.value === '1' && cashReceived.value < cartStore.grandTotal) return true;
   return false;
 });
 
 const currentNasiyaAmount = computed(() => {
-  if (!posSettings.value?.allowDebt) return 0;
+  if (!effectiveAllowDebt.value) return 0;
   if (selectedPaymentMethod.value === '4') return cartStore.grandTotal;
   if (selectedPaymentMethod.value === '1' && cashReceived.value < cartStore.grandTotal) {
     return Math.max(0, cartStore.grandTotal - (cashReceived.value || 0));
@@ -511,7 +541,7 @@ const openCheckoutModal = () => {
     return;
   }
   cashReceived.value = cartStore.grandTotal;
-  if (selectedPaymentMethod.value === '4' && !posSettings.value?.allowDebt) {
+  if (selectedPaymentMethod.value === '4' && !effectiveAllowDebt.value) {
     selectedPaymentMethod.value = '1';
   } else if (!paymentMethods.value.some(pm => pm.id === selectedPaymentMethod.value)) {
     selectedPaymentMethod.value = '1';
@@ -525,7 +555,7 @@ const paymentMethods = computed(() => {
     { id: '2', name: 'Plastik karta', type: 'card' },
     { id: '3', name: 'Click / Payme', type: 'click' },
   ];
-  if (posSettings.value?.allowDebt) {
+  if (effectiveAllowDebt.value) {
     methods.push({ id: '4', name: 'Nasiya (Qarz)', type: 'debt' });
   }
   return methods;
@@ -908,7 +938,7 @@ usePOSKeyboard({
   isNewCustomerModalOpen,
   completedOrder,
   allowDiscounts: computed(() => posSettings.value?.allowDiscounts),
-  allowDebt: computed(() => posSettings.value?.allowDebt),
+  allowDebt: effectiveAllowDebt,
   cartItemsCount: computed(() => cartStore.items.length),
   onCompleteOrder: handleCompleteOrder,
   onSelectPaymentMethod: selectPaymentMethod,

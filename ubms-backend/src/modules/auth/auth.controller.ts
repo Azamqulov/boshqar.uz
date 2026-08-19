@@ -10,7 +10,15 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 urinish / daqiqa
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('send-register-otp')
+  @HttpCode(HttpStatus.OK)
+  sendRegisterOtp(@Body('phone') phone: string) {
+    return this.authService.sendRegisterOtp(phone);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 urinish / daqiqa
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);

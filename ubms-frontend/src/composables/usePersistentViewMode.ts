@@ -29,6 +29,11 @@ export function usePersistentViewMode(
       }
     } catch (e) {}
 
+    // Fallback: If on mobile screen (< 768px), default to 'grid' (cards)
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'grid';
+    }
+
     return defaultMode;
   };
 

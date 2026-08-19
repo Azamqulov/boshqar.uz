@@ -18,6 +18,7 @@
       />
     </div>
     <AppViewToggle
+      class="hidden sm:inline-flex shrink-0"
       :model-value="viewMode"
       @update:model-value="$emit('update:viewMode', $event)"
     />

@@ -48,64 +48,122 @@
         </div>
       </div>
 
-      <!-- 1.1 TABLE VIEW -->
-      <div v-if="viewMode === 'table'" class="overflow-x-auto scrollbar-none">
-        <table class="w-full text-left text-xs table-auto">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] font-bold">
-            <tr>
-              <th class="py-2.5 px-3">#</th>
-              <th class="py-2.5 px-3">Mahsulot / Xizmat Nomi</th>
-              <th class="py-2.5 px-3 text-center">Sotilgan Soni</th>
-              <th class="py-2.5 px-4 text-right">Jami Tushum</th>
-              <th class="py-2.5 px-4 text-right">Tannarx (COGS)</th>
-              <th class="py-2.5 px-4 text-right">Sof Foyda</th>
-              <th class="py-2.5 px-4 text-right">Rentabellik</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="!loading && filteredSoldProducts.length === 0">
-              <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <span>Hech qanday mahsulot topilmadi</span>
-              </td>
-            </tr>
-            <tr v-for="(prod, idx) in pagination.paginatedItems.value" :key="prod.id || idx"
-              class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-3 px-3 font-mono text-slate-400 whitespace-nowrap">{{ pagination.startIndex.value + idx }}</td>
-              <td class="py-3 px-3 whitespace-nowrap">
-                <div class="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{{ prod.name }}</div>
-                <div v-if="prod.barcode || prod.sku" class="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
-                  {{ prod.barcode || prod.sku }}
-                </div>
-              </td>
-              <td class="py-3 px-3 text-center whitespace-nowrap">
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
-                  {{ prod.quantitySold }} dona
+      <!-- 1.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
+      <div v-if="viewMode === 'table'" class="w-full">
+        <!-- Mobile cards on small screens (< md) -->
+        <div class="block md:hidden space-y-3">
+          <div v-if="!loading && filteredSoldProducts.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
+            <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <span>Hech qanday mahsulot topilmadi</span>
+          </div>
+
+          <div
+            v-for="prod in pagination.paginatedItems.value"
+            :key="prod.id || prod.name"
+            class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h4 class="font-bold text-slate-900 dark:text-white text-sm truncate">
+                  {{ prod.name }}
+                </h4>
+                <span v-if="prod.sku || prod.barcode" class="text-[10px] text-slate-400 font-mono block mt-0.5">
+                  #{{ prod.sku || prod.barcode }}
                 </span>
-              </td>
-              <td class="py-3 px-4 text-right font-black text-slate-900 dark:text-white font-mono whitespace-nowrap">
-                {{ formatCurrency(prod.revenue) }}
-              </td>
-              <td class="py-3 px-4 text-right font-medium text-amber-600 dark:text-amber-400 font-mono whitespace-nowrap">
-                {{ formatCurrency(prod.cogs) }}
-              </td>
-              <td class="py-3 px-4 text-right font-black font-mono whitespace-nowrap"
-                :class="prod.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'">
-                {{ formatCurrency(prod.profit) }}
-              </td>
-              <td class="py-3 px-4 text-right font-bold font-mono whitespace-nowrap">
-                <span class="px-2 py-0.5 rounded text-[11px] whitespace-nowrap" :class="[
-                  prod.revenue > 0 && ((prod.profit / prod.revenue) * 100) >= 20
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                ]">
-                  {{ prod.revenue > 0 ? Math.round((prod.profit / prod.revenue) * 100) : 0 }}%
+              </div>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono shrink-0">
+                {{ prod.quantitySold }} dona
+              </span>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-[10px] text-slate-400 block">Jami Tushum</span>
+                <span class="font-black text-slate-900 dark:text-white font-mono">{{ formatCurrency(prod.revenue) }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">Tannarx (COGS)</span>
+                <span class="font-medium text-amber-600 dark:text-amber-400 font-mono">{{ formatCurrency(prod.cogs) }}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-slate-400 block">Sof Foyda</span>
+                <span class="font-black font-mono text-sm" :class="prod.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'">
+                  {{ formatCurrency(prod.profit) }}
                 </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold font-mono" :class="[
+                prod.revenue > 0 && ((prod.profit / prod.revenue) * 100) >= 20
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+              ]">
+                Rentabellik: {{ prod.revenue > 0 ? Math.round((prod.profit / prod.revenue) * 100) : 0 }}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table View (>= md) -->
+        <div class="hidden md:block overflow-x-auto scrollbar-none">
+          <table class="w-full text-left text-xs table-auto">
+            <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[10px] font-bold">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Mahsulot / Xizmat Nomi</th>
+                <th class="py-2.5 px-3 text-center">Sotilgan Soni</th>
+                <th class="py-2.5 px-4 text-right">Jami Tushum</th>
+                <th class="py-2.5 px-4 text-right">Tannarx (COGS)</th>
+                <th class="py-2.5 px-4 text-right">Sof Foyda</th>
+                <th class="py-2.5 px-4 text-right">Rentabellik</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
+              <tr v-if="!loading && filteredSoldProducts.length === 0">
+                <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <span>Hech qanday mahsulot topilmadi</span>
+                </td>
+              </tr>
+              <tr v-for="(prod, idx) in pagination.paginatedItems.value" :key="prod.id || idx"
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td class="py-3 px-3 font-mono text-slate-400 whitespace-nowrap">{{ pagination.startIndex.value + idx }}</td>
+                <td class="py-3 px-3 whitespace-nowrap">
+                  <div class="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{{ prod.name }}</div>
+                  <div v-if="prod.barcode || prod.sku" class="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
+                    {{ prod.barcode || prod.sku }}
+                  </div>
+                </td>
+                <td class="py-3 px-3 text-center whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
+                    {{ prod.quantitySold }} dona
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right font-black text-slate-900 dark:text-white font-mono whitespace-nowrap">
+                  {{ formatCurrency(prod.revenue) }}
+                </td>
+                <td class="py-3 px-4 text-right font-medium text-amber-600 dark:text-amber-400 font-mono whitespace-nowrap">
+                  {{ formatCurrency(prod.cogs) }}
+                </td>
+                <td class="py-3 px-4 text-right font-black font-mono whitespace-nowrap"
+                  :class="prod.profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'">
+                  {{ formatCurrency(prod.profit) }}
+                </td>
+                <td class="py-3 px-4 text-right font-bold font-mono whitespace-nowrap">
+                  <span class="px-2 py-0.5 rounded text-[11px] whitespace-nowrap" :class="[
+                    prod.revenue > 0 && ((prod.profit / prod.revenue) * 100) >= 20
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  ]">
+                    {{ prod.revenue > 0 ? Math.round((prod.profit / prod.revenue) * 100) : 0 }}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 1.2 CARD / GRID VIEW -->
@@ -165,17 +223,17 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
-      <!-- Pagination -->
-      <AppPagination
-        v-if="!loading"
-        v-model:current-page="pagination.currentPage.value"
-        v-model:page-size="pagination.pageSize.value"
-        :total-items="filteredSoldProducts.length"
-        item-name="mahsulot"
-      />
-    </div>
+    <!-- Pagination (cleanly placed outside the table card) -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredSoldProducts.length"
+      item-name="mahsulot"
+    />
   </div>
 </template>
 

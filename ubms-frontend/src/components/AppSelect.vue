@@ -3,14 +3,14 @@
   <div
     v-if="searchable"
     ref="containerRef"
-    class="relative w-full inline-block select-none"
+    class="relative w-full min-w-0 inline-block select-none"
   >
     <!-- Trigger Button -->
     <button
       type="button"
       @click="toggleDropdown"
       :disabled="disabled"
-      class="w-full flex items-center justify-between pl-3.5 pr-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
+      class="w-full min-w-0 max-w-full flex items-center justify-between pl-3.5 pr-2.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
       :class="[
         isOpen
           ? 'border-emerald-500 bg-slate-50 dark:bg-slate-800 shadow-sm ring-2 ring-emerald-500/15'
@@ -18,12 +18,12 @@
         customClass
       ]"
     >
-      <div class="flex items-center gap-2 truncate flex-1 pr-2">
+      <div class="flex items-center gap-2 truncate flex-1 min-w-0 pr-1.5">
         <slot name="selected" :option="selectedOption">
           <!-- Color dot if present -->
           <span
             v-if="selectedOption?.color"
-            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            class="w-2.5 h-2.5 rounded-full shrink-0"
             :style="{ backgroundColor: selectedOption.color }"
           ></span>
 
@@ -31,12 +31,12 @@
           <component
             v-if="selectedOption?.icon"
             :is="selectedOption.icon"
-            class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0"
+            class="w-3.5 h-3.5 text-emerald-500 shrink-0"
           />
 
           <!-- Label / Placeholder -->
           <span
-            class="truncate"
+            class="truncate flex-1 min-w-0"
             :class="!selectedOption ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white font-medium'"
           >
             {{ selectedOption ? selectedOption.label : (placeholder || 'Tanlang...') }}
@@ -45,7 +45,7 @@
           <!-- Badge if present -->
           <span
             v-if="selectedOption?.badge"
-            class="ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+            class="ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0 whitespace-nowrap"
           >
             {{ selectedOption.badge }}
           </span>
@@ -53,7 +53,7 @@
       </div>
 
       <ChevronDown
-        class="w-4 h-4 text-slate-400 dark:text-slate-400 transition-transform duration-200 flex-shrink-0"
+        class="w-4 h-4 text-slate-400 dark:text-slate-400 transition-transform duration-200 shrink-0 ml-1"
         :class="{ 'rotate-180 text-emerald-500': isOpen }"
       />
     </button>

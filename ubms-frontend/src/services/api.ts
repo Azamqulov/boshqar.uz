@@ -119,7 +119,25 @@ export function getErrorMessage(err: any, defaultMsg = 'Xatolik yuz berdi'): str
     }
   }
 
-  return err.message || defaultMsg;
+  const rawMsg = String(err.message || '');
+  if (rawMsg.includes('Network Error') || rawMsg.includes('ERR_CONNECTION_REFUSED')) {
+    return 'Internet yoki server bilan aloqa yo\'q. Iltimos, ulanishni tekshiring.';
+  }
+  if (rawMsg.includes('timeout') || rawMsg.includes('timed out')) {
+    return 'Server javob berish vaqti tugadi. Qaytadan urinib ko\'ring.';
+  }
+  if (
+    rawMsg.includes('is not a function') ||
+    rawMsg.includes('Cannot read') ||
+    rawMsg.includes('undefined') ||
+    rawMsg.includes('null') ||
+    rawMsg.includes('TypeError') ||
+    rawMsg.includes('ReferenceError')
+  ) {
+    return defaultMsg || 'Tizimda vaqtinchalik xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.';
+  }
+
+  return rawMsg || defaultMsg;
 }
 
 export default api;

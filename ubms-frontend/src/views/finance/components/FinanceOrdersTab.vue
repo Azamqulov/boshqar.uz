@@ -48,49 +48,49 @@
         </div>
       </div>
 
-      <!-- 2.1 TABLE VIEW -->
-      <div v-if="viewMode === 'table'" class="overflow-x-auto max-w-full w-full">
-        <table class="w-full text-left text-xs border-collapse min-w-[650px]">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold whitespace-nowrap">
-            <tr>
-              <th class="py-3 px-4">Chek #</th>
-              <th class="py-3 px-4">Sana va Vaqt</th>
-              <th class="py-3 px-4">Kassir / Mas'ul</th>
-              <th class="py-3 px-4">Mahsulotlar</th>
-              <th class="py-3 px-4">To'lov Turi</th>
-              <th class="py-3 px-4 text-right">Summa</th>
-              <th class="py-3 px-4 text-center">Harakat</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="!loading && filteredOrders.length === 0">
-              <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                <Receipt class="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <span>Cheklar mavjud emas</span>
-              </td>
-            </tr>
-            <tr v-for="order in pagination.paginatedItems.value" :key="order.id"
-              class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-              <td class="py-3.5 px-4 font-black font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+      <!-- 2.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
+      <div v-if="viewMode === 'table'" class="w-full">
+        <!-- Mobile cards when on small screens (< md) -->
+        <div class="block md:hidden space-y-3">
+          <div v-if="!loading && filteredOrders.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
+            <Receipt class="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <span>Cheklar mavjud emas</span>
+          </div>
+
+          <div
+            v-for="order in pagination.paginatedItems.value"
+            :key="order.id"
+            class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-black font-mono text-emerald-600 dark:text-emerald-400 text-sm">
                 {{ order.orderNumber }}
-              </td>
-              <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">
                 {{ formatDate(order.completedAt || order.createdAt) }}
-              </td>
-              <td class="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                {{ order.cashier?.fullName || 'Kassir' }}
-              </td>
-              <td class="py-3.5 px-4 max-w-xs whitespace-nowrap">
-                <div class="truncate text-slate-600 dark:text-slate-300 max-w-[200px]">
-                  <span v-for="(item, i) in order.items" :key="item.id">
-                    {{ item.quantity }}x {{ item.product?.name || item.service?.name }}<span
-                      v-if="i < order.items.length - 1">, </span>
-                  </span>
-                </div>
-              </td>
-              <td class="py-3.5 px-4 whitespace-nowrap">
+              </span>
+            </div>
+
+            <div class="space-y-1 text-xs">
+              <p class="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                <span>Kassir:</span>
+                <span class="font-bold">{{ order.cashier?.fullName || 'Kassir' }}</span>
+              </p>
+              <p v-if="order.customer?.fullName" class="text-slate-500 flex items-center justify-between">
+                <span>Mijoz:</span>
+                <span class="font-medium text-slate-700 dark:text-slate-300">{{ order.customer.fullName }}</span>
+              </p>
+              <div class="text-[11px] text-slate-500 truncate pt-0.5">
+                <span v-for="(item, i) in order.items" :key="item.id">
+                  {{ item.quantity }}x {{ item.product?.name || item.service?.name }}<span v-if="i < order.items.length - 1">, </span>
+                </span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div class="flex flex-wrap gap-1">
                 <span v-for="pay in order.payments" :key="pay.id"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold mr-1 whitespace-nowrap" :class="[
+                  class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold" :class="[
                     pay.paymentMethod?.type === 'cash'
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                       : pay.paymentMethod?.type === 'card'
@@ -99,27 +99,106 @@
                   ]">
                   {{ pay.paymentMethod?.name || 'To\'lov' }}
                 </span>
-              </td>
-              <td class="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white font-mono whitespace-nowrap">
+              </div>
+              <span class="font-black text-sm text-slate-900 dark:text-white font-mono">
                 {{ formatCurrency(order.total) }}
-              </td>
-              <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                <div class="flex items-center justify-center gap-1.5">
-                  <button @click="$emit('viewReceipt', order)"
-                    class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center gap-1">
-                    <Eye class="w-3.5 h-3.5" />
-                    <span>Ko'rish</span>
-                  </button>
-                  <button @click="$emit('cancelOrder', order)"
-                    class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                    title="Chekni bekor qilish / o'chirish">
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                @click="$emit('viewReceipt', order)"
+                class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 btn-interactive"
+              >
+                <Eye class="w-3.5 h-3.5" />
+                <span>Chekni ko'rish</span>
+              </button>
+              <button
+                type="button"
+                @click="$emit('cancelOrder', order)"
+                class="p-2 rounded-xl text-rose-500 bg-rose-500/10 transition"
+                title="Chekni bekor qilish"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table View (>= md) -->
+        <div class="hidden md:block overflow-x-auto max-w-full w-full">
+          <table class="w-full text-left text-xs border-collapse min-w-[650px]">
+            <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold whitespace-nowrap">
+              <tr>
+                <th class="py-3 px-4">Chek #</th>
+                <th class="py-3 px-4">Sana va Vaqt</th>
+                <th class="py-3 px-4">Kassir / Mas'ul</th>
+                <th class="py-3 px-4">Mahsulotlar</th>
+                <th class="py-3 px-4">To'lov Turi</th>
+                <th class="py-3 px-4 text-right">Summa</th>
+                <th class="py-3 px-4 text-center">Harakat</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
+              <tr v-if="!loading && filteredOrders.length === 0">
+                <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
+                  <Receipt class="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <span>Cheklar mavjud emas</span>
+                </td>
+              </tr>
+              <tr v-for="order in pagination.paginatedItems.value" :key="order.id"
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td class="py-3.5 px-4 font-black font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  {{ order.orderNumber }}
+                </td>
+                <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">
+                  {{ formatDate(order.completedAt || order.createdAt) }}
+                </td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                  {{ order.cashier?.fullName || 'Kassir' }}
+                </td>
+                <td class="py-3.5 px-4 max-w-xs whitespace-nowrap">
+                  <div class="truncate text-slate-600 dark:text-slate-300 max-w-[200px]">
+                    <span v-for="(item, i) in order.items" :key="item.id">
+                      {{ item.quantity }}x {{ item.product?.name || item.service?.name }}<span
+                        v-if="i < order.items.length - 1">, </span>
+                    </span>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  <span v-for="pay in order.payments" :key="pay.id"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold mr-1 whitespace-nowrap" :class="[
+                      pay.paymentMethod?.type === 'cash'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : pay.paymentMethod?.type === 'card'
+                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    ]">
+                    {{ pay.paymentMethod?.name || 'To\'lov' }}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white font-mono whitespace-nowrap">
+                  {{ formatCurrency(order.total) }}
+                </td>
+                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button @click="$emit('viewReceipt', order)"
+                      class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center gap-1">
+                      <Eye class="w-3.5 h-3.5" />
+                      <span>Ko'rish</span>
+                    </button>
+                    <button @click="$emit('cancelOrder', order)"
+                      class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                      title="Chekni bekor qilish / o'chirish">
+                      <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 2.2 CARD / GRID VIEW -->
@@ -193,17 +272,17 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
-      <!-- Pagination -->
-      <AppPagination
-        v-if="!loading"
-        v-model:current-page="pagination.currentPage.value"
-        v-model:page-size="pagination.pageSize.value"
-        :total-items="filteredOrders.length"
-        item-name="chek"
-      />
-    </div>
+    <!-- Pagination (cleanly placed outside the table card) -->
+    <AppPagination
+      v-if="!loading"
+      v-model:current-page="pagination.currentPage.value"
+      v-model:page-size="pagination.pageSize.value"
+      :total-items="filteredOrders.length"
+      item-name="chek"
+    />
   </div>
 </template>
 

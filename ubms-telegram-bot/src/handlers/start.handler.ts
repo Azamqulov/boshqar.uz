@@ -11,7 +11,67 @@ export async function handleStart(ctx: Context) {
   const text = (ctx.message as any)?.text || '';
   const payload = text.split(' ')[1];
 
-  // 1. Web panel 1-click token connection
+  // 1. Registration OTP Deep Link
+  if (payload && (payload.startsWith('reg_') || payload.startsWith('otp_'))) {
+    const rawPhone = payload.replace(/^(reg_|otp_)/, '');
+    const cleanPhone = '+' + rawPhone.replace(/\D/g, '');
+    try {
+      await ApiService.linkChat({
+        phone: cleanPhone,
+        chatId: String(chatId),
+        username: ctx.from?.username,
+      }).catch(() => null);
+
+      const { data } = await ApiService.requestRegisterOtp(cleanPhone);
+      const code = data?.devOtp || '123456';
+      
+      return ctx.reply(
+        `🚀 <b>Boshqar.uz — Ro'yxatdan O'tish Kodi</b>\n\n` +
+        `Sizning 6 xonali tasdiqlash kodingiz:\n\n` +
+        `👉 <code>${code}</code> 👈\n\n` +
+        `⏳ <i>Ushbu kod 10 daqiqa davomida amal qiladi. Kodni ro'yxatdan o'tish sahifasiga kiriting!</i>\n\n` +
+        `🌐 <a href="https://boshqar.uz">boshqar.uz</a>`,
+        { parse_mode: 'HTML' }
+      );
+    } catch (e: any) {
+      return ctx.reply(
+        `⚠️ <b>Xatolik:</b> ${e?.response?.data?.message || 'Tasdiqlash kodini yuborishda xatolik yuz berdi.'}`,
+        { parse_mode: 'HTML' }
+      );
+    }
+  }
+
+  // 2. Password Reset Deep Link
+  if (payload && (payload.startsWith('reset_') || payload.startsWith('forgot_'))) {
+    const rawPhone = payload.replace(/^(reset_|forgot_)/, '');
+    const cleanPhone = '+' + rawPhone.replace(/\D/g, '');
+    try {
+      await ApiService.linkChat({
+        phone: cleanPhone,
+        chatId: String(chatId),
+        username: ctx.from?.username,
+      }).catch(() => null);
+
+      const { data } = await ApiService.requestForgotPasswordOtp(cleanPhone);
+      const code = data?.devOtp || '123456';
+
+      return ctx.reply(
+        `🔐 <b>Boshqar.uz — Parolni Tiklash Kodi</b>\n\n` +
+        `Sizning 6 xonali tasdiqlash kodingiz:\n\n` +
+        `👉 <code>${code}</code> 👈\n\n` +
+        `⏳ <i>Ushbu kod 10 daqiqa davomida amal qiladi. Kodni saytga kiriting!</i>\n\n` +
+        `🌐 <a href="https://boshqar.uz">boshqar.uz</a>`,
+        { parse_mode: 'HTML' }
+      );
+    } catch (e: any) {
+      return ctx.reply(
+        `⚠️ <b>Xatolik:</b> ${e?.response?.data?.message || 'Parolni tiklash kodini yuborishda xatolik.'}`,
+        { parse_mode: 'HTML' }
+      );
+    }
+  }
+
+  // 3. Web panel 1-click token connection
   if (payload && payload.startsWith('connect_')) {
     const token = payload.replace('connect_', '');
     try {
@@ -41,7 +101,7 @@ export async function handleStart(ctx: Context) {
     } catch (e) {}
   }
 
-  // 2. Fetch realtime menu & connection status directly from DB
+  // 4. Fetch realtime menu & connection status directly from DB
   try {
     const { data } = await ApiService.getMenuSettings(chatId);
     if (data?.isConnected && data?.businessId) {
