@@ -45,25 +45,13 @@
       :categories-count="categories.length"
     />
 
-    <!-- Search, Category Filter and View Toggle -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-      <div class="flex-1">
-        <AppInput
-          v-model="searchQuery"
-          placeholder="Mahsulot nomi, SKU yoki shtrix-kod bo'yicha qidiruv..."
-          :icon="Search"
-        />
-      </div>
-      <div class="w-full sm:w-64">
-        <AppSelect
-          v-model="selectedCategoryId"
-          :options="categoryFilterOptions"
-          :searchable="true"
-          placeholder="Barcha Kategoriyalar"
-        />
-      </div>
-      <AppViewToggle v-model="viewMode" />
-    </div>
+    <!-- Search, Category Filter and View Toggle (ProductFilterBar Component) -->
+    <ProductFilterBar
+      v-model:search-query="searchQuery"
+      v-model:selected-category-id="selectedCategoryId"
+      :category-filter-options="categoryFilterOptions"
+      v-model:view-mode="viewMode"
+    />
 
     <!-- Products Container -->
     <SkeletonLoader v-if="loading" variant="table" :rows="8" />
@@ -102,29 +90,9 @@
       :category-options="categoryOptions"
       :unit-options="units"
       :fast-image-presets="fastImagePresets"
+      :loading="isSavingProduct"
       @close="isModalOpen = false"
       @save="saveProduct"
-    />
-
-    <!-- Category Management Modal -->
-    <CategoryManageModal
-      :is-open="isCategoryModalOpen"
-      :editing-cat-id="editingCatId"
-      :cat-form="catForm"
-      :saving-category="savingCategory"
-      :categories="categories"
-      :filtered-modal-categories="filteredModalCategories"
-      v-model:category-search="categorySearch"
-      :fast-category-presets="fastCategoryPresets"
-      :quick-emojis="quickEmojis"
-      :quick-colors="quickColors"
-      :get-category-icon="getCategoryIcon"
-      @close="isCategoryModalOpen = false"
-      @apply-preset="applyPreset"
-      @save-category="saveCategory"
-      @reset-category-form="resetCategoryForm"
-      @edit-category="editCategory"
-      @delete-category="deleteCategory"
     />
 
     <!-- Confirm Dialog Component -->
@@ -148,22 +116,27 @@
       :feature-title="proModalFeature"
       @close="showProModal = false"
     />
+
+    <!-- Excel & 1C Batch Import Modal -->
+    <ExcelImportModal
+      :is-open="isExcelImportOpen"
+      @close="isExcelImportOpen = false"
+      @imported="dataStore.fetchProducts(true)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import api, { getErrorMessage } from '../../services/api';
-import { useFormat } from '../../composables/useFormat';
-import { Plus, Search, FolderTree, FileSpreadsheet } from 'lucide-vue-next';
+import { Plus, FolderTree, FileSpreadsheet } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
-import AppSelect, { SelectOption } from '../../components/AppSelect.vue';
-import AppInput from '../../components/AppInput.vue';
-import AppViewToggle from '../../components/AppViewToggle.vue';
+import { SelectOption } from '../../components/AppSelect.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
 import ProUpgradeModal from '../../components/ProUpgradeModal.vue';
+import ExcelImportModal from './components/ExcelImportModal.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -173,98 +146,49 @@ import { usePermissions } from '../../composables/usePermissions';
 import { usePagination } from '../../composables/usePagination';
 
 import ProductStatsCards from './components/ProductStatsCards.vue';
+import ProductFilterBar from './components/ProductFilterBar.vue';
 import ProductTableView from './components/ProductTableView.vue';
 import ProductGridView from './components/ProductGridView.vue';
 import ProductFormModal from './components/ProductFormModal.vue';
-import CategoryManageModal from './components/CategoryManageModal.vue';
 
 const toast = useToast();
 const dataStore = useDataStore();
 const authStore = useAuthStore();
-const { formatCurrency } = useFormat();
 const { canCreate } = usePermissions();
 
 const showProModal = ref(false);
 const proModalTitle = ref('');
 const proModalSubtitle = ref('');
 const proModalFeature = ref('');
+const isExcelImportOpen = ref(false);
 
 const openExcelImportModal = () => {
-  proModalTitle.value = "Excel & 1C Import Faqat PRO Tarifda!";
-  proModalSubtitle.value = "Minglab tovarlarni 1 ta tugma bilan Excel orqali tizimga yuklang va 1C bazangiz bilan sinxronlang.";
-  proModalFeature.value = "1C & Excel Sinxronizatsiya";
-  showProModal.value = true;
+  const plan = (authStore.activeBusiness?.plan || '').toLowerCase();
+  const isPaid =
+    authStore.user?.isSuperAdmin ||
+    plan.includes('pro') ||
+    plan.includes('biznes') ||
+    plan.includes('business') ||
+    plan.includes('enterprise') ||
+    (!authStore.isSubscriptionExpired && !authStore.isDemo);
+
+  if (isPaid) {
+    isExcelImportOpen.value = true;
+  } else {
+    proModalTitle.value = "Excel & 1C Import Faqat PRO Tarifda!";
+    proModalSubtitle.value = "Minglab tovarlarni 1 ta tugma bilan Excel orqali tizimga yuklang va 1C bazangiz bilan sinxronlang.";
+    proModalFeature.value = "1C & Excel Sinxronizatsiya";
+    showProModal.value = true;
+  }
 };
 
 const viewMode = usePersistentViewMode('products', 'table');
-const loading = ref(false);
+const loading = ref(dataStore.products.length === 0);
 const products = computed(() => dataStore.products);
 const categories = computed(() => dataStore.categories);
 
 const isModalOpen = ref(false);
-const isCategoryModalOpen = ref(false);
 const editingId = ref<string | null>(null);
-const editingCatId = ref<string | null>(null);
-const savingCategory = ref(false);
-
-const imageInputMode = ref<'upload' | 'url'>('upload');
-const fileInputRef = ref<HTMLInputElement | null>(null);
-
-const triggerFileInput = () => {
-  fileInputRef.value?.click();
-};
-
-const removeImage = () => {
-  form.value.imageUrl = '';
-  if (fileInputRef.value) fileInputRef.value.value = '';
-};
-
-const handleImageFileUpload = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith('image/')) {
-    toast.warning("Iltimos, rasm faylini tanlang (JPG, PNG, WebP)!", "Fayl formati");
-    return;
-  }
-
-  // Optimize and compress image using HTML5 Canvas
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const maxDim = 600;
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxDim) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        }
-      } else {
-        if (height > maxDim) {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        form.value.imageUrl = compressedDataUrl;
-        toast.success("Rasm muvaffaqiyatli yuklandi!", "Rasm");
-      }
-    };
-    img.src = event.target?.result as string;
-  };
-  reader.readAsDataURL(file);
-};
 
 // Biznes turiga qarab tayyor rasm shablonlari
 const restaurantImagePresets = [
@@ -328,7 +252,7 @@ const fastImagePresets = computed(() => {
   if (bType === 'pharmacy') return pharmacyImagePresets;
   if (bType === 'barbershop') return barbershopImagePresets;
   if (bType === 'service') return serviceImagePresets;
-  return shopImagePresets; // shop (default)
+  return shopImagePresets;
 });
 
 const isDeleteModalOpen = ref(false);
@@ -337,33 +261,6 @@ const isDeleting = ref(false);
 
 const searchQuery = ref('');
 const selectedCategoryId = ref('');
-const categorySearch = ref('');
-
-const quickEmojis = ['🍕', '🍔', '🍲', '🥗', '🥤', '☕', '🍰', '🍞', '🥩', '🧴', '👕', '📦'];
-const quickColors = ['#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#64748b'];
-
-const fastCategoryPresets = [
-  { name: 'Pitsa & Fast Food', icon: '🍕', color: '#f59e0b' },
-  { name: 'Milliy Taomlar', icon: '🍲', color: '#10b981' },
-  { name: 'Salatlar & Gazaklar', icon: '🥗', color: '#14b8a6' },
-  { name: 'Ichimliklar & Choy', icon: '🥤', color: '#06b6d4' },
-  { name: 'Desertlar & Shirinliklar', icon: '🍰', color: '#ec4899' },
-  { name: 'Non Mahsulotlari', icon: '🍞', color: '#d97706' },
-  { name: 'Go\'sht & Yarim tayyor', icon: '🥩', color: '#ef4444' },
-  { name: 'Maishiy & Tozalash', icon: '🧴', color: '#6366f1' },
-  { name: 'Umumiy Tovarlar', icon: '📦', color: '#8b5cf6' },
-];
-
-const photoPresets = [
-  { name: 'Osh', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200' },
-  { name: 'Pitsa', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200' },
-  { name: 'Shashlik', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200' },
-  { name: 'Somsa', url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200' },
-  { name: 'Cola', url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200' },
-  { name: 'Choy/Qahva', url: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=200' },
-  { name: 'Non', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200' },
-];
-
 const units = ref<any[]>([]);
 
 const form = ref({
@@ -378,12 +275,6 @@ const form = ref({
   salePrice: 0,
   minStock: 5,
   initialStock: 10,
-});
-
-const catForm = ref({
-  name: '',
-  color: '#10b981',
-  icon: '📦',
 });
 
 const categoryFilterOptions = computed<SelectOption[]>(() => {
@@ -405,15 +296,6 @@ const categoryOptions = computed<SelectOption[]>(() => {
     label: `${getCategoryIcon(cat.icon)} ${cat.name}`,
     color: cat.color || '#10b981',
   }));
-});
-
-const categoryFormOptions = categoryOptions;
-
-const filteredModalCategories = computed(() => {
-  if (!categorySearch.value) return categories.value;
-  return categories.value.filter((c) =>
-    c.name.toLowerCase().includes(categorySearch.value.toLowerCase()),
-  );
 });
 
 const loadUnits = async () => {
@@ -439,14 +321,6 @@ const loadProducts = async (force = false) => {
     console.error(err);
   } finally {
     loading.value = false;
-  }
-};
-
-const loadCategories = async (force = false) => {
-  try {
-    await dataStore.fetchCategories(force);
-  } catch (err) {
-    console.error(err);
   }
 };
 
@@ -481,8 +355,6 @@ const openCreateModal = () => {
   }
 
   editingId.value = null;
-  imageInputMode.value = 'upload';
-  if (fileInputRef.value) fileInputRef.value.value = '';
   form.value = {
     name: '',
     sku: '',
@@ -501,8 +373,6 @@ const openCreateModal = () => {
 
 const editProduct = (prod: any) => {
   editingId.value = prod.id;
-  imageInputMode.value = prod.imageUrl?.startsWith('http') ? 'url' : 'upload';
-  if (fileInputRef.value) fileInputRef.value.value = '';
   const isDish = prod.brand === 'dish' || prod.unit?.shortName === 'por';
   const isService = prod.brand === 'service';
   
@@ -522,7 +392,10 @@ const editProduct = (prod: any) => {
   isModalOpen.value = true;
 };
 
+const isSavingProduct = ref(false);
+
 const saveProduct = async () => {
+  if (isSavingProduct.value) return;
   if (!form.value.name.trim()) {
     toast.warning('Mahsulot nomini kiriting', 'Mahsulot');
     return;
@@ -532,6 +405,7 @@ const saveProduct = async () => {
     return;
   }
 
+  isSavingProduct.value = true;
   try {
     const payload = {
       name: form.value.name.trim(),
@@ -550,7 +424,6 @@ const saveProduct = async () => {
 
     if (editingId.value) {
       const { data: updated } = await api.put(`/products/${editingId.value}`, payload);
-      // Optimistic: update store immediately so table refreshes right away
       const idx = dataStore.products.findIndex((p: any) => p.id === editingId.value);
       if (idx !== -1 && updated) {
         dataStore.products[idx] = { ...dataStore.products[idx], ...updated };
@@ -558,7 +431,6 @@ const saveProduct = async () => {
       toast.success(`"${form.value.name}" muvaffaqiyatli yangilandi`, 'Mahsulot');
     } else {
       const { data: created } = await api.post('/products', payload);
-      // Optimistic: push new product to top of list immediately
       if (created) {
         dataStore.products.unshift(created);
       }
@@ -566,13 +438,14 @@ const saveProduct = async () => {
     }
 
     isModalOpen.value = false;
-    // Invalidate and refresh in background silently without blocking the user
     dataStore.invalidate('products');
     dataStore.invalidate('dashboard');
     dataStore.invalidate('inventory');
     dataStore.fetchProducts(true).catch(console.error);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Mahsulotni saqlashda xatolik yuz berdi'), 'Xatolik');
+  } finally {
+    isSavingProduct.value = false;
   }
 };
 
@@ -597,7 +470,6 @@ const executeDeleteProduct = async () => {
 
   isDeleting.value = true;
   try {
-    // Immediate reactive removal from Pinia store for instant UI response
     dataStore.products = dataStore.products.filter((p: any) => p.id !== id);
     isDeleteModalOpen.value = false;
     productToDelete.value = null;
@@ -612,7 +484,6 @@ const executeDeleteProduct = async () => {
   } catch (err: any) {
     console.error('Delete product error:', err);
     toast.error(getErrorMessage(err, "Mahsulotni o'chirishda xatolik yuz berdi"), 'Xatolik');
-    // Rollback by refreshing from server if deletion failed
     dataStore.fetchProducts(true);
   } finally {
     isDeleting.value = false;
@@ -634,96 +505,7 @@ const toggleAvailability = async (prod: any) => {
   }
 };
 
-// Category Management Functions
-const openCategoryModal = () => {
-  resetCategoryForm();
-  isCategoryModalOpen.value = true;
-};
-
-const resetCategoryForm = () => {
-  editingCatId.value = null;
-  catForm.value = {
-    name: '',
-    color: '#10b981',
-    icon: '📦',
-  };
-};
-
-const applyPreset = async (preset: { name: string; icon: string; color: string }) => {
-  catForm.value = {
-    name: preset.name,
-    icon: preset.icon,
-    color: preset.color,
-  };
-  await saveCategory();
-};
-
-const editCategory = (cat: any) => {
-  editingCatId.value = cat.id;
-  catForm.value = {
-    name: cat.name,
-    color: cat.color || '#10b981',
-    icon: cat.icon || '📦',
-  };
-};
-
-const saveCategory = async () => {
-  if (!catForm.value.name.trim()) {
-    toast.warning('Kategoriya nomini kiriting', 'Kategoriya');
-    return;
-  }
-
-  savingCategory.value = true;
-  try {
-    const payload = {
-      name: catForm.value.name.trim(),
-      color: catForm.value.color || '#10b981',
-      icon: catForm.value.icon || '📦',
-    };
-
-    let savedId: string | null = null;
-    if (editingCatId.value) {
-      const { data } = await api.patch(`/categories/${editingCatId.value}`, payload);
-      savedId = data?.id || editingCatId.value;
-      toast.success(`"${payload.name}" kategoriyasi muvaffaqiyatli yangilandi!`, 'Kategoriya');
-    } else {
-      const { data } = await api.post('/categories', payload);
-      savedId = data?.id;
-      toast.success(`"${payload.name}" kategoriyasi muvaffaqiyatli yaratildi!`, 'Kategoriya');
-    }
-    
-    resetCategoryForm();
-    await loadCategories(true);
-    await loadProducts(true);
-
-    // If product modal is open, auto select this category
-    if (isModalOpen.value && savedId) {
-      form.value.categoryId = savedId;
-    }
-  } catch (err: any) {
-    toast.error(getErrorMessage(err, 'Kategoriyani saqlashda xatolik'), 'Xatolik');
-  } finally {
-    savingCategory.value = false;
-  }
-};
-
-const deleteCategory = async (cat: any) => {
-  if (!window.confirm(`"${cat.name}" kategoriyasini o'chirishni tasdiqlaysizmi? (Unga tegishli tovarlar saqlanadi)`)) {
-    return;
-  }
-  try {
-    await api.delete(`/categories/${cat.id}`);
-    toast.success(`"${cat.name}" kategoriyasi o'chirildi`, 'Kategoriya');
-    dataStore.invalidate('categories');
-    await loadCategories(true);
-    await loadProducts(true);
-  } catch (err: any) {
-    toast.error(getErrorMessage(err, 'Kategoriyani o\'chirishda xatolik'), 'Xatolik');
-  }
-};
-
 onMounted(() => {
   loadProducts();
-  loadCategories();
 });
 </script>

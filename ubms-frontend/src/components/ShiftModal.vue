@@ -709,6 +709,7 @@ watch(
 );
 
 const handleOpenShift = async () => {
+  if (submitting.value) return;
   submitting.value = true;
   try {
     const data = await shiftStore.openShift(
@@ -726,6 +727,7 @@ const handleOpenShift = async () => {
 };
 
 const handleCloseShift = async () => {
+  if (submitting.value) return;
   submitting.value = true;
   try {
     const closed = await shiftStore.closeShift(

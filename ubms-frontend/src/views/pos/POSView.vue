@@ -280,7 +280,7 @@ const onApplyDiscount = (payload: { type: 'percent' | 'fixed'; value: number }) 
   );
 };
 
-const loading = ref(false);
+const loading = ref(dataStore.products.length === 0);
 const products = computed(() => dataStore.products);
 const categories = computed(() => dataStore.categories);
 const customers = computed(() => dataStore.customers || []);
@@ -532,17 +532,17 @@ const paymentMethods = computed(() => {
 });
 const selectedPaymentMethod = ref('1');
 
-const loadProducts = async () => {
+const loadProducts = async (force = false) => {
   if (dataStore.products.length === 0) {
     loading.value = true;
   }
   try {
     const promises: Promise<any>[] = [
-      dataStore.fetchProducts(),
-      dataStore.fetchCategories(),
+      dataStore.fetchProducts(force),
+      dataStore.fetchCategories(force),
     ];
     if (isRestaurant.value) {
-      promises.push(dataStore.fetchTables());
+      promises.push(dataStore.fetchTables(force));
     }
     await Promise.all(promises);
     cacheCatalog(dataStore.products, dataStore.categories);
@@ -685,7 +685,7 @@ const handleBarcodeScan = async () => {
 };
 
 const handleCompleteOrder = async () => {
-  if (cartStore.items.length === 0) return;
+  if (isProcessing.value || cartStore.items.length === 0) return;
 
   // Determine actual paid amount based on payment method
   const total = cartStore.grandTotal;
@@ -866,6 +866,7 @@ const handleCompleteOrder = async () => {
     }
 
     isCheckoutOpen.value = false;
+    isProcessing.value = false;
     cartStore.clearCart();
     selectedCustomerId.value = '';
     selectedTableNumber.value = '';
@@ -878,8 +879,15 @@ const handleCompleteOrder = async () => {
     toast.success(`Savdo muvaffaqiyatli yakunlandi! Chek: ${data.orderNumber || '#001'}`, 'Kassa (POS)');
     dataStore.invalidate('products');
     dataStore.invalidate('customers');
+    dataStore.invalidate('dashboard');
+    dataStore.invalidate('inventory');
+    dataStore.invalidate('finance');
+
+    // Run catalog & shift refreshes in background without blocking the UI
     if (isOnline.value) {
-      await Promise.allSettled([loadProducts(), fetchCurrentShift(), dataStore.fetchCustomers()]);
+      setTimeout(() => {
+        Promise.allSettled([loadProducts(true), fetchCurrentShift(), dataStore.fetchCustomers(true)]).catch(console.error);
+      }, 50);
     }
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Savdoni yakunlashda xatolik', 'Xatolik');
@@ -888,111 +896,27 @@ const handleCompleteOrder = async () => {
   }
 };
 
-const handleGlobalKeyDown = (e: KeyboardEvent) => {
-  // Check if hotkeys are enabled in POS settings
-  if (posSettings.value?.enableHotkeys === false) return;
+import { usePOSKeyboard } from './composables/usePOSKeyboard';
 
-  const key = e.key;
-
-  // F1: Open Hotkeys cheat sheet modal
-  if (key === 'F1') {
-    e.preventDefault();
-    isHotkeysModalOpen.value = !isHotkeysModalOpen.value;
-    return;
-  }
-
-  // Escape: Close any open modal
-  if (key === 'Escape') {
-    if (isHotkeysModalOpen.value) { isHotkeysModalOpen.value = false; return; }
-    if (isCheckoutOpen.value) { isCheckoutOpen.value = false; return; }
-    if (isDiscountModalOpen.value) { isDiscountModalOpen.value = false; return; }
-    if (isHeldOrdersOpen.value) { isHeldOrdersOpen.value = false; return; }
-    if (completedOrder.value) { completedOrder.value = null; return; }
-    if (isNewCustomerModalOpen.value) { isNewCustomerModalOpen.value = false; return; }
-    return;
-  }
-
-  // If Checkout Modal is open:
-  if (isCheckoutOpen.value) {
-    if (key === 'Enter') {
-      const activeEl = document.activeElement as HTMLElement;
-      if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.classList.contains('no-hotkey-enter'))) {
-        return;
-      }
-      e.preventDefault();
-      handleCompleteOrder();
-      return;
-    }
-
-    // Number keys 1, 2, 3, 4 for payment method if not typing in input/textarea
-    const activeEl = document.activeElement as HTMLElement;
-    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-    if (!isTyping) {
-      if (key === '1') { e.preventDefault(); selectPaymentMethod('1'); return; }
-      if (key === '2') { e.preventDefault(); selectPaymentMethod('2'); return; }
-      if (key === '3') { e.preventDefault(); selectPaymentMethod('3'); return; }
-      if (key === '4' && posSettings.value?.allowDebt) { e.preventDefault(); selectPaymentMethod('4'); return; }
-    }
-    return;
-  }
-
-  // F2: Focus Search / Barcode input
-  if (key === 'F2') {
-    e.preventDefault();
-    const searchEl = document.getElementById('pos-search-input');
-    if (searchEl) {
-      searchEl.focus();
-      (searchEl as HTMLInputElement).select?.();
-    }
-    return;
-  }
-
-  // F4: Open Discount Modal (agar sozlamalarda ruxsat berilgan bo'lsa)
-  if (key === 'F4') {
-    e.preventDefault();
-    if (posSettings.value?.allowDiscounts === false) {
-      toast.warning('Sozlamalarda chegirma berish o\'chirilgan!', 'Chegirma taqiqlangan');
-      return;
-    }
-    if (cartStore.items.length > 0) {
-      isDiscountModalOpen.value = true;
-    } else {
-      toast.warning('Chegirma berish uchun avval savatga tovar qo\'shing!', 'Savat bo\'sh');
-    }
-    return;
-  }
-
-  // F7: Clear Cart
-  if (key === 'F7') {
-    e.preventDefault();
-    if (cartStore.items.length > 0) {
-      cartStore.clearCart();
-      toast.info('Savat tozalandi', 'Savat');
-    }
-    return;
-  }
-
-  // F8: Hold Current Cart
-  if (key === 'F8') {
-    e.preventDefault();
-    holdCurrentCart();
-    return;
-  }
-
-  // F9: Open Held Orders
-  if (key === 'F9') {
-    e.preventDefault();
-    isHeldOrdersOpen.value = true;
-    return;
-  }
-
-  // F10: Open Checkout Modal
-  if (key === 'F10') {
-    e.preventDefault();
-    openCheckoutModal();
-    return;
-  }
-};
+// Setup POS Keyboard hotkeys composable
+usePOSKeyboard({
+  enableHotkeys: computed(() => posSettings.value?.enableHotkeys),
+  isCheckoutOpen,
+  isDiscountModalOpen,
+  isHotkeysModalOpen,
+  isHeldOrdersOpen,
+  isNewCustomerModalOpen,
+  completedOrder,
+  allowDiscounts: computed(() => posSettings.value?.allowDiscounts),
+  allowDebt: computed(() => posSettings.value?.allowDebt),
+  cartItemsCount: computed(() => cartStore.items.length),
+  onCompleteOrder: handleCompleteOrder,
+  onSelectPaymentMethod: selectPaymentMethod,
+  onOpenCheckout: openCheckoutModal,
+  onClearCart: () => cartStore.clearCart(),
+  onHoldCart: holdCurrentCart,
+  toast,
+});
 
 let cleanupOfflineListeners: (() => void) | null = null;
 
@@ -1001,7 +925,6 @@ onMounted(() => {
   loadProducts();
   fetchCurrentShift();
   dataStore.fetchCustomers();
-  window.addEventListener('keydown', handleGlobalKeyDown);
   setTimeout(() => {
     document.getElementById('pos-search-input')?.focus();
   }, 300);
@@ -1011,6 +934,5 @@ onUnmounted(() => {
   if (cleanupOfflineListeners) {
     cleanupOfflineListeners();
   }
-  window.removeEventListener('keydown', handleGlobalKeyDown);
 });
 </script>

@@ -3,34 +3,70 @@
     class="flex-1 flex-col glass-card rounded-2xl p-3 sm:p-4 overflow-hidden"
     :class="mobileViewTab === 'catalog' ? 'flex' : 'hidden lg:flex'"
   >
-    <!-- Search & Category Filters -->
+    <!-- Search, Category Filters & Desktop PC Grid Density Toggle -->
     <div class="space-y-2.5 mb-3.5 shrink-0">
-      <!-- Full-Width Search Input with Barcode auto-focus and clear button -->
-      <div class="relative w-full">
-        <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-        <input
-          id="pos-search-input"
-          ref="searchInputRef"
-          :value="searchQuery"
-          @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-          @keydown.enter="$emit('barcodeScan')"
-          type="text"
-          :placeholder="posSettings?.enableHotkeys !== false ? 'Mahsulot nomi yoki Shtrix-kodni skanerlang (F2 / Enter)...' : 'Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)...'"
-          class="w-full pl-10 pr-20 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
-        />
-        <div class="absolute right-3 top-2.5 flex items-center gap-1.5">
-          <kbd
-            v-if="posSettings?.enableHotkeys !== false"
-            class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] text-slate-500 dark:text-slate-400 font-mono font-bold"
-          >
-            F2
-          </kbd>
+      <!-- Search Input + Grid Size Toggle -->
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1">
+          <Search class="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+          <input
+            id="pos-search-input"
+            ref="searchInputRef"
+            :value="searchQuery"
+            @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+            @keydown.enter="$emit('barcodeScan')"
+            type="text"
+            :placeholder="posSettings?.enableHotkeys !== false ? 'Mahsulot nomi yoki Shtrix-kodni skanerlang (F2 / Enter)...' : 'Mahsulot nomi yoki Shtrix-kodni skanerlang (Enter)...'"
+            class="w-full pl-10 pr-20 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+          />
+          <div class="absolute right-3 top-2.5 flex items-center gap-1.5">
+            <kbd
+              v-if="posSettings?.enableHotkeys !== false"
+              class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] text-slate-500 dark:text-slate-400 font-mono font-bold"
+            >
+              F2
+            </kbd>
+            <button
+              v-if="searchQuery"
+              @click="$emit('update:searchQuery', '')"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- PC Terminal Grid Density Controls -->
+        <div class="hidden sm:flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-xs shrink-0">
           <button
-            v-if="searchQuery"
-            @click="$emit('update:searchQuery', '')"
-            class="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+            type="button"
+            @click="setGridDensity('compact')"
+            class="px-2 py-1.5 rounded-lg font-bold transition flex items-center gap-1"
+            :class="gridDensity === 'compact' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+            title="Kichik kartalar (ko'proq tovar ko'rsatish)"
           >
-            <X class="w-4 h-4" />
+            <LayoutGrid class="w-3.5 h-3.5" />
+            <span class="hidden xl:inline text-[11px]">Kichik</span>
+          </button>
+          <button
+            type="button"
+            @click="setGridDensity('standard')"
+            class="px-2 py-1.5 rounded-lg font-bold transition flex items-center gap-1"
+            :class="gridDensity === 'standard' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+            title="Standart kartalar"
+          >
+            <Grid class="w-3.5 h-3.5" />
+            <span class="hidden xl:inline text-[11px]">O'rtacha</span>
+          </button>
+          <button
+            type="button"
+            @click="setGridDensity('large')"
+            class="px-2 py-1.5 rounded-lg font-bold transition flex items-center gap-1"
+            :class="gridDensity === 'large' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+            title="Sensorli (Touch) ekran uchun katta tugmalar"
+          >
+            <Maximize2 class="w-3.5 h-3.5" />
+            <span class="hidden xl:inline text-[11px]">Katta (Touch)</span>
           </button>
         </div>
       </div>
@@ -111,13 +147,24 @@
         <span>Mahsulot topilmadi</span>
       </div>
 
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
+      <div
+        v-else
+        class="grid transition-all duration-200"
+        :class="[
+          gridDensity === 'compact'
+            ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2'
+            : gridDensity === 'large'
+            ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4'
+            : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5'
+        ]"
+      >
         <div
           v-for="prod in filteredProducts"
           :key="prod.id"
           @click="$emit('productClick', prod)"
-          class="p-2.5 sm:p-3 rounded-2xl border transition-all flex flex-col justify-between group relative select-none"
+          class="rounded-2xl border transition-all flex flex-col justify-between group relative select-none"
           :class="[
+            gridDensity === 'compact' ? 'p-2' : gridDensity === 'large' ? 'p-3.5 sm:p-4' : 'p-2.5 sm:p-3',
             !isItemAvailable(prod)
               ? 'bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800/80 opacity-60 cursor-not-allowed'
               : 'bg-slate-50 hover:bg-slate-100/90 dark:bg-slate-800/60 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 cursor-pointer shadow-xs hover:shadow-md hover:shadow-emerald-500/10 btn-interactive'
@@ -134,14 +181,19 @@
           </div>
 
           <!-- Product Image -->
-          <div class="w-full h-24 sm:h-28 md:h-32 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden mb-2 sm:mb-2.5 flex items-center justify-center relative">
+          <div
+            class="w-full rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden flex items-center justify-center relative"
+            :class="[
+              gridDensity === 'compact' ? 'h-18 sm:h-20 mb-1.5' : gridDensity === 'large' ? 'h-32 sm:h-36 md:h-40 mb-3' : 'h-24 sm:h-28 md:h-32 mb-2 sm:mb-2.5'
+            ]"
+          >
             <img
               v-if="prod.imageUrl"
               :src="prod.imageUrl"
               class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
               @error="prod.imageUrl = null"
             />
-            <Package v-else class="w-10 h-10 text-slate-400 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition" />
+            <Package v-else class="w-8 h-8 sm:w-10 sm:h-10 text-slate-400 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition" />
             
             <!-- Stock Indicator / Made-to-order badge -->
             <span
@@ -174,17 +226,27 @@
           </div>
 
           <div>
-            <h4 class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-1">{{ prod.name }}</h4>
+            <h4
+              class="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-1"
+              :class="gridDensity === 'compact' ? 'text-[11px]' : gridDensity === 'large' ? 'text-sm' : 'text-xs'"
+            >
+              {{ prod.name }}
+            </h4>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ prod.sku }}</p>
           </div>
 
           <div class="mt-2 flex items-center justify-between">
             <div>
-              <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(prod.salePrice) }}</span>
+              <span
+                class="font-black text-emerald-600 dark:text-emerald-400 font-mono"
+                :class="gridDensity === 'compact' ? 'text-[11px]' : gridDensity === 'large' ? 'text-sm' : 'text-xs'"
+              >
+                {{ formatCurrency(prod.salePrice) }}
+              </span>
               <span v-if="prod.unit?.shortName && prod.unit.shortName !== 'dona'" class="text-[9px] text-slate-400 font-bold ml-1">/ {{ prod.unit.shortName }}</span>
             </div>
             <span
-              class="text-[10px] font-bold px-1.5 py-0.5 rounded"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-lg"
               :class="!isItemAvailable(prod) ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
             >+</span>
           </div>
@@ -196,7 +258,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { Search, X, Flame, Package, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { Search, X, Flame, Package, ChevronLeft, ChevronRight, LayoutGrid, Grid, Maximize2 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
 
@@ -220,77 +282,117 @@ defineEmits<{
   (e: 'productClick', prod: any): void;
 }>();
 
+const { formatCurrency } = useFormat();
+
+const formatStock = (qty: number | string | null | undefined, unit = 'dona') => {
+  const val = Number(qty || 0);
+  if (val <= 0) return '0 ' + unit;
+  return `${val} ${unit}`;
+};
+
 const searchInputRef = ref<HTMLInputElement | null>(null);
 const categoryScrollContainer = ref<HTMLElement | null>(null);
 const canScrollLeft = ref(false);
 const canScrollRight = ref(false);
-const { formatCurrency } = useFormat();
 
+// PC Grid Density preference
+const savedGrid = localStorage.getItem('pos_grid_density') as 'compact' | 'standard' | 'large' | null;
+const gridDensity = ref<'compact' | 'standard' | 'large'>(savedGrid || 'standard');
+
+const setGridDensity = (density: 'compact' | 'standard' | 'large') => {
+  gridDensity.value = density;
+  try {
+    localStorage.setItem('pos_grid_density', density);
+  } catch (e) {}
+};
+
+// Check if item is available for sale
+const isItemAvailable = (prod: any) => {
+  if (prod.status === 'inactive') return false;
+  if (props.posSettings?.allowZeroStockSale !== false) return true;
+  if (prod.brand === 'service' || isDishItem(prod)) return true;
+  return prod.stockQty > 0;
+};
+
+const isDishItem = (prod: any) => {
+  const brand = (prod.brand || '').toLowerCase();
+  const catName = (prod.category?.name || '').toLowerCase();
+  return (
+    brand.includes('kitchen') ||
+    brand.includes('bar') ||
+    brand.includes('dish') ||
+    catName.includes('ovqat') ||
+    catName.includes('ichimlik') ||
+    catName.includes('fast food') ||
+    catName.includes('taom')
+  );
+};
+
+// Category Horizontal Scrolling Helpers
 const checkScroll = () => {
-  if (!categoryScrollContainer.value) return;
-  const { scrollLeft, scrollWidth, clientWidth } = categoryScrollContainer.value;
-  canScrollLeft.value = scrollLeft > 10;
-  canScrollRight.value = scrollLeft < scrollWidth - clientWidth - 10;
+  const el = categoryScrollContainer.value;
+  if (!el) return;
+  canScrollLeft.value = el.scrollLeft > 10;
+  canScrollRight.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 10;
 };
 
 const scrollCategories = (direction: 'left' | 'right') => {
-  if (!categoryScrollContainer.value) return;
-  const scrollAmount = 260;
-  categoryScrollContainer.value.scrollBy({
+  const el = categoryScrollContainer.value;
+  if (!el) return;
+  const scrollAmount = 250;
+  el.scrollBy({
     left: direction === 'left' ? -scrollAmount : scrollAmount,
     behavior: 'smooth',
   });
-  setTimeout(checkScroll, 320);
+  setTimeout(checkScroll, 300);
 };
 
 const onCategoryWheel = (e: WheelEvent) => {
-  if (!categoryScrollContainer.value) return;
-  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+  const el = categoryScrollContainer.value;
+  if (!el) return;
+  if (e.deltaY !== 0) {
+    el.scrollLeft += e.deltaY;
     e.preventDefault();
-    categoryScrollContainer.value.scrollLeft += e.deltaY * 1.5;
+    checkScroll();
   }
-  checkScroll();
 };
 
-// Drag to scroll
-let isDown = false;
+// Drag-to-scroll for category track
+let isDragging = false;
 let startX = 0;
 let scrollLeftInit = 0;
 
 const onMouseDown = (e: MouseEvent) => {
-  if (!categoryScrollContainer.value) return;
-  isDown = true;
-  startX = e.pageX - categoryScrollContainer.value.offsetLeft;
-  scrollLeftInit = categoryScrollContainer.value.scrollLeft;
+  const el = categoryScrollContainer.value;
+  if (!el) return;
+  isDragging = true;
+  startX = e.pageX - el.offsetLeft;
+  scrollLeftInit = el.scrollLeft;
 };
 
 const onMouseLeave = () => {
-  isDown = false;
+  isDragging = false;
 };
 
 const onMouseUp = () => {
-  isDown = false;
+  isDragging = false;
 };
 
 const onMouseMove = (e: MouseEvent) => {
-  if (!isDown || !categoryScrollContainer.value) return;
+  if (!isDragging) return;
   e.preventDefault();
-  const x = e.pageX - categoryScrollContainer.value.offsetLeft;
+  const el = categoryScrollContainer.value;
+  if (!el) return;
+  const x = e.pageX - el.offsetLeft;
   const walk = (x - startX) * 1.5;
-  categoryScrollContainer.value.scrollLeft = scrollLeftInit - walk;
+  el.scrollLeft = scrollLeftInit - walk;
   checkScroll();
 };
 
-watch(
-  () => props.categories,
-  () => {
-    nextTick(() => checkScroll());
-  },
-  { deep: true }
-);
-
 onMounted(() => {
-  nextTick(() => checkScroll());
+  nextTick(() => {
+    checkScroll();
+  });
   window.addEventListener('resize', checkScroll);
 });
 
@@ -298,25 +400,18 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScroll);
 });
 
-const isDishItem = (prod: any) => {
-  return prod.brand === 'dish' || prod.brand === 'kitchen' || prod.isMadeToOrder;
-};
-
-const isItemAvailable = (prod: any) => {
-  if (prod.status === 'inactive') return false;
-  if (isDishItem(prod) || prod.brand === 'service') return true;
-  if (props.posSettings?.allowZeroStockSale) return true;
-  return prod.stockQty > 0;
-};
-
-const formatStock = (qty: number, unitName = 'dona') => {
-  if (qty === undefined || qty === null) return `0 ${unitName}`;
-  const num = Number(qty);
-  const formatted = num % 1 === 0 ? num.toString() : num.toFixed(3).replace(/\.?0+$/, '');
-  return `${formatted} ${unitName}`;
-};
+watch(
+  () => props.categories,
+  () => {
+    nextTick(checkScroll);
+  },
+  { deep: true }
+);
 
 defineExpose({
-  focusSearch: () => searchInputRef.value?.focus(),
+  focusSearch: () => {
+    searchInputRef.value?.focus();
+    searchInputRef.value?.select();
+  },
 });
 </script>

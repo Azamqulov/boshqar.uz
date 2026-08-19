@@ -193,7 +193,7 @@ const { canCreate } = usePermissions();
 const { posSettings } = usePosSettings();
 
 const viewMode = usePersistentViewMode('customers', 'table');
-const loading = ref(false);
+const loading = ref(dataStore.customers.length === 0);
 const submitting = ref(false);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'debtors' | 'clear'>('all');
@@ -298,6 +298,7 @@ const openEditModal = (c: any) => {
 };
 
 const saveCustomer = async () => {
+  if (submitting.value) return;
   if (!customerForm.value.fullName.trim()) {
     toast.warning('Mijoz ismini kiriting', 'Mijoz');
     return;
@@ -306,33 +307,54 @@ const saveCustomer = async () => {
   try {
     const cleanPhone = customerForm.value.phone ? cleanUzbekPhone(customerForm.value.phone) : undefined;
     if (editingCustomerId.value) {
-      const { data: updated } = await api.put(`/customers/${editingCustomerId.value}`, {
+      const custId = editingCustomerId.value;
+      const payload = {
         fullName: customerForm.value.fullName.trim(),
         phone: cleanPhone,
         notes: customerForm.value.notes,
-      });
-      const idx = dataStore.customers.findIndex((c: any) => c.id === editingCustomerId.value);
+      };
+
+      // Optimistic update
+      const idx = dataStore.customers.findIndex((c: any) => c.id === custId);
       if (idx !== -1) {
-        dataStore.customers[idx] = { ...dataStore.customers[idx], fullName: customerForm.value.fullName.trim(), phone: cleanPhone, notes: customerForm.value.notes, ...(updated || {}) };
+        dataStore.customers[idx] = { ...dataStore.customers[idx], ...payload };
       }
+      isCustomerModalOpen.value = false;
       toast.success('Mijoz ma\'lumotlari yangilandi!', 'CRM');
+
+      const { data: updated } = await api.put(`/customers/${custId}`, payload);
+      if (idx !== -1 && updated) {
+        dataStore.customers[idx] = { ...dataStore.customers[idx], ...updated };
+      }
     } else {
-      const { data: created } = await api.post('/customers', {
+      const payload = {
         fullName: customerForm.value.fullName.trim(),
         phone: cleanPhone,
         notes: customerForm.value.notes,
         debt: Number(customerForm.value.debt) || 0,
-      });
-      if (created) {
-        dataStore.customers.unshift(created);
-      }
+      };
+
+      const tempCustomer = {
+        id: 'temp-' + Date.now(),
+        ...payload,
+        createdAt: new Date().toISOString(),
+      };
+      dataStore.customers.unshift(tempCustomer);
+      isCustomerModalOpen.value = false;
       toast.success(`"${customerForm.value.fullName}" mijozlar bazasiga qo'shildi!`, 'CRM');
+
+      const { data: created } = await api.post('/customers', payload);
+      if (created) {
+        const tempIdx = dataStore.customers.findIndex((c: any) => c.id === tempCustomer.id);
+        if (tempIdx !== -1) {
+          dataStore.customers[tempIdx] = created;
+        }
+      }
     }
-    isCustomerModalOpen.value = false;
     dataStore.invalidate('customers');
-    loadCustomers(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Mijozni saqlashda xatolik yuz berdi', 'Xatolik');
+    loadCustomers(true);
   } finally {
     submitting.value = false;
   }
@@ -356,11 +378,13 @@ const openAddDebtModal = (c: any) => {
 };
 
 const submitAddDebt = async () => {
-  if (!activeCustomer.value) return;
+  if (!activeCustomer.value || submitting.value) return;
   if (!debtAddAmount.value || debtAddAmount.value <= 0) {
     toast.warning('Qarz summasini to\'g\'ri kiriting', 'Nasiya / Qarz');
     return;
   }
+
+  submitting.value = true;
 
   // Limit tekshiruvi
   const limit = posSettings.value.maxDebtLimit;
@@ -400,6 +424,8 @@ const submitAddDebt = async () => {
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Qarz kiritishda xatolik yuz berdi', 'Xatolik');
     loadCustomers(true);
+  } finally {
+    submitting.value = false;
   }
 };
 
@@ -412,11 +438,13 @@ const openPayDebtModal = (c: any) => {
 };
 
 const submitPayDebt = async () => {
-  if (!activeCustomer.value) return;
+  if (!activeCustomer.value || submitting.value) return;
   if (!debtPayAmount.value || debtPayAmount.value <= 0) {
     toast.warning('To\'lov summasini to\'g\'ri kiriting', 'Qarz To\'lovi');
     return;
   }
+
+  submitting.value = true;
 
   const custId = activeCustomer.value.id;
   const custName = activeCustomer.value.fullName;
@@ -443,6 +471,8 @@ const submitPayDebt = async () => {
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Qarz to\'lovini kiritishda xatolik yuz berdi', 'Xatolik');
     loadCustomers(true);
+  } finally {
+    submitting.value = false;
   }
 };
 

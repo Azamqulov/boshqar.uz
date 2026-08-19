@@ -85,7 +85,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
-              <tr v-if="filteredEmployees.length === 0">
+              <tr v-if="!loading && filteredEmployees.length === 0">
                 <td colspan="6" class="py-12 text-center text-slate-400 dark:text-slate-500">
                   <Users class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
                   <p class="font-bold text-slate-700 dark:text-slate-300">Xodimlar topilmadi</p>
@@ -162,7 +162,7 @@
 
       <!-- Grid / Cards View -->
       <div v-else>
-        <div v-if="filteredEmployees.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+        <div v-if="!loading && filteredEmployees.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
           <Users class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
           <p class="font-bold text-slate-700 dark:text-slate-300">Xodimlar topilmadi</p>
           <p class="text-xs text-slate-400 mt-0.5" v-if="searchQuery || statusFilter || positionFilter">

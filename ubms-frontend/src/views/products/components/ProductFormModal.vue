@@ -446,6 +446,7 @@
                   type="submit"
                   variant="primary"
                   size="md"
+                  :loading="loading"
                   class="px-6"
                 >
                   {{ editingId ? 'O\'zgarishlarni Saqlash' : 'Mahsulotni Saqlash' }}
@@ -496,6 +497,7 @@ const props = defineProps<{
   categoryOptions: any[];
   unitOptions?: any[];
   fastImagePresets: Array<{ name: string; url: string }>;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{

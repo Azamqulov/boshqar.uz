@@ -25,7 +25,7 @@
     "label": "Sartaroshxona",
     "desc": "Ustalarning bandlik jadvali",
     "iconName": "Scissors",
-    "isEnabled": true
+    "isEnabled": false
   },
   {
     "type": "pharmacy",
@@ -39,6 +39,6 @@
     "label": "Xizmat ko'rsatish",
     "desc": "Universal buyurtma va xizmat",
     "iconName": "Wrench",
-    "isEnabled": true
+    "isEnabled": false
   }
 ]

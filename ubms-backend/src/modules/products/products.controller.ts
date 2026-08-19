@@ -112,6 +112,17 @@ export class ProductsController {
     return this.productsService.findOne(businessId, id);
   }
 
+  @Post('batch-import')
+  @RequirePermission('products.create')
+  batchImport(
+    @CurrentBusinessId() businessId: string,
+    @CurrentBranchId() branchId: string,
+    @CurrentUser('userId') userId: string,
+    @Body() body: { items: any[] },
+  ) {
+    return this.productsService.batchImport(businessId, branchId, userId, body.items);
+  }
+
   @Post()
   @RequirePermission('products.create')
   create(

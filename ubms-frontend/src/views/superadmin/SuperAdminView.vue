@@ -32,26 +32,64 @@
     <!-- Global Stats Cards -->
     <SuperAdminHeaderStats :stats="stats" />
 
-    <!-- Navigation Tabs with Sliding Animated Pill -->
-    <div class="relative flex items-center gap-1 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-xs overflow-x-auto scrollbar-none">
-      <!-- Animated Sliding Background Pill -->
-      <div
-        v-if="pillStyle"
-        class="absolute rounded-xl bg-white dark:bg-slate-800 shadow-xs border border-slate-200/70 dark:border-slate-700 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
-        :style="pillStyle"
-      ></div>
-
+    <!-- Navigation Tabs with Sliding Animated Pill & Scroll Navigation -->
+    <div class="relative flex items-center group/tabnav">
+      <!-- Left scroll arrow button -->
       <button
-        v-for="tab in adminTabs"
-        :key="tab.id"
-        :ref="(el) => setTabRef(el, tab.id)"
-        @click="activeTab = tab.id"
+        v-if="canScrollLeft"
         type="button"
-        class="relative z-10 px-3.5 py-2 rounded-xl font-bold transition-colors duration-300 flex items-center gap-2 whitespace-nowrap btn-interactive"
-        :class="activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+        @click="scrollTabs('left')"
+        class="absolute left-1 z-20 p-1.5 rounded-full bg-white/95 dark:bg-slate-800/95 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-500 hover:scale-105 transition"
+        title="Chapga surish"
       >
-        <component :is="tab.icon" class="w-4 h-4" />
-        <span>{{ tab.label }}</span>
+        <ChevronLeft class="w-4 h-4" />
+      </button>
+
+      <!-- Scrollable container -->
+      <div
+        ref="tabContainerRef"
+        @scroll="checkScroll"
+        class="relative w-full flex items-center gap-1 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-xs overflow-x-auto scrollbar-none scroll-smooth"
+      >
+        <!-- Animated Sliding Background Pill -->
+        <div
+          v-if="pillStyle"
+          class="absolute rounded-xl bg-white dark:bg-slate-800 shadow-xs border border-slate-200/70 dark:border-slate-700 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none"
+          :style="pillStyle"
+        ></div>
+
+        <button
+          v-for="tab in adminTabs"
+          :key="tab.id"
+          :ref="(el) => setTabRef(el, tab.id)"
+          @click="selectTab(tab.id)"
+          type="button"
+          class="relative z-10 px-3 py-2 rounded-xl font-bold transition-colors duration-300 flex items-center gap-2 whitespace-nowrap shrink-0 btn-interactive"
+          :class="activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <component :is="tab.icon" class="w-4 h-4 shrink-0" />
+          <span>{{ tab.label }}</span>
+          <span
+            v-if="tab.count !== undefined"
+            class="px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none transition-colors"
+            :class="activeTab === tab.id
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black'
+              : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+          >
+            {{ tab.count }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Right scroll arrow button -->
+      <button
+        v-if="canScrollRight"
+        type="button"
+        @click="scrollTabs('right')"
+        class="absolute right-1 z-20 p-1.5 rounded-full bg-white/95 dark:bg-slate-800/95 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-500 hover:scale-105 transition"
+        title="O'ngga surish"
+      >
+        <ChevronRight class="w-4 h-4" />
       </button>
     </div>
 
@@ -64,6 +102,7 @@
     <SuperAdminOwnersTab
       v-else-if="activeTab === 'owners'"
       :owners="owners"
+      :loading="loading"
       v-model:search="ownerSearch"
       v-model:plan-filter="ownerPlanFilter"
       v-model:status-filter="ownerStatusFilter"
@@ -76,6 +115,7 @@
     <SuperAdminBusinessesTab
       v-else-if="activeTab === 'businesses'"
       :businesses="businesses"
+      :loading="loading"
       v-model:search="businessSearch"
       v-model:status-filter="businessStatusFilter"
       v-model:view-mode="viewMode"
@@ -87,6 +127,7 @@
     <SuperAdminUsersTab
       v-else-if="activeTab === 'users'"
       :users="users"
+      :loading="loading"
       v-model:search="userSearch"
       v-model:view-mode="viewMode"
       @toggle-super-admin="toggleSuperAdminPrivilege"
@@ -97,6 +138,7 @@
     <SuperAdminAuditTab
       v-else-if="activeTab === 'audit'"
       :audit-logs="auditLogs"
+      :loading="loading"
       v-model:view-mode="viewMode"
       @refresh="loadAllData"
     />
@@ -124,6 +166,7 @@
       :is-open="showOwnerModal"
       :owner-detail="ownerDetail"
       :plans="plans"
+      :loading="isSavingOwnerAction"
       @close="showOwnerModal = false"
       @save-plan="saveOwnerPlan"
       @toggle-status="toggleOwnerStatusAction"
@@ -217,10 +260,12 @@
           </button>
           <button
             @click="saveBusinessPlan"
-            class="px-4 py-2 rounded-xl text-xs font-bold transition btn-interactive"
+            :disabled="isSavingBusinessPlan"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none flex items-center gap-1.5"
             :class="selectedDurationDays === 0 ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-500/25' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25'"
           >
-            {{ selectedDurationDays === 0 ? 'Tarifni Tugatish (Expire)' : 'Saqlash' }}
+            <span v-if="isSavingBusinessPlan" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ selectedDurationDays === 0 ? 'Tarifni Tugatish (Expire)' : 'Saqlash' }}</span>
           </button>
         </div>
       </div>
@@ -229,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useFormat } from '../../composables/useFormat';
@@ -265,6 +310,8 @@ import {
   Wrench,
   ShoppingBag,
   Target,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-vue-next';
 
 import { usePersistentTab } from '../../composables/usePersistentTab';
@@ -280,12 +327,34 @@ type SuperAdminTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SuperAdminTab>('superadmin', 'leads', validTabs);
 
+const tabContainerRef = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+const checkScroll = () => {
+  if (!tabContainerRef.value) return;
+  const el = tabContainerRef.value;
+  canScrollLeft.value = el.scrollLeft > 10;
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 10;
+};
+
+const scrollTabs = (direction: 'left' | 'right') => {
+  if (!tabContainerRef.value) return;
+  const offset = direction === 'left' ? -250 : 250;
+  tabContainerRef.value.scrollBy({ left: offset, behavior: 'smooth' });
+  setTimeout(checkScroll, 350);
+};
+
+const selectTab = (tabId: SuperAdminTab) => {
+  activeTab.value = tabId;
+  const targetEl = tabRefs[tabId];
+  if (targetEl && tabContainerRef.value) {
+    targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+};
+
 const tabRefs = reactive<Record<string, HTMLElement>>({});
 const isMounted = ref(false);
-
-onMounted(() => {
-  isMounted.value = true;
-});
 
 const setTabRef = (el: any, id: string) => {
   if (el) tabRefs[id] = el;
@@ -304,9 +373,9 @@ const pillStyle = computed(() => {
 
 const adminTabs = computed(() => [
   { id: 'leads' as const, label: 'Demo & Leadlar', icon: Target },
-  { id: 'owners' as const, label: `Mijozlar CRM (${owners.value.length})`, icon: Crown },
-  { id: 'businesses' as const, label: `Korxonalar & Obunalar (${businesses.value.length})`, icon: Building2 },
-  { id: 'users' as const, label: `Xodimlar & Rollar (${users.value.length})`, icon: Users },
+  { id: 'owners' as const, label: 'Mijozlar CRM', icon: Crown, count: owners.value.length },
+  { id: 'businesses' as const, label: 'Korxonalar & Obunalar', icon: Building2, count: businesses.value.length },
+  { id: 'users' as const, label: 'Xodimlar & Rollar', icon: Users, count: users.value.length },
   { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt },
   { id: 'audit' as const, label: 'Audit Tarixi', icon: ShieldCheck },
   { id: 'businessTypes' as const, label: 'Biznes Turlari', icon: Sliders },
@@ -328,9 +397,10 @@ watch(activeTab, (tab) => {
   if (route.path === '/superadmin' && route.query.tab !== tab) {
     router.replace({ query: { ...route.query, tab } });
   }
+  loadActiveTabData(tab);
 });
 const viewMode = usePersistentViewMode('superadmin', 'table');
-const loading = ref(false);
+const loading = ref(true);
 
 const stats = ref<any>({});
 const owners = ref<any[]>([]);
@@ -377,31 +447,117 @@ const getBusinessTypeIcon = (type: string) => {
   }
 };
 
-const loadAllData = async () => {
+const loadStats = async () => {
+  try {
+    const { data } = await api.get('/superadmin/stats');
+    stats.value = data || {};
+  } catch (err) {
+    console.error('Failed to load stats', err);
+  }
+};
+
+const loadPlans = async () => {
+  try {
+    const { data } = await api.get('/superadmin/plans');
+    plans.value = data || [];
+  } catch (err) {
+    console.error('Failed to load plans', err);
+  }
+};
+
+const loadOwners = async () => {
+  try {
+    const params = new URLSearchParams();
+    if (ownerSearch.value) params.append('search', ownerSearch.value);
+    if (ownerPlanFilter.value) params.append('plan', ownerPlanFilter.value);
+    if (ownerStatusFilter.value) params.append('status', ownerStatusFilter.value);
+
+    const { data } = await api.get(`/superadmin/owners?${params.toString()}`);
+    owners.value = data?.items || [];
+  } catch (err) {
+    console.error('Failed to load owners', err);
+  }
+};
+
+const loadBusinesses = async () => {
+  try {
+    const { data } = await api.get('/superadmin/businesses');
+    businesses.value = data || [];
+  } catch (err) {
+    console.error('Failed to load businesses', err);
+  }
+};
+
+const loadUsers = async () => {
+  try {
+    const { data } = await api.get('/superadmin/users');
+    users.value = data || [];
+  } catch (err) {
+    console.error('Failed to load users', err);
+  }
+};
+
+const loadAuditLogs = async () => {
+  try {
+    const { data } = await api.get('/superadmin/audit-logs');
+    auditLogs.value = data || [];
+  } catch (err) {
+    console.error('Failed to load audit logs', err);
+  }
+};
+
+const loadBusinessTypes = async () => {
+  try {
+    const { data } = await api.get('/superadmin/business-types');
+    businessTypesList.value = data || [];
+  } catch (err) {
+    console.error('Failed to load business types', err);
+  }
+};
+
+const loadedTabs = reactive<Record<string, boolean>>({});
+
+const loadActiveTabData = async (tab = activeTab.value, force = false) => {
+  if (loadedTabs[tab] && !force) return;
+
   loading.value = true;
   try {
-    const results = await Promise.allSettled([
-      api.get('/superadmin/stats'),
-      api.get('/superadmin/owners'),
-      api.get('/superadmin/businesses'),
-      api.get('/superadmin/users'),
-      api.get('/superadmin/plans'),
-      api.get('/superadmin/audit-logs'),
-      api.get('/superadmin/business-types'),
-    ]);
-
-    if (results[0].status === 'fulfilled') stats.value = results[0].value.data || {};
-    if (results[1].status === 'fulfilled') owners.value = results[1].value.data?.items || [];
-    if (results[2].status === 'fulfilled') businesses.value = results[2].value.data || [];
-    if (results[3].status === 'fulfilled') users.value = results[3].value.data || [];
-    if (results[4].status === 'fulfilled') plans.value = results[4].value.data || [];
-    if (results[5].status === 'fulfilled') auditLogs.value = results[5].value.data || [];
-    if (results[6].status === 'fulfilled') businessTypesList.value = results[6].value.data || [];
+    switch (tab) {
+      case 'leads':
+        break;
+      case 'owners':
+        await Promise.all([loadOwners(), plans.value.length === 0 ? loadPlans() : Promise.resolve()]);
+        break;
+      case 'businesses':
+        await Promise.all([loadBusinesses(), plans.value.length === 0 ? loadPlans() : Promise.resolve()]);
+        break;
+      case 'users':
+        await loadUsers();
+        break;
+      case 'audit':
+        await loadAuditLogs();
+        break;
+      case 'businessTypes':
+        await loadBusinessTypes();
+        break;
+      case 'billing':
+      case 'backups':
+        break;
+    }
+    loadedTabs[tab] = true;
   } catch (err) {
-    console.error('Failed to load superadmin data', err);
+    console.error(`Failed to load tab data: ${tab}`, err);
   } finally {
     loading.value = false;
   }
+};
+
+const loadAllData = async () => {
+  await Promise.allSettled([
+    loadActiveTabData(activeTab.value, true),
+    loadStats(),
+    loadPlans(),
+  ]);
 };
 
 const toggleBusinessTypeAction = async (bt: any) => {
@@ -421,21 +577,6 @@ const toggleBusinessTypeAction = async (bt: any) => {
   }
 };
 
-
-const loadOwners = async () => {
-  try {
-    const params = new URLSearchParams();
-    if (ownerSearch.value) params.append('search', ownerSearch.value);
-    if (ownerPlanFilter.value) params.append('plan', ownerPlanFilter.value);
-    if (ownerStatusFilter.value) params.append('status', ownerStatusFilter.value);
-
-    const { data } = await api.get(`/superadmin/owners?${params.toString()}`);
-    owners.value = data?.items || [];
-  } catch (err) {
-    console.error(err);
-  }
-};
-
 const openOwnerDetailModal = async (ownerId: string) => {
   try {
     const { data } = await api.get(`/superadmin/owners/${ownerId}/stats`);
@@ -446,38 +587,65 @@ const openOwnerDetailModal = async (ownerId: string) => {
   }
 };
 
+const isSavingOwnerAction = ref(false);
+
 const toggleOwnerStatusAction = async (ownerId: string, currentStatus: string) => {
+  if (isSavingOwnerAction.value) return;
+  isSavingOwnerAction.value = true;
   const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+  // Optimistic update
+  if (ownerDetail.value?.owner) {
+    ownerDetail.value.owner.status = newStatus;
+  }
+  const targetOwner = owners.value.find((o: any) => o.id === ownerId);
+  if (targetOwner) {
+    targetOwner.status = newStatus;
+  }
+  toast.success(`Firma egasi muvaffaqiyatli ${newStatus === 'active' ? 'faollashtirildi' : 'bloklandi'}!`, 'Owner Status');
+
   try {
     await api.patch(`/superadmin/owners/${ownerId}/status`, { status: newStatus });
-    toast.success(`Firma egasi muvaffaqiyatli ${newStatus === 'active' ? 'faollashtirildi' : 'bloklandi'}!`, 'Owner Status');
-    if (ownerDetail.value) {
-      ownerDetail.value.owner.status = newStatus;
-    }
-    loadOwners();
-    loadAllData();
   } catch (err) {
     toast.error('Statusni o\'zgartirishda xatolik', 'Xatolik');
+    loadOwners();
+  } finally {
+    isSavingOwnerAction.value = false;
   }
 };
 
 const saveOwnerPlan = async (ownerId: string, planId: string, durationDays?: number) => {
+  if (isSavingOwnerAction.value) return;
+  isSavingOwnerAction.value = true;
+  const days = durationDays !== undefined && durationDays !== null ? durationDays : 30;
+  const isExpiring = days === 0;
+
+  // Optimistic update
+  const chosenPlan = plans.value.find((p: any) => p.id === planId);
+  const targetOwner = owners.value.find((o: any) => o.id === ownerId);
+  if (targetOwner) {
+    targetOwner.plan = chosenPlan?.name || targetOwner.plan;
+  }
+  if (ownerDetail.value?.business) {
+    ownerDetail.value.business.plan = chosenPlan?.name || ownerDetail.value.business.plan;
+    ownerDetail.value.business.planId = planId;
+  }
+
+  if (isExpiring) {
+    toast.warning('Firma egasining obuna muddati darhol tugatildi!', 'Obuna Tugatildi');
+  } else {
+    toast.success(`Tarif rejasi muvaffaqiyatli yangilandi (${days} kunga)!`, 'Tarif');
+  }
+
   try {
-    const days = durationDays !== undefined && durationDays !== null ? durationDays : 30;
-    const isExpiring = days === 0;
     await api.patch(`/superadmin/owners/${ownerId}/plan`, {
       planId,
       durationDays: days,
     });
-    if (isExpiring) {
-      toast.warning('Firma egasining obuna muddati darhol tugatildi!', 'Obuna Tugatildi');
-    } else {
-      toast.success(`Tarif rejasi muvaffaqiyatli yangilandi (${days} kunga)!`, 'Tarif');
-    }
-    loadOwners();
-    loadAllData();
   } catch (err) {
     toast.error('Tarifni yangilashda xatolik', 'Xatolik');
+    loadOwners();
+  } finally {
+    isSavingOwnerAction.value = false;
   }
 };
 
@@ -515,21 +683,25 @@ const getPlanBadgeClass = (planName: string) => {
 
 const toggleBusinessStatus = async (b: any) => {
   const newStatus = b.status === 'active' ? 'suspended' : 'active';
+  b.status = newStatus;
+  toast.success(`Biznes holati «${newStatus === 'active' ? 'Faol' : 'To\'xtatilgan'}» ga o'zgartirildi`, 'Biznes');
   try {
     await api.patch(`/superadmin/businesses/${b.id}/status`, { status: newStatus });
-    b.status = newStatus;
   } catch (err) {
     toast.error('Biznes statusini o\'zgartirishda xatolik', 'Xatolik');
+    b.status = newStatus === 'active' ? 'suspended' : 'active';
   }
 };
 
 const toggleUserStatus = async (u: any) => {
   const newStatus = u.status === 'active' ? 'blocked' : 'active';
+  u.status = newStatus;
+  toast.success(`Foydalanuvchi «${newStatus === 'active' ? 'Faol' : 'Bloklangan'}» ga o'zgartirildi`, 'Foydalanuvchi');
   try {
     await api.patch(`/superadmin/users/${u.id}/status`, { status: newStatus });
-    u.status = newStatus;
   } catch (err) {
     toast.error('Foydalanuvchi statusini o\'zgartirishda xatolik', 'Xatolik');
+    u.status = newStatus === 'active' ? 'blocked' : 'active';
   }
 };
 
@@ -550,27 +722,56 @@ const openPlanModal = (b: any) => {
   showPlanModal.value = true;
 };
 
+const isSavingBusinessPlan = ref(false);
+
 const saveBusinessPlan = async () => {
-  if (!selectedBusiness.value || !selectedPlanId.value) return;
+  if (!selectedBusiness.value || !selectedPlanId.value || isSavingBusinessPlan.value) return;
+  isSavingBusinessPlan.value = true;
+  const biz = selectedBusiness.value;
+  const pId = selectedPlanId.value;
+  const days = selectedDurationDays.value ?? 30;
+  const isExpiring = days === 0;
+
+  // Optimistic update
+  const chosenPlan = plans.value.find((p: any) => p.id === pId);
+  biz.planId = pId;
+  biz.plan = chosenPlan?.name || biz.plan;
+  if (biz.subscription) {
+    biz.subscription.isExpired = isExpiring;
+    biz.subscription.daysLeft = days;
+    biz.subscription.status = isExpiring ? 'past_due' : 'active';
+  }
+  showPlanModal.value = false;
+
+  if (isExpiring) {
+    toast.warning(`«${biz.name}» biznesining obuna muddati darhol tugatildi!`, 'Obuna Tugatildi');
+  } else {
+    toast.success(`Biznes tarifi muvaffaqiyatli saqlandi (${days} kunga faollashtirildi)`, 'Tarif');
+  }
+
   try {
-    const isExpiring = selectedDurationDays.value === 0;
-    await api.patch(`/superadmin/businesses/${selectedBusiness.value.id}/plan`, {
-      planId: selectedPlanId.value,
-      durationDays: selectedDurationDays.value ?? 30,
+    await api.patch(`/superadmin/businesses/${biz.id}/plan`, {
+      planId: pId,
+      durationDays: days,
     });
-    showPlanModal.value = false;
-    if (isExpiring) {
-      toast.warning(`«${selectedBusiness.value.name}» biznesining obuna muddati darhol tugatildi!`, 'Obuna Tugatildi');
-    } else {
-      toast.success(`Biznes tarifi muvaffaqiyatli saqlandi (${selectedDurationDays.value} kunga faollashtirildi)`, 'Tarif');
-    }
-    loadAllData();
   } catch (err) {
     toast.error('Tarifni saqlashda xatolik', 'Xatolik');
+    loadAllData();
+  } finally {
+    isSavingBusinessPlan.value = false;
   }
 };
 
 onMounted(() => {
-  loadAllData();
+  isMounted.value = true;
+  nextTick(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+  });
+  // 1. Priority: Instantly load the active tab's data
+  loadActiveTabData(activeTab.value, true);
+  // 2. Background async load for stats and plans
+  loadStats();
+  loadPlans();
 });
 </script>

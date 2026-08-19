@@ -63,7 +63,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="filteredOrders.length === 0">
+            <tr v-if="!loading && filteredOrders.length === 0">
               <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
                 <Receipt class="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <span>Cheklar mavjud emas</span>
@@ -123,7 +123,15 @@
       </div>
 
       <!-- 2.2 CARD / GRID VIEW -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else-if="viewMode === 'grid'">
+        <SkeletonLoader v-if="loading" variant="cards" :count="6" />
+
+        <div v-else-if="filteredOrders.length === 0" class="p-12 text-center text-slate-400 dark:text-slate-500 glass-card rounded-2xl">
+          <Receipt class="w-10 h-10 mx-auto mb-2 opacity-30" />
+          <span>Cheklar mavjud emas</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="order in pagination.paginatedItems.value"
           :key="order.id"
@@ -185,9 +193,11 @@
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Pagination -->
       <AppPagination
+        v-if="!loading"
         v-model:current-page="pagination.currentPage.value"
         v-model:page-size="pagination.pageSize.value"
         :total-items="filteredOrders.length"
@@ -200,6 +210,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Receipt, Search, Eye, Trash2 } from 'lucide-vue-next';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
 import AppPagination from '../../../components/AppPagination.vue';
@@ -207,6 +218,7 @@ import AppPagination from '../../../components/AppPagination.vue';
 const props = defineProps<{
   orders: any[];
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
 defineEmits<{

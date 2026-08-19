@@ -117,9 +117,10 @@
           <button
             type="submit"
             :disabled="saving"
-            class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-3 btn-interactive"
+            class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition mt-3 btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none flex items-center justify-center gap-2"
           >
-            {{ saving ? (editingEmpId ? 'Saqlanmoqda...' : 'Qo\'shilmoqda...') : (editingEmpId ? 'O\'zgarishlarni Saqlash' : 'Xodimni Saqlash') }}
+            <span v-if="saving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ saving ? (editingEmpId ? 'Saqlanmoqda...' : 'Qo\'shilmoqda...') : (editingEmpId ? 'O\'zgarishlarni Saqlash' : 'Xodimni Saqlash') }}</span>
           </button>
         </form>
       </div>

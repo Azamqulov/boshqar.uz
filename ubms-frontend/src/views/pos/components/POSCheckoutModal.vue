@@ -420,16 +420,17 @@
           </div>
 
           <button
-            @click="$emit('completeOrder')"
-            :disabled="isSubmitDisabled"
-            class="w-full py-3.5 rounded-xl font-black text-sm shadow-lg transition flex items-center justify-center space-x-2 btn-interactive"
+            @click="(e) => { if (isSubmitDisabled || isProcessing) { e.preventDefault(); e.stopPropagation(); return; } $emit('completeOrder'); }"
+            :disabled="isSubmitDisabled || isProcessing"
+            class="w-full py-3.5 rounded-xl font-black text-sm shadow-lg transition flex items-center justify-center space-x-2 btn-interactive disabled:pointer-events-none select-none"
             :class="[
-              isSubmitDisabled
-                ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60 text-slate-500 shadow-none'
+              (isSubmitDisabled || isProcessing)
+                ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-60 text-slate-500 shadow-none pointer-events-none'
                 : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/25 text-white cursor-pointer'
             ]"
           >
-            <CheckCircle class="w-5 h-5" />
+            <span v-if="isProcessing" class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+            <CheckCircle v-else class="w-5 h-5" />
             <span>{{ isProcessing ? 'Chek chiqarilmoqda...' : 'To\'lovni Yakunlash (Chek Chiqarish)' }}</span>
           </button>
         </div>

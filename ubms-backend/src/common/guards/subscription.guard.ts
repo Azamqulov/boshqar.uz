@@ -3,6 +3,24 @@ import { Reflector } from '@nestjs/core';
 import { SKIP_SUBSCRIPTION_KEY, IS_PUBLIC_KEY } from '../decorators/custom.decorator';
 import { PrismaService } from '../../prisma/prisma.service';
 
+// Fast in-memory caching for subscription checks
+interface CachedSubscription {
+  isValid: boolean;
+  subscription: any;
+  cachedAt: number;
+}
+
+const subscriptionCache = new Map<string, CachedSubscription>();
+const SUB_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+export function invalidateSubscriptionCache(businessId?: string) {
+  if (businessId) {
+    subscriptionCache.delete(businessId);
+  } else {
+    subscriptionCache.clear();
+  }
+}
+
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
   constructor(
@@ -55,6 +73,14 @@ export class SubscriptionGuard implements CanActivate {
       return true;
     }
 
+    const now = Date.now();
+    const cached = subscriptionCache.get(businessId);
+    if (cached && now - cached.cachedAt < SUB_CACHE_TTL_MS) {
+      if (cached.isValid) {
+        return true;
+      }
+    }
+
     // Check latest subscription for this tenant
     const subscription = await this.prisma.subscription.findFirst({
       where: { businessId },
@@ -71,23 +97,22 @@ export class SubscriptionGuard implements CanActivate {
     });
 
     if (!subscription) {
+      subscriptionCache.set(businessId, { isValid: false, subscription: null, cachedAt: now });
       throw new ForbiddenException({
         code: 'SUBSCRIPTION_EXPIRED',
         message: 'Ushbu biznes uchun faol obuna topilmadi. Davom etish uchun tarifni tanlang yoki administrator bilan bog\'laning.',
       });
     }
 
-    const now = Date.now();
     const currentPeriodEndMs = new Date(subscription.currentPeriodEnd).getTime();
     const isPeriodValid = currentPeriodEndMs > now;
 
-    if (subscription.status === 'active' && isPeriodValid) {
+    if ((subscription.status === 'active' || subscription.status === 'trialing') && isPeriodValid) {
+      subscriptionCache.set(businessId, { isValid: true, subscription, cachedAt: now });
       return true;
     }
 
-    if (subscription.status === 'trialing' && isPeriodValid) {
-      return true;
-    }
+    subscriptionCache.set(businessId, { isValid: false, subscription, cachedAt: now });
 
     // If subscription expired or suspended
     throw new ForbiddenException({

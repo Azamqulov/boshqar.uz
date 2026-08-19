@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X, Keyboard, Check, Sparkles } from 'lucide-vue-next';
+import { X, Keyboard } from 'lucide-vue-next';
 
 defineProps<{
   isOpen: boolean;
@@ -10,14 +10,15 @@ defineEmits<{
 }>();
 
 const hotkeysList = [
-  { key: 'F2', label: 'Qidiruv / Skaner', desc: 'Fokusni tovar qidiruv yoki shtrix-kod maydoniga qo\'yish' },
-  { key: 'F4', label: 'Chegirma Berish', desc: 'Buyurtmaga foiz (%) yoki summali chegirma oynasini ochish' },
-  { key: 'F8', label: 'Kutishga Qo\'yish', desc: 'Joriy savatni vaqtincha kutish rejimiga saqlash' },
-  { key: 'F9', label: 'Kutishdagilar', desc: 'Kutishdagi savatlar ro\'yxatini ochish va qayta yuklash' },
-  { key: 'F10', label: 'To\'lovga O\'tish', desc: 'To\'lov va chek chiqarish oynasini ochish' },
-  { key: 'F7', label: 'Savatni Tozalash', desc: 'Savatdagi barcha tovarlarni o\'chirish' },
-  { key: '1, 2, 3, 4', label: 'To\'lov Usuli', desc: 'To\'lov oynasida: 1-Naqd, 2-Karta, 3-Click/Payme, 4-Nasiya' },
-  { key: 'Enter', label: 'To\'lovni Yakunlash', desc: 'To\'lov oynasida buyurtmani tasdiqlash va chek chiqarish' },
+  { key: 'F2', label: 'Qidiruv / Skaner', desc: "Fokusni tovar qidiruv yoki shtrix-kod maydoniga qo'yish" },
+  { key: 'F4', label: 'Chegirma Berish', desc: "Buyurtmaga foiz (%) yoki summali chegirma oynasini ochish" },
+  { key: 'F7', label: 'Savatni Tozalash', desc: "Savatdagi barcha tovarlarni o'chirish" },
+  { key: 'F8', label: "Kutishga Qo'yish", desc: 'Joriy savatni vaqtincha kutish rejimiga saqlash' },
+  { key: 'F9', label: 'Kutishdagilar', desc: "Kutishdagi savatlar ro'yxatini ochish va qayta yuklash" },
+  { key: 'F10', label: "To'lovga O'tish", desc: "To'lov va chek chiqarish oynasini ochish" },
+  { key: 'F11', label: "To'liq Ekran (Kiosk)", desc: "Kassa terminalini brauzer sarlavhalarisiz to'liq ekranga o'tkazish" },
+  { key: '1, 2, 3, 4', label: "To'lov Usuli", desc: "To'lov oynasida: 1-Naqd, 2-Karta, 3-Click/Payme, 4-Nasiya" },
+  { key: 'Enter', label: "To'lovni Yakunlash", desc: "To'lov oynasida buyurtmani tasdiqlash va chek chiqarish" },
   { key: 'Escape', label: 'Oynani Yopish', desc: 'Har qanday ochiq modal oynani yopish' },
 ];
 </script>

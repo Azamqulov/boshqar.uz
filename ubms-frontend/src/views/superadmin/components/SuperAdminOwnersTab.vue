@@ -6,10 +6,9 @@
         <div class="flex-1">
           <AppInput
             :model-value="search"
-            @update:model-value="$emit('update:search', $event)"
+            @update:model-value="handleSearchInput"
             placeholder="Owner ismi, telefon yoki biznes nomi bo'yicha qidiruv..."
             :icon="Search"
-            @input="$emit('filterChanged')"
           />
         </div>
 
@@ -45,7 +44,9 @@
     </div>
 
     <!-- Owners Table View -->
-    <div v-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
+    <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase font-semibold">
@@ -128,10 +129,15 @@
     </div>
 
     <!-- Owners Grid View -->
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-if="owners.length === 0" class="col-span-full glass-card rounded-2xl p-8 text-center text-slate-400">
+    <div v-else-if="viewMode === 'grid'">
+      <SkeletonLoader v-if="loading" variant="cards" :count="6" />
+      <div v-else-if="owners.length === 0" class="glass-card rounded-2xl p-8 text-center text-slate-400">
         Firma egalari topilmadi
       </div>
+      <div
+        v-else
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
       <div
         v-for="o in pagination.paginatedItems.value"
         :key="o.id"
@@ -195,9 +201,11 @@
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Pagination -->
     <AppPagination
+      v-if="!loading"
       v-model:current-page="pagination.currentPage.value"
       v-model:page-size="pagination.pageSize.value"
       :total-items="owners.length"
@@ -209,6 +217,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Search, Eye, Crown, Phone, Building2 } from 'lucide-vue-next';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import AppViewToggle from '../../../components/AppViewToggle.vue';
@@ -222,9 +231,10 @@ const props = defineProps<{
   planFilter: string;
   statusFilter: string;
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:search', val: string): void;
   (e: 'update:planFilter', val: string): void;
   (e: 'update:statusFilter', val: string): void;
@@ -234,8 +244,16 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
-
 const pagination = usePagination(() => props.owners);
+
+let debounceTimer: any = null;
+const handleSearchInput = (val: string) => {
+  emit('update:search', val);
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    emit('filterChanged');
+  }, 250);
+};
 
 const getPlanBadgeClass = (plan: string) => {
   switch (plan?.toLowerCase()) {

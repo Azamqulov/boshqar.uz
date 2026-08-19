@@ -157,48 +157,77 @@ export class OrdersService {
       throw new BadRequestException({ code: 'EMPTY_ITEMS', message: 'Savatda kamida 1 ta mahsulot yoki xizmat bo\'lishi shart' });
     }
 
-    // Generate readable order number (#000123)
+    const productIds = dto.items.map((i) => i.productId).filter((id): id is string => Boolean(id));
+    const serviceIds = dto.items.map((i) => i.serviceId).filter((id): id is string => Boolean(id));
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const countToday = await this.prisma.order.count({
-      where: {
-        businessId,
-        createdAt: { gte: todayStart },
-      },
-    });
+
+    // 1. Parallel Batch Lookups (Single Network Roundtrip)
+    const [countToday, employee, dbProducts, dbServices, dbPaymentMethods, activeShift, foundTable] =
+      await Promise.all([
+        this.prisma.order.count({
+          where: {
+            businessId,
+            createdAt: { gte: todayStart },
+          },
+        }),
+        this.prisma.employee.findFirst({
+          where: { businessId, userId },
+        }),
+        productIds.length > 0
+          ? this.prisma.product.findMany({
+              where: { id: { in: productIds }, businessId },
+              include: { unit: { select: { shortName: true } } },
+            })
+          : [],
+        serviceIds.length > 0
+          ? this.prisma.service.findMany({
+              where: { id: { in: serviceIds }, businessId },
+            })
+          : [],
+        this.prisma.paymentMethod.findMany({
+          where: { businessId },
+        }),
+        this.prisma.posShift
+          .findFirst({
+            where: { businessId, branchId, status: 'open' },
+          })
+          .catch(() => null),
+        !dto.tableId && (dto as any).tableNumber
+          ? this.prisma.table.findFirst({
+              where: {
+                branchId,
+                name: { contains: String((dto as any).tableNumber), mode: 'insensitive' },
+              },
+            })
+          : null,
+      ]);
+
     const orderNumber = `#${String(countToday + 1).padStart(4, '0')}`;
+    const productMap = new Map<string, any>(dbProducts.map((p: any) => [p.id, p] as [string, any]));
+    const serviceMap = new Map<string, any>(dbServices.map((s: any) => [s.id, s] as [string, any]));
 
-    // Find cashier employee
-    const employee = await this.prisma.employee.findFirst({
-      where: { businessId, userId },
-    });
-
-    // 1. Fetch item prices from DB and prepare lines (Strict Server-Side Pricing)
+    // 2. Compute order lines in-memory (0ms)
     let subtotal = 0;
     const orderItemsData = [];
 
     for (const item of dto.items) {
       let unitPrice = 0;
-      let lineDiscount = item.discountAmount || 0;
+      const lineDiscount = item.discountAmount || 0;
 
       if (item.productId) {
-        const product = await this.prisma.product.findFirst({
-          where: { id: item.productId, businessId },
-        });
+        const product = productMap.get(item.productId);
         if (!product) {
           throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
         }
-        
-        // Manual price is only permitted when explicitly marked with isManualPrice
+
         if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
           unitPrice = Number(item.unitPrice);
         } else {
           unitPrice = Number(product.salePrice);
         }
       } else if (item.serviceId) {
-        const service = await this.prisma.service.findFirst({
-          where: { id: item.serviceId, businessId },
-        });
+        const service = serviceMap.get(item.serviceId);
         if (!service) {
           throw new NotFoundException({ code: 'SERVICE_NOT_FOUND', message: 'Xizmat topilmadi' });
         }
@@ -226,35 +255,21 @@ export class OrdersService {
       });
     }
 
-    const totalDiscount = (dto.discountAmount || 0);
-    const taxAmount = (dto.taxAmount || 0);
+    const totalDiscount = dto.discountAmount || 0;
+    const taxAmount = dto.taxAmount || 0;
     const grandTotal = Math.max(0, subtotal - totalDiscount + taxAmount);
 
-    // Pre-resolve payment methods if immediate payments provided
+    // 3. Resolve payment methods in-memory from dbPaymentMethods
     const preparedPayments: { paymentMethodId: string; amount: number }[] = [];
     if (dto.payments && dto.payments.length > 0) {
       for (const p of dto.payments) {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.paymentMethodId);
         const resolved = mapInputToPaymentType(p.paymentMethodId);
-
-        let pm: any = null;
-        if (isUuid) {
-          pm = await this.prisma.paymentMethod.findFirst({
-            where: { id: p.paymentMethodId, businessId },
-          });
-        }
-
-        if (!pm) {
-          pm = await this.prisma.paymentMethod.findFirst({
-            where: { businessId, name: resolved.name },
-          });
-        }
-
-        if (!pm) {
-          pm = await this.prisma.paymentMethod.findFirst({
-            where: { businessId, type: resolved.type },
-          });
-        }
+        let pm = dbPaymentMethods.find(
+          (m) =>
+            m.id === p.paymentMethodId ||
+            m.name?.toLowerCase() === resolved.name.toLowerCase() ||
+            m.type === resolved.type,
+        );
 
         if (!pm) {
           pm = await this.prisma.paymentMethod.create({
@@ -265,6 +280,7 @@ export class OrdersService {
               isActive: true,
             },
           });
+          dbPaymentMethods.push(pm);
         }
 
         preparedPayments.push({
@@ -276,7 +292,6 @@ export class OrdersService {
 
     const isImmediateComplete = preparedPayments.length > 0;
 
-    // Safely map orderType enum (Prisma enum: 'pos' | 'restaurant' | 'service')
     let validOrderType: OrderType = 'pos';
     const rawType = String(dto.orderType || '').toLowerCase();
     if (rawType === 'restaurant' || rawType === 'dine_in' || rawType === 'takeaway' || rawType === 'delivery') {
@@ -287,35 +302,12 @@ export class OrdersService {
       validOrderType = 'pos';
     }
 
-    let resolvedTableId = dto.tableId || null;
-    if (!resolvedTableId && (dto as any).tableNumber) {
-      const foundTable = await this.prisma.table.findFirst({
-        where: {
-          branchId,
-          name: { contains: String((dto as any).tableNumber), mode: 'insensitive' },
-        },
-      });
-      if (foundTable) {
-        resolvedTableId = foundTable.id;
-      }
-    }
+    const resolvedTableId = dto.tableId || foundTable?.id || null;
+    const activeShiftId = activeShift?.id || null;
 
-    // Check active open shift for this branch (safe lookup)
-    let activeShiftId: string | null = null;
-    try {
-      const activeShift = await this.prisma.posShift.findFirst({
-        where: { businessId, branchId, status: 'open' },
-      });
-      if (activeShift) {
-        activeShiftId = activeShift.id;
-      }
-    } catch (e) {
-      activeShiftId = null;
-    }
-
+    // 4. Atomic Transaction with batch inventory lookups
     const result = await this.prisma.$transaction(
       async (tx) => {
-        // 2. Create Order
         const order = await tx.order.create({
           data: {
             businessId,
@@ -342,73 +334,70 @@ export class OrdersService {
           },
         });
 
-        // 3. Atomically update inventory & log transactions inside transaction
         const lowStockItems: { product: any; afterQty: number }[] = [];
 
-        for (const item of dto.items) {
-          if (!item.productId) continue;
-
-          const product = await tx.product.findFirst({
-            where: { id: item.productId, businessId },
-            include: { unit: { select: { shortName: true } } },
-          });
-          if (!product) continue;
-
-          const isMadeToOrder =
-            product.brand === 'dish' ||
-            product.brand === 'kitchen' ||
-            product.brand === 'service' ||
-            product.unitId === '00000000-0000-0000-0000-000000000024';
-
-          const inv = await tx.inventory.findUnique({
+        if (productIds.length > 0) {
+          const dbInventories = await tx.inventory.findMany({
             where: {
-              branchId_productId: {
-                branchId,
-                productId: item.productId,
-              },
+              branchId,
+              productId: { in: productIds },
             },
           });
+          const invMap = new Map(dbInventories.map((inv) => [inv.productId, inv]));
 
-          const currentQty = inv ? Number(inv.quantity) : 0;
-          const buyQty = Number(item.quantity);
+          for (const item of dto.items) {
+            if (!item.productId) continue;
+            const product = productMap.get(item.productId);
+            if (!product) continue;
 
-          if (!isMadeToOrder && inv && currentQty < buyQty) {
-            throw new ConflictException({
-              code: 'INSUFFICIENT_STOCK',
-              message: `"${product.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,
-            });
-          }
+            const isMadeToOrder =
+              product.brand === 'dish' ||
+              product.brand === 'kitchen' ||
+              product.brand === 'service' ||
+              product.unit?.shortName === 'por' ||
+              product.unitId === '00000000-0000-0000-0000-000000000024';
 
-          if (inv) {
-            const afterQty = Math.max(0, currentQty - buyQty);
-            await tx.inventory.update({
-              where: { id: inv.id },
-              data: { quantity: afterQty },
-            });
+            const inv = invMap.get(item.productId);
+            const currentQty = inv ? Number(inv.quantity) : 0;
+            const buyQty = Number(item.quantity);
 
-            const minThreshold = Number(product.minStock || 5);
-            if (afterQty <= minThreshold) {
-              lowStockItems.push({ product, afterQty });
+            if (!isMadeToOrder && inv && currentQty < buyQty) {
+              throw new ConflictException({
+                code: 'INSUFFICIENT_STOCK',
+                message: `"${product.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,
+              });
             }
 
-            await tx.inventoryTransaction.create({
-              data: {
-                branchId,
-                productId: item.productId,
-                type: 'out',
-                reason: 'sale',
-                quantity: buyQty,
-                quantityBefore: currentQty,
-                quantityAfter: afterQty,
-                referenceType: 'order',
-                referenceId: order.id,
-                createdBy: userId,
-              },
-            });
+            if (inv) {
+              const afterQty = Math.max(0, currentQty - buyQty);
+              await tx.inventory.update({
+                where: { id: inv.id },
+                data: { quantity: afterQty },
+              });
+
+              const minThreshold = Number(product.minStock || 5);
+              if (afterQty <= minThreshold) {
+                lowStockItems.push({ product, afterQty });
+              }
+
+              await tx.inventoryTransaction.create({
+                data: {
+                  branchId,
+                  productId: item.productId,
+                  type: 'out',
+                  reason: 'sale',
+                  quantity: buyQty,
+                  quantityBefore: currentQty,
+                  quantityAfter: afterQty,
+                  referenceType: 'order',
+                  referenceId: order.id,
+                  createdBy: userId,
+                },
+              });
+            }
           }
         }
 
-        // 4. Save Payments & Revenue
         if (isImmediateComplete) {
           let totalPaid = 0;
           for (const p of preparedPayments) {
@@ -447,7 +436,6 @@ export class OrdersService {
           });
         }
 
-        // 5. If Restaurant order
         if (dto.tableId) {
           await tx.table.update({
             where: { id: dto.tableId },
@@ -480,8 +468,8 @@ export class OrdersService {
         };
       },
       {
-        maxWait: 20000,
-        timeout: 30000,
+        maxWait: 15000,
+        timeout: 25000,
       },
     );
 

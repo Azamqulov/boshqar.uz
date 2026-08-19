@@ -23,7 +23,9 @@
     </div>
 
     <!-- Audit Logs Table View -->
-    <div v-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
+    <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs font-mono">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase font-sans font-semibold">
@@ -53,7 +55,9 @@
 
     <!-- Audit Logs Grid / Card View -->
     <div v-else-if="viewMode === 'grid'">
-      <div v-if="auditLogs.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+      <SkeletonLoader v-if="loading" variant="cards" :count="6" />
+
+      <div v-else-if="auditLogs.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
         <ShieldCheck class="w-10 h-10 mx-auto mb-2 opacity-30 text-emerald-500" />
         <span>Audit jurnallari mavjud emas</span>
       </div>
@@ -96,6 +100,7 @@
 
     <!-- Pagination -->
     <AppPagination
+      v-if="!loading"
       v-model:current-page="pagination.currentPage.value"
       v-model:page-size="pagination.pageSize.value"
       :total-items="auditLogs.length"
@@ -200,6 +205,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ShieldCheck, Calendar, Trash2, X, AlertTriangle, RefreshCw } from 'lucide-vue-next';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppViewToggle from '../../../components/AppViewToggle.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import AppConfirmDialog from '../../../components/AppConfirmDialog.vue';
@@ -211,6 +217,7 @@ import api from '../../../services/api';
 const props = defineProps<{
   auditLogs: any[];
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{

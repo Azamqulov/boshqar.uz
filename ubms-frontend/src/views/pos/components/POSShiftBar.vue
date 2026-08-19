@@ -59,6 +59,20 @@
         <span class="hidden md:inline">{{ isSyncing ? 'Sinxronlanmoqda...' : 'Sinxronlash' }}</span>
       </button>
 
+      <!-- Fullscreen Toggle for PC Terminal / Desktop -->
+      <button
+        type="button"
+        @click="toggleFullscreen"
+        class="hidden sm:flex px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs items-center gap-1 transition btn-interactive"
+        :title="isFullscreen ? 'To\'liq ekrandan chiqish (F11 / Esc)' : 'Kassa kiosk to\'liq ekran rejimi (F11)'"
+      >
+        <Minimize v-if="isFullscreen" class="w-3.5 h-3.5 text-amber-500" />
+        <Maximize v-else class="w-3.5 h-3.5 text-blue-500" />
+        <span class="hidden md:inline">{{ isFullscreen ? 'Kichraytirish' : 'To\'liq Ekran' }}</span>
+        <span class="text-[10px] px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono">F11</span>
+      </button>
+
+      <!-- Hotkeys Guide (F1) -->
       <button
         v-if="enableHotkeys !== false"
         type="button"
@@ -103,7 +117,8 @@
 </template>
 
 <script setup lang="ts">
-import { AlertTriangle, Receipt, Moon, Sun, Keyboard, Wifi, WifiOff, RefreshCw } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { AlertTriangle, Receipt, Moon, Sun, Keyboard, Wifi, WifiOff, RefreshCw, Maximize, Minimize } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
 withDefaults(
@@ -130,4 +145,26 @@ defineEmits<{
 }>();
 
 const { formatCurrency, formatDateTime } = useFormat();
+
+const isFullscreen = ref(false);
+
+const checkFullscreenState = () => {
+  isFullscreen.value = !!document.fullscreenElement;
+};
+
+const toggleFullscreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => null);
+  } else {
+    document.exitFullscreen().catch(() => null);
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', checkFullscreenState);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', checkFullscreenState);
+});
 </script>

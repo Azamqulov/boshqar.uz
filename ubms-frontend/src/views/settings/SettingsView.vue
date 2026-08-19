@@ -346,7 +346,8 @@ type SettingsTab = typeof validTabs[number];
 
 const activeTab = usePersistentTab<SettingsTab>('settings', 'my-profile', validTabs);
 const loading = ref(false);
-const loadingEmployees = ref(false);
+const loadingEmployees = ref(true);
+const loadingAudit = ref(true);
 const savingEmp = ref(false);
 const deleting = ref(false);
 
@@ -501,7 +502,6 @@ const handleChangePassword = async () => {
 
 const employees = ref<any[]>([]);
 const auditLogs = ref<any[]>([]);
-const loadingAudit = ref(false);
 
 const showEmployeeModal = ref(false);
 const showConfirmModal = ref(false);
@@ -597,6 +597,7 @@ const editEmployee = (emp: any) => {
 };
 
 const saveEmployee = async () => {
+  if (savingEmp.value) return;
   if (!empForm.value.fullName.trim()) {
     toast.warning('Xodimning ism va familiyasini kiriting', 'Ism');
     return;
@@ -793,17 +794,28 @@ watch(
   () => authStore.activeBusiness?.id,
   (newId) => {
     if (newId) {
-      loadEmployees();
-      loadAudit();
+      if (activeTab.value === 'employees') loadEmployees();
+      if (activeTab.value === 'audit') loadAudit();
     }
   },
 );
+
+watch(activeTab, (tab) => {
+  if (tab === 'employees' && employees.value.length === 0) {
+    loadEmployees();
+  } else if (tab === 'audit' && auditLogs.value.length === 0) {
+    loadAudit();
+  }
+});
 
 onMounted(async () => {
   loadReceiptSettings();
   await authStore.fetchBusinesses();
   await authStore.fetchProfile();
-  loadEmployees();
-  loadAudit();
+  if (activeTab.value === 'employees') {
+    loadEmployees();
+  } else if (activeTab.value === 'audit') {
+    loadAudit();
+  }
 });
 </script>

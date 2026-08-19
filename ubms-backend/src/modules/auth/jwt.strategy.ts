@@ -13,6 +13,25 @@ export interface JwtPayload {
   tokenVersion?: number;
 }
 
+// Fast in-memory caching to eliminate redundant remote DB round-trips on every request
+interface CachedUserAuth {
+  user: any;
+  cachedAt: number;
+}
+
+const userAuthCache = new Map<string, CachedUserAuth>();
+const branchAuthCache = new Map<string, { belongs: boolean; cachedAt: number }>();
+const USER_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+export function invalidateUserAuthCache(userId?: string) {
+  if (userId) {
+    userAuthCache.delete(userId);
+  } else {
+    userAuthCache.clear();
+  }
+  branchAuthCache.clear();
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
@@ -34,30 +53,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
     }
 
-    let user;
-    try {
-      user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          businessUsers: {
-            where: { status: 'active' },
-            include: {
-              role: {
-                include: {
-                  rolePermissions: {
-                    include: { permission: true },
-                  },
-                },
-              },
-            },
-          },
-          ownedBusinesses: true,
-        },
-      });
-    } catch (err) {
-      // Resilient 1-shot retry for Supabase cloud pooler momentary drops
+    let user: any = null;
+    const cached = userAuthCache.get(userId);
+    const now = Date.now();
+
+    if (cached && now - cached.cachedAt < USER_CACHE_TTL_MS) {
+      user = cached.user;
+    } else {
       try {
-        await new Promise((r) => setTimeout(r, 350));
         user = await this.prisma.user.findUnique({
           where: { id: userId },
           include: {
@@ -76,11 +79,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             ownedBusinesses: true,
           },
         });
-      } catch (retryErr) {
-        throw new UnauthorizedException({
-          code: 'DB_CONNECTION_RETRY_FAILED',
-          message: 'Baza bilan vaqtinchalik aloqa uzildi. Iltimos sahifani yangilang.',
-        });
+      } catch (err) {
+        // Resilient 1-shot retry for Supabase cloud pooler momentary drops
+        try {
+          await new Promise((r) => setTimeout(r, 350));
+          user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+              businessUsers: {
+                where: { status: 'active' },
+                include: {
+                  role: {
+                    include: {
+                      rolePermissions: {
+                        include: { permission: true },
+                      },
+                    },
+                  },
+                },
+              },
+              ownedBusinesses: true,
+            },
+          });
+        } catch (retryErr) {
+          throw new UnauthorizedException({
+            code: 'DB_CONNECTION_RETRY_FAILED',
+            message: 'Baza bilan vaqtinchalik aloqa uzildi. Iltimos sahifani yangilang.',
+          });
+        }
+      }
+
+      if (user && user.status === 'active') {
+        userAuthCache.set(userId, { user, cachedAt: now });
       }
     }
 
@@ -94,6 +124,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Token invalidation check (when password is changed, tokenVersion is incremented)
     if (payload.tokenVersion !== undefined && user.tokenVersion !== undefined) {
       if (payload.tokenVersion !== user.tokenVersion) {
+        userAuthCache.delete(userId);
         throw new UnauthorizedException({
           code: 'TOKEN_REVOKED',
           message: 'Parol o\'zgarganligi sababli seans bekor qilingan. Iltimos, qaytadan kiring.',
@@ -111,8 +142,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (user.isSuperAdmin) {
         verifiedBusinessId = requestedBizId;
       } else {
-        const isOwner = user.ownedBusinesses.some((b) => b.id === requestedBizId);
-        const memberBiz = user.businessUsers.find((bu) => bu.businessId === requestedBizId);
+        const isOwner = user.ownedBusinesses.some((b: any) => b.id === requestedBizId);
+        const memberBiz = user.businessUsers.find((bu: any) => bu.businessId === requestedBizId);
 
         if (isOwner) {
           verifiedBusinessId = requestedBizId;
@@ -120,14 +151,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           verifiedBusinessId = requestedBizId;
           effectiveRoleId = memberBiz.roleId;
           if (memberBiz.role?.rolePermissions) {
-            effectivePermissions = memberBiz.role.rolePermissions.map((rp) => rp.permission.code);
+            effectivePermissions = memberBiz.role.rolePermissions.map((rp: any) => rp.permission.code);
           }
         } else {
           // Attacker sent unauthorized businessId -> Reject or fallback to payload verified business
           if (
             payload.businessId &&
-            (user.ownedBusinesses.some((b) => b.id === payload.businessId) ||
-              user.businessUsers.some((bu) => bu.businessId === payload.businessId))
+            (user.ownedBusinesses.some((b: any) => b.id === payload.businessId) ||
+              user.businessUsers.some((bu: any) => bu.businessId === payload.businessId))
           ) {
             verifiedBusinessId = payload.businessId;
           } else if (user.ownedBusinesses.length > 0) {
@@ -155,14 +186,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (user.isSuperAdmin) {
         verifiedBranchId = requestedBranchId;
       } else {
-        // Verify branch belongs to the verified business
-        const branchBelongsToBusiness = await this.prisma.branch.findFirst({
-          where: { id: requestedBranchId, businessId: verifiedBusinessId },
-          select: { id: true },
-        });
+        // Fast in-memory check for branch ownership
+        const branchKey = `${requestedBranchId}:${verifiedBusinessId}`;
+        const cachedBranch = branchAuthCache.get(branchKey);
+        let branchBelongs = false;
 
-        if (branchBelongsToBusiness) {
-          const isOwner = user.ownedBusinesses.some((b) => b.id === verifiedBusinessId);
+        if (cachedBranch && now - cachedBranch.cachedAt < USER_CACHE_TTL_MS) {
+          branchBelongs = cachedBranch.belongs;
+        } else {
+          const branchRecord = await this.prisma.branch.findFirst({
+            where: { id: requestedBranchId, businessId: verifiedBusinessId },
+            select: { id: true },
+          });
+          branchBelongs = !!branchRecord;
+          branchAuthCache.set(branchKey, { belongs: branchBelongs, cachedAt: now });
+        }
+
+        if (branchBelongs) {
+          const isOwner = user.ownedBusinesses.some((b: any) => b.id === verifiedBusinessId);
           if (payload.branchId && payload.branchId !== requestedBranchId && !isOwner) {
             verifiedBranchId = payload.branchId;
           } else {

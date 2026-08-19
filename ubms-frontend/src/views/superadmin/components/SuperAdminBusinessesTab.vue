@@ -29,7 +29,9 @@
     </div>
 
     <!-- Businesses Table View -->
-    <div v-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
+    <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase font-semibold">
@@ -124,7 +126,9 @@
 
     <!-- Businesses Grid / Card View -->
     <div v-else-if="viewMode === 'grid'">
-      <div v-if="filteredBusinesses.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+      <SkeletonLoader v-if="loading" variant="cards" :count="8" />
+
+      <div v-else-if="filteredBusinesses.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
         <Building2 class="w-10 h-10 mx-auto mb-2 opacity-30 text-emerald-500" />
         <span>Hech qanday biznes topilmadi</span>
       </div>
@@ -231,6 +235,7 @@
 
     <!-- Pagination -->
     <AppPagination
+      v-if="!loading"
       v-model:current-page="pagination.currentPage.value"
       v-model:page-size="pagination.pageSize.value"
       :total-items="filteredBusinesses.length"
@@ -242,6 +247,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { Search, Building2, Calendar, Crown, Zap, Ban, CheckCircle, AlertTriangle, Clock } from 'lucide-vue-next';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import AppViewToggle from '../../../components/AppViewToggle.vue';
@@ -254,6 +260,7 @@ const props = defineProps<{
   search: string;
   statusFilter: string;
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
 defineEmits<{

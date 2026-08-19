@@ -81,9 +81,11 @@
               />
               <button
                 @click="$emit('savePlan', ownerDetail.owner.id, ownerDetail.business.planId, selectedDurationDays)"
-                class="px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25 transition btn-interactive"
+                :disabled="loading"
+                class="px-3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-white font-bold text-xs shadow-md shadow-emerald-500/25 transition btn-interactive flex items-center gap-1"
               >
-                Saqlash
+                <span v-if="loading" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span>Saqlash</span>
               </button>
             </div>
 
@@ -123,7 +125,8 @@
             </div>
             <button
               @click="$emit('toggleStatus', ownerDetail.owner.id, ownerDetail.owner.status)"
-              class="w-full py-2 rounded-xl font-bold text-xs transition btn-interactive flex items-center justify-center gap-1.5"
+              :disabled="loading"
+              class="w-full py-2 rounded-xl font-bold text-xs transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none flex items-center justify-center gap-1.5"
               :class="ownerDetail.owner?.status === 'active' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20'"
             >
               <Ban v-if="ownerDetail.owner?.status === 'active'" class="w-4 h-4" />
@@ -147,6 +150,7 @@ const props = defineProps<{
   isOpen: boolean;
   ownerDetail: any;
   plans: any[];
+  loading?: boolean;
 }>();
 
 const selectedDurationDays = ref(30);

@@ -43,7 +43,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="filteredExpenses.length === 0">
+            <tr v-if="!loading && filteredExpenses.length === 0">
               <td colspan="5" class="py-12 text-center text-slate-400 dark:text-slate-500">
                 <TrendingDown class="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <span>Xarajatlar mavjud emas</span>
@@ -76,7 +76,15 @@
       </div>
 
       <!-- 3.2 CARD / GRID VIEW -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else-if="viewMode === 'grid'">
+        <SkeletonLoader v-if="loading" variant="cards" :count="6" />
+
+        <div v-else-if="filteredExpenses.length === 0" class="p-12 text-center text-slate-400 dark:text-slate-500 glass-card rounded-2xl">
+          <TrendingDown class="w-10 h-10 mx-auto mb-2 opacity-30 text-rose-500" />
+          <span>Xarajatlar mavjud emas</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="exp in pagination.paginatedItems.value"
           :key="exp.id"
@@ -109,9 +117,11 @@
           </div>
         </div>
       </div>
+      </div>
 
       <!-- Pagination -->
       <AppPagination
+        v-if="!loading"
         v-model:current-page="pagination.currentPage.value"
         v-model:page-size="pagination.pageSize.value"
         :total-items="filteredExpenses.length"
@@ -127,12 +137,14 @@ import { TrendingDown, Plus, Trash2 } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import AppPagination from '../../../components/AppPagination.vue';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
 
 const props = defineProps<{
   expenses: any[];
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
 defineEmits<{

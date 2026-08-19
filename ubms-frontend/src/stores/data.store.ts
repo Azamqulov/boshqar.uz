@@ -312,12 +312,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['appointments']) {
       return inFlightPromises['appointments'];
     }
-    loading.value.appointments = true;
+    if (appointments.value.length === 0) {
+      loading.value.appointments = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/appointments?limit=200');
         const items = Array.isArray(data) ? data : (data?.items || []);
         appointments.value = items;
+        saveToStorage('appointments', items);
         lastFetched.value['appointments'] = Date.now();
       } catch (e) {
         console.error('Fetch appointments failed:', e);
@@ -339,12 +342,15 @@ export const useDataStore = defineStore('ubms_data', () => {
     if (inFlightPromises['tables']) {
       return inFlightPromises['tables'];
     }
-    loading.value.tables = true;
+    if (tables.value.length === 0) {
+      loading.value.tables = true;
+    }
     const p = (async () => {
       try {
         const { data } = await api.get('/restaurant/tables');
         const items = Array.isArray(data) ? data : (data?.items || []);
         tables.value = items;
+        saveToStorage('tables', items);
         lastFetched.value['tables'] = Date.now();
       } catch (e) {
         console.error('Fetch tables failed:', e);
@@ -582,9 +588,12 @@ export const useDataStore = defineStore('ubms_data', () => {
     dashboardSummary,
     dashboardCharts,
     inventory,
+    inventoryTotal,
+    inventoryMeta,
     financeSummary,
     financeExpenses,
     appointments,
+    loading,
     fetchProducts,
     fetchCategories,
     fetchDashboard,

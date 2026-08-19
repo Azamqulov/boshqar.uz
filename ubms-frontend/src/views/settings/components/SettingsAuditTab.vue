@@ -294,172 +294,29 @@
       item-name="audit yozuvi"
     />
 
-    <!-- 5. Audit Log Details Modal -->
-    <Teleport to="body">
-      <div v-if="selectedLog" @click.self="selectedLog = null" class="modal-overlay">
-        <div class="modal-container max-w-lg" @click.stop>
-          <div class="modal-header border-b border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-2.5">
-              <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <ShieldCheck class="w-5 h-5" />
-              </div>
-              <div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">Audit Yozuvi Tafsiloti</h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">ID: {{ selectedLog.id }}</p>
-              </div>
-            </div>
-            <button @click="selectedLog = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
+    <!-- 5. Detail Modal Component -->
+    <AuditDetailModal
+      :selected-log="selectedLog"
+      :get-action-badge-class="getActionBadgeClass"
+      :get-action-icon="getActionIcon"
+      :format-action-name="getActionLabel"
+      :format-date="formatDate"
+      :get-audit-description="getAuditDescription"
+      :flatten-payload="flattenPayload"
+      :format-field-label="formatFieldLabel"
+      :format-field-value="formatFieldValue"
+      @close="selectedLog = null"
+    />
 
-          <div class="modal-body space-y-4">
-            <!-- Grid info -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Xodim:</span>
-                <span class="font-black text-slate-900 dark:text-white block">{{ selectedLog.user?.fullName || 'Tizim' }}</span>
-                <span class="text-[10px] text-slate-400 font-mono block">{{ selectedLog.user?.phone || '-' }}</span>
-              </div>
-
-              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Sana & Vaqt:</span>
-                <span class="font-black text-slate-900 dark:text-white block font-mono">{{ formatDate(selectedLog.createdAt) }}</span>
-                <span class="text-[10px] text-slate-400 font-mono block">IP: {{ formatIpAddress(selectedLog.ipAddress) }}</span>
-              </div>
-
-              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Harakat:</span>
-                <div>
-                  <span
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border shadow-xs"
-                    :class="getActionBadgeClass(selectedLog.action)"
-                  >
-                    <component :is="getActionIcon(selectedLog.action)" class="w-3.5 h-3.5 shrink-0" />
-                    <span>{{ getActionLabel(selectedLog.action) }}</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
-                <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Bo'lim:</span>
-                <div>
-                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 shadow-xs">
-                    <component :is="getEntityIcon(selectedLog.entity)" class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>{{ getEntityLabel(selectedLog.entity) }}</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Payload / Changes (Human-friendly parameters table + adaptive light/dark styling) -->
-            <div v-if="selectedLog.newValue" class="space-y-2">
-              <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block tracking-wider">
-                Kiritilgan / O'zgartirilgan Ma'lumotlar:
-              </span>
-
-              <!-- Clean Key-Value Table -->
-              <div class="rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/50 overflow-hidden divide-y divide-slate-200/80 dark:divide-slate-700/60 text-xs">
-                <div
-                  v-for="(val, key) in flattenPayload(selectedLog.newValue)"
-                  :key="key"
-                  class="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-white/60 dark:hover:bg-slate-800/80 transition"
-                >
-                  <span class="font-bold text-slate-600 dark:text-slate-400 capitalize">{{ formatFieldLabel(String(key)) }}:</span>
-                  <span class="font-mono font-bold text-slate-900 dark:text-white text-right break-all">
-                    {{ formatFieldValue(val, String(key)) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer border-t border-slate-200 dark:border-slate-800 flex justify-end">
-            <AppButton variant="secondary" size="md" @click="selectedLog = null">Yopish</AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- 6. Cleanup Audit Modal -->
-    <Teleport to="body">
-      <div v-if="showCleanupModal" @click.self="showCleanupModal = false" class="modal-overlay">
-        <div class="modal-container max-w-md" @click.stop>
-          <div class="modal-header border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-2.5">
-              <div class="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                <Trash2 class="w-5 h-5" />
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-slate-900 dark:text-white">Audit Jurnallarini Tozalash</h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">Biznesingizdagi eski audit ma'lumotlarini o'chirish</p>
-              </div>
-            </div>
-            <button @click="showCleanupModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="modal-body p-4 space-y-3.5 text-xs">
-            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-              Baza hajmini tejash va eski harakatlarni tozalash uchun muddatni tanlang:
-            </p>
-
-            <!-- Options Radio Group -->
-            <div class="space-y-2">
-              <label
-                v-for="opt in cleanupOptions"
-                :key="opt.value"
-                class="flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer"
-                :class="
-                  selectedPeriod === opt.value
-                    ? 'border-rose-500/80 bg-rose-500/10 text-slate-900 dark:text-white ring-1 ring-rose-500/30'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50'
-                "
-              >
-                <input
-                  type="radio"
-                  name="settingsCleanupPeriod"
-                  :value="opt.value"
-                  v-model="selectedPeriod"
-                  class="mt-0.5 text-rose-600 focus:ring-rose-500"
-                />
-                <div class="min-w-0">
-                  <span class="font-bold block text-slate-900 dark:text-white text-xs">{{ opt.label }}</span>
-                  <span class="text-[11px] text-slate-400 block mt-0.5">{{ opt.desc }}</span>
-                </div>
-              </label>
-            </div>
-
-            <!-- Warning notice -->
-            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] flex items-start gap-2">
-              <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-              <span>Diqqat: O'chirilgan audit ma'lumotlarini qayta tiklab bo'lmaydi.</span>
-            </div>
-          </div>
-
-          <div class="modal-footer border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 p-3">
-            <button
-              type="button"
-              @click="showCleanupModal = false"
-              :disabled="cleaningUp"
-              class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              Bekor qilish
-            </button>
-            <button
-              type="button"
-              @click="promptConfirmCleanup"
-              :disabled="cleaningUp"
-              class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/25 transition btn-interactive disabled:opacity-50"
-            >
-              <Trash2 class="w-3.5 h-3.5" />
-              <span>Tozalash</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <!-- 6. Cleanup Audit Modal Component -->
+    <AuditCleanupModal
+      :is-open="showCleanupModal"
+      v-model:selected-period="selectedPeriod"
+      :cleanup-options="cleanupOptions"
+      :cleaning-up="cleaningUp"
+      @close="showCleanupModal = false"
+      @prompt-confirm="promptConfirmCleanup"
+    />
 
     <!-- Double Confirmation Dialog -->
     <AppConfirmDialog
@@ -515,6 +372,8 @@ import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
 import { useToast } from '../../../composables/useToast';
 import api from '../../../services/api';
+import AuditDetailModal from './AuditDetailModal.vue';
+import AuditCleanupModal from './AuditCleanupModal.vue';
 
 const props = defineProps<{
   auditLogs: any[];
@@ -686,6 +545,13 @@ const getEntityLabel = (entity: string) => {
     discounts: 'Chegirmalar',
   };
   return map[e] || entity || 'Umumiy';
+};
+
+const getAuditDescription = (log: any) => {
+  const user = log.user?.fullName || log.user?.phone || 'Xodim';
+  const entity = getEntityLabel(log.entity);
+  const action = getActionLabel(log.action);
+  return `${user} tomonidan «${entity}» bo'limida «${action}» amali bajarildi.`;
 };
 
 const getEntityIcon = (entity: string) => {

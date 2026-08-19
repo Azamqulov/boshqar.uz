@@ -178,6 +178,7 @@ import { useToast } from '../../composables/useToast';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
 import { usePagination } from '../../composables/usePagination';
+import { useFormat } from '../../composables/useFormat';
 import api, { getErrorMessage } from '../../services/api';
 
 import SupplierStatsCards from './components/SupplierStatsCards.vue';
@@ -191,9 +192,10 @@ import SupplierStatementModal from './components/SupplierStatementModal.vue';
 const toast = useToast();
 const dataStore = useDataStore();
 const { canCreate } = usePermissions();
+const { formatCurrency } = useFormat();
 
 const viewMode = usePersistentViewMode('suppliers', 'table');
-const loading = ref(false);
+const loading = ref(dataStore.suppliers.length === 0);
 const submitting = ref(false);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'debtors' | 'clear'>('all');
@@ -266,10 +268,6 @@ watch([searchQuery, activeFilter], () => {
   pagination.resetPage();
 });
 
-const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('uz-UZ').format(Math.round(val)) + " so'm";
-};
-
 const fetchSuppliers = async (force = false) => {
   if (suppliers.value.length === 0) {
     loading.value = true;
@@ -308,6 +306,7 @@ const openEditModal = (s: any) => {
 };
 
 const saveSupplier = async () => {
+  if (submitting.value) return;
   if (!formData.value.name.trim()) {
     toast.warning('Mas\'ul shaxs nomini kiriting', 'Ta\'minotchi');
     return;
@@ -382,7 +381,8 @@ const openHistoryModal = async (s: any) => {
 };
 
 const submitPay = async () => {
-  if (!activeSupplier.value || !payAmount.value || payAmount.value <= 0) return;
+  if (!activeSupplier.value || !payAmount.value || payAmount.value <= 0 || submitting.value) return;
+  submitting.value = true;
   const sId = activeSupplier.value.id;
   const amt = Number(payAmount.value);
 
@@ -408,6 +408,8 @@ const submitPay = async () => {
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'To\'lovni amalga oshirishda xatolik'), 'Xatolik');
     fetchSuppliers(true);
+  } finally {
+    submitting.value = false;
   }
 };
 
@@ -428,6 +430,8 @@ const confirmDeleteSupplier = (s: any) => {
 };
 
 const deleteSupplier = async (id: string) => {
+  if (submitting.value) return;
+  submitting.value = true;
   confirmModal.value.open = false;
   // Optimistic removal
   dataStore.suppliers = dataStore.suppliers.filter((s: any) => s.id !== id);
@@ -440,6 +444,8 @@ const deleteSupplier = async (id: string) => {
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Ta\'minotchini o\'chirishda xatolik'), 'Xatolik');
     fetchSuppliers(true);
+  } finally {
+    submitting.value = false;
   }
 };
 

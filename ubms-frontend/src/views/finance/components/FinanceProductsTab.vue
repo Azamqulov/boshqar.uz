@@ -63,7 +63,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
-            <tr v-if="filteredSoldProducts.length === 0">
+            <tr v-if="!loading && filteredSoldProducts.length === 0">
               <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
                 <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <span>Hech qanday mahsulot topilmadi</span>
@@ -109,11 +109,19 @@
       </div>
 
       <!-- 1.2 CARD / GRID VIEW -->
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else-if="viewMode === 'grid'">
+        <SkeletonLoader v-if="loading" variant="cards" :count="6" />
+
+        <div v-else-if="filteredSoldProducts.length === 0" class="p-12 text-center text-slate-400 dark:text-slate-500 glass-card rounded-2xl">
+          <PackageCheck class="w-10 h-10 mx-auto mb-2 opacity-40" />
+          <span>Hech qanday mahsulot topilmadi</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="prod in pagination.paginatedItems.value"
-          :key="prod.id || prod.name"
-          class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-emerald-500/50 transition"
+          :key="prod.id"
+          class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3 hover:shadow-md transition"
         >
           <div>
             <span class="font-bold text-slate-900 dark:text-white text-sm block truncate">
@@ -157,9 +165,11 @@
           </div>
         </div>
       </div>
+    </div>
 
       <!-- Pagination -->
       <AppPagination
+        v-if="!loading"
         v-model:current-page="pagination.currentPage.value"
         v-model:page-size="pagination.pageSize.value"
         :total-items="filteredSoldProducts.length"
@@ -172,6 +182,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { PackageCheck, Search } from 'lucide-vue-next';
+import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
@@ -179,6 +190,7 @@ import { usePagination } from '../../../composables/usePagination';
 const props = defineProps<{
   soldProducts: any[];
   viewMode: 'table' | 'grid';
+  loading?: boolean;
 }>();
 
 const { formatCurrency } = useFormat();

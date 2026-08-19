@@ -70,6 +70,18 @@
         <span v-else-if="!isLoading">Kirish</span>
         <span v-else>Kirilmoqda...</span>
       </button>
+
+      <!-- 1-Click Demo Login Button -->
+      <div class="pt-2">
+        <button
+          type="button"
+          @click="handleDemoLogin"
+          class="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition flex items-center justify-center gap-2"
+        >
+          <Sparkles class="w-4 h-4 text-amber-500" />
+          <span>Demo tizimni sinab ko'rish (1-klikda)</span>
+        </button>
+      </div>
     </form>
 
     <div class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
@@ -88,7 +100,7 @@ import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import { getErrorMessage } from '../../services/api';
 import PhoneInput from '../../components/PhoneInput.vue';
 import PasswordInput from '../../components/PasswordInput.vue';
-import { ShieldAlert, AlertTriangle, Clock } from 'lucide-vue-next';
+import { ShieldAlert, AlertTriangle, Clock, Sparkles } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -212,6 +224,13 @@ const handleLogin = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const handleDemoLogin = async () => {
+  phone.value = '90 123 45 67';
+  password.value = 'admin123';
+  toast.info('Demo hisob ma\'lumotlari kiritildi. Tizimga kirilmoqda...', 'Demo Rejim');
+  await handleLogin();
 };
 
 onMounted(() => {

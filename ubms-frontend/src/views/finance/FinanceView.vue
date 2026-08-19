@@ -86,6 +86,7 @@
     <FinanceProductsTab
       v-if="activeTab === 'products'"
       :sold-products="summary.soldProducts || []"
+      :loading="loading"
       :view-mode="viewMode"
     />
 
@@ -93,6 +94,7 @@
     <FinanceOrdersTab
       v-else-if="activeTab === 'orders'"
       :orders="summary.recentOrders || []"
+      :loading="loading"
       :view-mode="viewMode"
       @view-receipt="viewReceipt"
       @cancel-order="promptCancelOrder"
@@ -102,6 +104,7 @@
     <FinanceExpensesTab
       v-else-if="activeTab === 'expenses'"
       :expenses="expenses"
+      :loading="loading"
       :view-mode="viewMode"
       @open-expense-modal="isExpenseModalOpen = true"
       @delete-expense="promptDeleteExpense"
@@ -257,7 +260,7 @@ const shiftStore = useShiftStore();
 const authStore = useAuthStore();
 const { formatCurrency, formatDate, formatDateTime } = useFormat();
 
-const loading = ref(false);
+const loading = ref(!dataStore.financeSummary);
 const submitting = ref(false);
 const viewMode = usePersistentViewMode('finance', 'table');
 
@@ -455,6 +458,7 @@ const printReceipt = () => {
 };
 
 const createExpense = async () => {
+  if (submitting.value) return;
   if (!expenseForm.value.amount || Number(expenseForm.value.amount) <= 0) {
     toast.warning('Xarajat summasini to\'g\'ri kiriting', 'Moliya');
     return;
@@ -499,6 +503,7 @@ const confirmState = ref<{
 });
 
 const executeConfirmAction = async () => {
+  if (confirmState.value.loading) return;
   confirmState.value.loading = true;
   try {
     await confirmState.value.action();
@@ -588,6 +593,8 @@ watch(activeTab, (tab) => {
 
 onMounted(() => {
   loadFinance(true);
-  loadShifts();
+  if (activeTab.value === 'shifts') {
+    loadShifts();
+  }
 });
 </script>

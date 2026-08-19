@@ -720,4 +720,179 @@ export class ProductsService {
       },
     });
   }
+
+  // Excel / CSV Batch Import
+  async batchImport(
+    businessId: string,
+    branchId: string | undefined,
+    userId: string,
+    items: Array<{
+      name: string;
+      salePrice: number;
+      purchasePrice?: number;
+      sku?: string;
+      barcode?: string;
+      initialStock?: number;
+      minStock?: number;
+      categoryName?: string;
+      unitName?: string;
+    }>,
+  ) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new BadRequestException({ code: 'EMPTY_IMPORT', message: 'Import uchun tovarlar ro\'yxati bo\'sh' });
+    }
+
+    const [defaultBranch, units, categories] = await Promise.all([
+      this.prisma.branch.findFirst({ where: { businessId, isMain: true } }),
+      this.prisma.unit.findMany({ where: { OR: [{ businessId }, { businessId: null }] } }),
+      this.prisma.category.findMany({ where: { businessId } }),
+    ]);
+
+    const targetBranchId = branchId || defaultBranch?.id;
+    const defaultUnit = units.find((u) => u.shortName === 'dona' || u.name.toLowerCase().includes('dona')) || units[0];
+
+    const categoryMap = new Map<string, string>();
+    categories.forEach((c) => categoryMap.set(c.name.toLowerCase().trim(), c.id));
+
+    const unitMap = new Map<string, string>();
+    units.forEach((u) => {
+      unitMap.set(u.name.toLowerCase().trim(), u.id);
+      unitMap.set(u.shortName.toLowerCase().trim(), u.id);
+    });
+
+    let importedCount = 0;
+    let skippedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.name?.trim()) {
+        skippedCount++;
+        continue;
+      }
+
+      try {
+        const cleanName = item.name.trim();
+        const salePrice = Number(item.salePrice || 0);
+        const purchasePrice = Number(item.purchasePrice || 0);
+        const minStock = Number(item.minStock || 0);
+        const initialStock = Number(item.initialStock || 0);
+        let sku = item.sku?.trim() || null;
+        const barcode = item.barcode?.trim() || null;
+
+        if (!sku) {
+          const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+          sku = `IMP-${Date.now().toString().slice(-4)}${i}-${rand}`;
+        }
+
+        let categoryId: string | null = null;
+        if (item.categoryName?.trim()) {
+          const cKey = item.categoryName.trim().toLowerCase();
+          if (categoryMap.has(cKey)) {
+            categoryId = categoryMap.get(cKey)!;
+          } else {
+            const newCat = await this.prisma.category.create({
+              data: {
+                businessId,
+                name: item.categoryName.trim(),
+              },
+            });
+            categoryId = newCat.id;
+            categoryMap.set(cKey, newCat.id);
+          }
+        }
+
+        let unitId = defaultUnit?.id || '00000000-0000-0000-0000-000000000020';
+        if (item.unitName?.trim()) {
+          const uKey = item.unitName.trim().toLowerCase();
+          if (unitMap.has(uKey)) {
+            unitId = unitMap.get(uKey)!;
+          }
+        }
+
+        const existingProduct = await this.prisma.product.findFirst({
+          where: {
+            businessId,
+            OR: [
+              { sku },
+              ...(barcode ? [{ barcode }] : []),
+            ],
+          },
+        });
+
+        if (existingProduct) {
+          await this.prisma.product.update({
+            where: { id: existingProduct.id },
+            data: {
+              name: cleanName,
+              salePrice,
+              purchasePrice,
+              ...(categoryId ? { categoryId } : {}),
+              minStock,
+            },
+          });
+
+          if (initialStock > 0 && targetBranchId) {
+            await this.prisma.inventory.upsert({
+              where: {
+                branchId_productId: {
+                  branchId: targetBranchId,
+                  productId: existingProduct.id,
+                },
+              },
+              create: {
+                businessId,
+                branchId: targetBranchId,
+                productId: existingProduct.id,
+                quantity: initialStock,
+              },
+              update: {
+                quantity: initialStock,
+              },
+            });
+          }
+        } else {
+          const newProduct = await this.prisma.product.create({
+            data: {
+              businessId,
+              branchId: targetBranchId || null,
+              name: cleanName,
+              sku,
+              barcode,
+              categoryId,
+              unitId,
+              purchasePrice,
+              salePrice,
+              minStock,
+              status: 'active',
+            },
+          });
+
+          if (initialStock > 0 && targetBranchId) {
+            await this.prisma.inventory.create({
+              data: {
+                businessId,
+                branchId: targetBranchId,
+                productId: newProduct.id,
+                quantity: initialStock,
+              },
+            });
+          }
+        }
+
+        importedCount++;
+      } catch (e: any) {
+        errors.push(`Qator ${i + 1} (${item.name}): ${e.message}`);
+        skippedCount++;
+      }
+    }
+
+    return {
+      success: true,
+      total: items.length,
+      imported: importedCount,
+      skipped: skippedCount,
+      errors,
+    };
+  }
 }

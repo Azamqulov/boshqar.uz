@@ -36,20 +36,34 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    // Check if user is SuperAdmin or owner of the business (SuperAdmin & Owner have all permissions)
+    // 1. SuperAdmins have all permissions
     if (user.isSuperAdmin) {
       return true;
     }
 
+    // 2. Check pre-resolved permissions from JwtStrategy (0ms in-memory verification)
+    const userPermissions: string[] = Array.isArray(user.permissions) ? user.permissions : [];
+    if (userPermissions.includes('*') || userPermissions.includes('ALL') || userPermissions.includes(requiredPermission)) {
+      return true;
+    }
+
+    // 3. Check if user is owner of the business in the pre-resolved context
+    const isVerifiedOwner = (user as any).isOwner || (user.roleId && ['owner', 'admin'].includes(String(user.roleId).toLowerCase()));
+    if (isVerifiedOwner) {
+      return true;
+    }
+
+    // 4. DB Fallback (only if pre-resolved context was incomplete)
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
+      select: { ownerId: true },
     });
 
     if (business && business.ownerId === user.userId) {
       return true;
     }
 
-    // Check business_user role and permissions
+    // Check business_user role and permissions from DB
     const businessUser = await this.prisma.businessUser.findUnique({
       where: {
         businessId_userId: {

@@ -45,6 +45,12 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
           }
           return Promise.resolve(null);
         }),
+        findMany: jest.fn().mockImplementation(({ where }) => {
+          if (where?.id?.in?.includes('prod-100') && where.businessId === 'tenant-a') {
+            return Promise.resolve([mockProduct]);
+          }
+          return Promise.resolve([]);
+        }),
         findUnique: jest.fn().mockResolvedValue(mockProduct),
       },
       service: {
@@ -53,6 +59,7 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
       },
       inventory: {
         findUnique: jest.fn().mockResolvedValue(mockInventory),
+        findMany: jest.fn().mockResolvedValue([mockInventory]),
         update: jest.fn(),
       },
       inventoryTransaction: {
@@ -60,6 +67,7 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
       },
       paymentMethod: {
         findFirst: jest.fn().mockResolvedValue({ id: 'pm-1', name: 'Naqd' }),
+        findMany: jest.fn().mockResolvedValue([{ id: 'pm-1', name: 'Naqd' }]),
       },
       payment: {
         create: jest.fn(),
@@ -214,6 +222,12 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
   });
 
   it('should throw ConflictException when stock is insufficient', async () => {
+    prisma.inventory.findMany.mockResolvedValue([
+      {
+        ...mockInventory,
+        quantity: 1, // Only 1 left
+      },
+    ]);
     prisma.inventory.findUnique.mockResolvedValue({
       ...mockInventory,
       quantity: 1, // Only 1 left

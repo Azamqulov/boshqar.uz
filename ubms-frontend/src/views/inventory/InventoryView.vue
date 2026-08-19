@@ -170,7 +170,7 @@ const getErrorMessage = (err: any, defaultMsg: string) => {
 
 const viewMode = usePersistentViewMode('inventory', 'table');
 const activeStatusFilter = ref<'all' | 'low'>('all');
-const loading = ref(false);
+const loading = ref(dataStore.inventory.length === 0);
 const submitting = ref(false);
 const searchQuery = ref('');
 const inventory = computed(() => dataStore.inventory);

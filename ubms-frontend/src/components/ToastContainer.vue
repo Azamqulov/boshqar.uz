@@ -1,44 +1,72 @@
 <template>
-  <div class="fixed top-4 right-4 z-50 flex flex-col space-y-2.5 max-w-sm w-full pointer-events-none">
-    <transition-group name="toast">
-      <div
-        v-for="t in toasts"
-        :key="t.id"
-        class="pointer-events-auto p-4 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-start space-x-3 transition-all"
-        :class="[
-          t.type === 'success'
-            ? 'bg-white/95 text-emerald-900 border-emerald-500/40 shadow-emerald-500/10 dark:bg-slate-900/95 dark:border-emerald-500/40 dark:text-emerald-300 dark:shadow-emerald-950/40'
-            : t.type === 'error'
-            ? 'bg-white/95 text-rose-900 border-rose-500/40 shadow-rose-500/10 dark:bg-slate-900/95 dark:border-rose-500/40 dark:text-rose-300 dark:shadow-rose-950/40'
-            : t.type === 'warning'
-            ? 'bg-white/95 text-amber-900 border-amber-500/40 shadow-amber-500/10 dark:bg-slate-900/95 dark:border-amber-500/40 dark:text-amber-300 dark:shadow-amber-950/40'
-            : 'bg-white/95 text-blue-900 border-blue-500/40 shadow-blue-500/10 dark:bg-slate-900/95 dark:border-blue-500/40 dark:text-blue-300 dark:shadow-blue-950/40'
-        ]"
-      >
-        <!-- Icon -->
-        <div class="flex-shrink-0 mt-0.5">
-          <CheckCircle2 v-if="t.type === 'success'" class="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-          <AlertCircle v-else-if="t.type === 'error'" class="w-5 h-5 text-rose-500 dark:text-rose-400" />
-          <AlertTriangle v-else-if="t.type === 'warning'" class="w-5 h-5 text-amber-500 dark:text-amber-400" />
-          <Info v-else class="w-5 h-5 text-blue-500 dark:text-blue-400" />
-        </div>
-
-        <!-- Content -->
-        <div class="flex-1 min-w-0">
-          <h4 v-if="t.title" class="font-bold text-xs text-slate-900 dark:text-white">{{ t.title }}</h4>
-          <p class="text-xs text-slate-700 dark:text-slate-200 mt-0.5 leading-relaxed">{{ t.message }}</p>
-        </div>
-
-        <!-- Close Button -->
-        <button
-          @click="remove(t.id)"
-          class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+  <Teleport to="body">
+    <div
+      class="fixed top-4 right-4 z-[999999999] flex flex-col space-y-2.5 max-w-sm w-[calc(100vw-2rem)] sm:w-full pointer-events-none"
+      style="z-index: 999999999;"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <transition-group name="toast">
+        <div
+          v-for="t in toasts"
+          :key="t.id"
+          role="alert"
+          class="pointer-events-auto p-4 rounded-2xl border shadow-2xl flex items-start space-x-3 transition-all duration-200 transform select-none"
+          :class="[
+            t.type === 'success'
+              ? 'bg-white dark:bg-slate-900 border-emerald-500/40 text-emerald-950 dark:text-emerald-200 shadow-emerald-500/10 ring-1 ring-emerald-500/20'
+              : t.type === 'error'
+              ? 'bg-white dark:bg-slate-900 border-rose-500/40 text-rose-950 dark:text-rose-200 shadow-rose-500/10 ring-1 ring-rose-500/20'
+              : t.type === 'warning'
+              ? 'bg-white dark:bg-slate-900 border-amber-500/40 text-amber-950 dark:text-amber-200 shadow-amber-500/10 ring-1 ring-amber-500/20'
+              : 'bg-white dark:bg-slate-900 border-blue-500/40 text-blue-950 dark:text-blue-200 shadow-blue-500/10 ring-1 ring-blue-500/20'
+          ]"
         >
-          <X class="w-4 h-4" />
-        </button>
-      </div>
-    </transition-group>
-  </div>
+          <!-- Type-specific Icon Chip -->
+          <div
+            class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            :class="[
+              t.type === 'success'
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                : t.type === 'error'
+                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                : t.type === 'warning'
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+            ]"
+          >
+            <CheckCircle2 v-if="t.type === 'success'" class="w-5 h-5" />
+            <AlertCircle v-else-if="t.type === 'error'" class="w-5 h-5" />
+            <AlertTriangle v-else-if="t.type === 'warning'" class="w-5 h-5" />
+            <Info v-else class="w-5 h-5" />
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0 pt-0.5">
+            <h4
+              v-if="t.title"
+              class="font-black text-xs text-slate-900 dark:text-white leading-tight mb-0.5 tracking-tight"
+            >
+              {{ t.title }}
+            </h4>
+            <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed break-words">
+              {{ t.message }}
+            </p>
+          </div>
+
+          <!-- Close Button -->
+          <button
+            type="button"
+            @click="remove(t.id)"
+            class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
+            title="Yopish"
+          >
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </transition-group>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

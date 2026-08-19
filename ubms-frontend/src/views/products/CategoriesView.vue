@@ -43,32 +43,12 @@
       </div>
     </div>
 
-    <!-- Quick Stats Cards (AppStatCard) -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <AppStatCard
-        title="Jami Kategoriyalar"
-        :value="`${categories.length} ta`"
-        subtitle="Mavjud toifalar soni"
-        :icon="FolderTree"
-        variant="blue"
-      />
-
-      <AppStatCard
-        title="Mahsulotli Kategoriyalar"
-        :value="`${activeCategoriesCount} ta`"
-        subtitle="Faol tovarlar biriktirilgan"
-        :icon="CheckCircle2"
-        variant="emerald"
-      />
-
-      <AppStatCard
-        title="Biriktirilgan Mahsulotlar"
-        :value="`${totalAssociatedProducts} ta`"
-        subtitle="Kategoriyalardagi tovarlar"
-        :icon="Package"
-        variant="amber"
-      />
-    </div>
+    <!-- Quick Stats Cards Component -->
+    <CategoryStatsCards
+      :total-count="categories.length"
+      :active-count="activeCategoriesCount"
+      :associated-products-count="totalAssociatedProducts"
+    />
 
     <!-- Search, Filters & View Mode Toggles -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -114,7 +94,7 @@
       </div>
     </div>
 
-    <!-- Loading State with Rotating Sync Icon -->
+    <!-- Loading State -->
     <SkeletonLoader v-if="loading" variant="table" :rows="6" />
 
     <!-- Empty State -->
@@ -126,165 +106,23 @@
       </p>
     </div>
 
-    <!-- 1. Table View -->
-    <div v-else-if="viewMode === 'table'" class="glass-card rounded-2xl overflow-hidden shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-100/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider font-semibold">
-            <tr>
-              <th class="py-3.5 px-4">Kategoriya Nomi</th>
-              <th class="py-3.5 px-4">Rang Tusi</th>
-              <th class="py-3.5 px-4">Mahsulotlar Soni</th>
-              <th class="py-3.5 px-4 text-center">Holati</th>
-              <th class="py-3.5 px-4 text-right">Amallar</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
-            <tr
-              v-for="cat in pagination.paginatedItems.value"
-              :key="cat.id"
-              class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group"
-            >
-              <!-- Name & Emoji -->
-              <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700 overflow-hidden"
-                    :style="{ backgroundColor: (cat.color || '#10b981') + '18', color: cat.color || '#10b981' }"
-                  >
-                    <CategoryIcon :icon="cat.icon" iconClass="w-5 h-5" />
-                  </div>
-                  <div class="min-w-0">
-                    <span class="block text-slate-900 dark:text-white font-bold text-sm truncate">{{ cat.name }}</span>
-                    <span v-if="cat.description" class="text-[11px] text-slate-400 truncate block">{{ cat.description }}</span>
-                  </div>
-                </div>
-              </td>
+    <!-- 1. Table View Component -->
+    <CategoryTableView
+      v-else-if="viewMode === 'table'"
+      :categories="pagination.paginatedItems.value"
+      :get-product-count="getProductCount"
+      @edit="editCategory"
+      @delete="confirmDeleteCategory"
+    />
 
-              <!-- Color Badge -->
-              <td class="py-3.5 px-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono"
-                  :style="{ backgroundColor: (cat.color || '#10b981') + '15', color: cat.color || '#10b981' }"
-                >
-                  <span class="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" :style="{ backgroundColor: cat.color || '#10b981' }"></span>
-                  <span>{{ cat.color || '#10b981' }}</span>
-                </span>
-              </td>
-
-              <!-- Product Count -->
-              <td class="py-3.5 px-4 font-mono font-bold">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs">
-                  <Package class="w-3.5 h-3.5 text-slate-400" />
-                  <span>{{ getProductCount(cat.id) }} ta tovar</span>
-                </span>
-              </td>
-
-              <!-- Status -->
-              <td class="py-3.5 px-4 text-center">
-                <span
-                  class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
-                  :class="getProductCount(cat.id) > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700'"
-                >
-                  {{ getProductCount(cat.id) > 0 ? 'Faol (Mahsulotli)' : 'Bo\'sh' }}
-                </span>
-              </td>
-
-              <!-- Actions -->
-              <td class="py-3.5 px-4 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    type="button"
-                    @click="editCategory(cat)"
-                    class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                    title="Tahrirlash"
-                  >
-                    <Edit2 class="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    @click="confirmDeleteCategory(cat)"
-                    class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                    title="O'chirish"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 2. Grid / Cards View -->
-    <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      <div
-        v-for="cat in pagination.paginatedItems.value"
-        :key="cat.id"
-        class="glass-card rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition group border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90"
-      >
-        <div>
-          <!-- Header Bar with Color Pill & Icon -->
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div class="flex items-center gap-2.5">
-              <div
-                class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-slate-200/80 dark:border-slate-700"
-                :style="{ backgroundColor: (cat.color || '#10b981') + '20', color: cat.color || '#10b981' }"
-              >
-                <CategoryIcon :icon="cat.icon" iconClass="w-5 h-5" />
-              </div>
-              <div>
-                <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1">
-                  {{ cat.name }}
-                </h4>
-                <span class="text-[11px] text-slate-400 block font-mono">
-                  {{ getProductCount(cat.id) }} ta mahsulot
-                </span>
-              </div>
-            </div>
-
-            <!-- Color dot -->
-            <span
-              class="w-3 h-3 rounded-full shrink-0 shadow-sm mt-1"
-              :style="{ backgroundColor: cat.color || '#10b981' }"
-              :title="cat.color || '#10b981'"
-            ></span>
-          </div>
-
-          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs flex justify-between items-center">
-            <span class="text-slate-400">Holat:</span>
-            <span
-              class="font-bold text-[11px]"
-              :class="getProductCount(cat.id) > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'"
-            >
-              {{ getProductCount(cat.id) > 0 ? 'Faol' : 'Bo\'sh' }}
-            </span>
-          </div>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <span class="text-[10px] text-slate-400 font-mono font-bold">{{ cat.color || '#10b981' }}</span>
-
-          <div class="flex items-center gap-1">
-            <button
-              @click="editCategory(cat)"
-              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Tahrirlash"
-            >
-              <Edit2 class="w-4 h-4" />
-            </button>
-            <button
-              @click="confirmDeleteCategory(cat)"
-              class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-              title="O'chirish"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 2. Grid / Cards View Component -->
+    <CategoryGridView
+      v-else-if="viewMode === 'grid'"
+      :categories="pagination.paginatedItems.value"
+      :get-product-count="getProductCount"
+      @edit="editCategory"
+      @delete="confirmDeleteCategory"
+    />
 
     <!-- Pagination -->
     <AppPagination
@@ -295,172 +133,19 @@
       item-name="kategoriya"
     />
 
-    <!-- Create / Edit Category Modal (Teleport to body) -->
-    <Teleport to="body">
-      <div v-if="isFormOpen" @click.self="closeForm" class="modal-overlay">
-        <div class="modal-container max-w-lg" @click.stop>
-          <!-- Modal Header -->
-          <div class="modal-header pb-2.5 border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-2.5">
-              <div
-                class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-inner transition transform hover:scale-105"
-                :style="{ backgroundColor: (catForm.color || '#10b981') + '20', color: catForm.color || '#10b981', border: `1.5px solid ${catForm.color || '#10b981'}40` }"
-              >
-                <CategoryIcon :icon="catForm.icon || 'Package'" iconClass="w-4.5 h-4.5" />
-              </div>
-              <div>
-                <h3 class="text-sm font-black text-slate-900 dark:text-white tracking-tight">
-                  {{ editingCatId ? 'Kategoriyani Tahrirlash' : 'Yangi Kategoriya Yaratish' }}
-                </h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400">Nomi, belgisi va rangini tanlang</p>
-              </div>
-            </div>
-            <button @click="closeForm" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-
-          <!-- Modal Body (Compact & No Scroll) -->
-          <div class="modal-body p-4 space-y-3 text-xs">
-            
-            <!-- 1. Tezkor Shablonlar -->
-            <div class="space-y-1.5">
-              <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                Tezkor Shablonlar:
-              </span>
-              <div class="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  v-for="preset in fastCategoryPresets"
-                  :key="preset.name"
-                  @click="applyPreset(preset)"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 border border-slate-200/80 dark:border-slate-700 hover:border-emerald-500/40 text-slate-700 dark:text-slate-200 text-[11px] font-semibold transition btn-interactive"
-                >
-                  <CategoryIcon :icon="preset.icon" iconClass="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span>{{ preset.name }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Form Fields -->
-            <form @submit.prevent="saveCategory" class="space-y-3">
-              
-              <!-- 2. Kategoriya Nomi -->
-              <div>
-                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1 text-[11px]">
-                  Kategoriya Nomi *
-                </label>
-                <input
-                  v-model="catForm.name"
-                  required
-                  placeholder="Masalan: Pitsa & Fast Food, Ichimliklar, Shirinliklar..."
-                  class="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 font-bold shadow-inner"
-                />
-              </div>
-
-              <!-- 3. Ikonka va Rang Bo'limi -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
-                
-                <!-- SVG Ikonka Tanlash -->
-                <div class="space-y-1.5">
-                  <div class="flex items-center justify-between">
-                    <label class="font-bold text-slate-700 dark:text-slate-300 text-[11px]">SVG Ikonka</label>
-                    <span class="text-[10px] text-slate-400 font-mono">{{ catForm.icon || 'Package' }}</span>
-                  </div>
-                  <div class="grid grid-cols-4 gap-1">
-                    <button
-                      type="button"
-                      v-for="item in availableCategoryIcons"
-                      :key="item.name"
-                      @click="catForm.icon = item.name"
-                      :title="item.label"
-                      class="h-8 rounded-lg border transition flex items-center justify-center btn-interactive"
-                      :class="catForm.icon === item.name ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600'"
-                    >
-                      <component :is="item.component" class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Rang Tanlash -->
-                <div class="space-y-1.5">
-                  <div class="flex items-center justify-between">
-                    <label class="font-bold text-slate-700 dark:text-slate-300 text-[11px]">Rang Tusi</label>
-                    <span class="text-[10px] font-mono text-slate-400">{{ catForm.color || '#10b981' }}</span>
-                  </div>
-                  <div class="grid grid-cols-5 gap-1.5 pt-0.5">
-                    <button
-                      type="button"
-                      v-for="color in quickColors"
-                      :key="color"
-                      @click="catForm.color = color"
-                      class="w-6 h-6 rounded-lg border-2 transition transform hover:scale-110 shadow-xs flex items-center justify-center"
-                      :class="catForm.color === color ? 'border-slate-900 dark:border-white ring-2 ring-emerald-500/40 scale-105' : 'border-transparent'"
-                      :style="{ backgroundColor: color }"
-                    >
-                      <CheckCircle2 v-if="catForm.color === color" class="w-3 h-3 text-white drop-shadow" />
-                    </button>
-                    <label
-                      class="w-6 h-6 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-emerald-500 transition bg-white dark:bg-slate-900 text-[10px]"
-                      title="Maxsus rang"
-                    >
-                      <input
-                        type="color"
-                        v-model="catForm.color"
-                        class="w-0 h-0 opacity-0"
-                      />
-                      <span>🎨</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 4. Kategoriya Prevyusi (Jonli Ko'rinishi) -->
-              <div class="p-2.5 rounded-xl border flex items-center justify-between transition" :style="{ backgroundColor: (catForm.color || '#10b981') + '10', borderColor: (catForm.color || '#10b981') + '30' }">
-                <div class="flex items-center gap-2">
-                  <div
-                    class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
-                    :style="{ backgroundColor: (catForm.color || '#10b981') + '25', color: catForm.color || '#10b981' }"
-                  >
-                    <CategoryIcon :icon="catForm.icon || 'Package'" iconClass="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <span class="font-black text-xs text-slate-900 dark:text-white block">{{ catForm.name || "Kategoriya Nomi" }}</span>
-                    <span class="text-[10px] text-slate-400">Katalog va POS kassada shu tarzda ko'rinadi</span>
-                  </div>
-                </div>
-                <span
-                  class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider"
-                  :style="{ backgroundColor: (catForm.color || '#10b981') + '20', color: catForm.color || '#10b981' }"
-                >
-                  Faol
-                </span>
-              </div>
-
-              <!-- 5. Tugmalar -->
-              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  @click="closeForm"
-                  class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition"
-                >
-                  Bekor qilish
-                </button>
-                <AppButton
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  class="px-6"
-                  :loading="saving"
-                >
-                  {{ saving ? 'Saqlanmoqda...' : (editingCatId ? 'Kategoriyani Yangilash' : 'Kategoriyani Saqlash') }}
-                </AppButton>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <!-- Create / Edit Category Modal Component -->
+    <CategoryFormModal
+      :is-open="isFormOpen"
+      :editing-cat-id="editingCatId"
+      :cat-form="catForm"
+      :saving="saving"
+      :available-category-icons="availableCategoryIcons"
+      :fast-category-presets="fastCategoryPresets"
+      :quick-colors="quickColors"
+      @close="closeForm"
+      @save="saveCategory"
+      @apply-preset="applyPreset"
+    />
 
     <!-- Delete Confirmation Modal -->
     <AppConfirmDialog
@@ -481,23 +166,24 @@ import api, { getErrorMessage } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
-import { getCategoryIcon } from '../../composables/useCategoryIcon';
-import CategoryIcon from '../../components/CategoryIcon.vue';
 import AppInput from '../../components/AppInput.vue';
 import AppButton from '../../components/AppButton.vue';
-import AppStatCard from '../../components/AppStatCard.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import { usePagination } from '../../composables/usePagination';
+import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
+
+import CategoryStatsCards from './components/CategoryStatsCards.vue';
+import CategoryTableView from './components/CategoryTableView.vue';
+import CategoryGridView from './components/CategoryGridView.vue';
+import CategoryFormModal from './components/CategoryFormModal.vue';
+
 import {
   FolderTree,
   Plus,
   Search,
-  Edit2,
-  Trash2,
-  X,
   Package,
   Apple,
   UtensilsCrossed,
@@ -514,11 +200,8 @@ import {
   BookOpen,
   Laptop,
   Wrench,
-  CheckCircle2,
   ArrowLeft,
 } from 'lucide-vue-next';
-
-import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 
 interface Category {
   id: string;
@@ -533,7 +216,7 @@ const authStore = useAuthStore();
 const dataStore = useDataStore();
 const toast = useToast();
 
-const loading = ref(false);
+const loading = ref(dataStore.categories.length === 0);
 const saving = ref(false);
 const searchQuery = ref('');
 const activeFilter = ref<'all' | 'with_products' | 'empty'>('all');

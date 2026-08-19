@@ -23,7 +23,7 @@ defineEmits<{ (e: 'click', event: MouseEvent): void }>();
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="inline-flex items-center justify-center gap-2 rounded-xl font-bold transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed select-none"
+    class="inline-flex items-center justify-center gap-2 rounded-xl font-bold transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none"
     :class="[
       // Variants
       variant === 'primary' && 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25',
@@ -38,7 +38,7 @@ defineEmits<{ (e: 'click', event: MouseEvent): void }>();
       size === 'md' && 'px-4 py-2.5 text-xs',
       size === 'lg' && 'px-6 py-3.5 text-sm',
     ]"
-    @click="(e) => $emit('click', e)"
+    @click="(e) => { if (disabled || loading) { e.preventDefault(); e.stopPropagation(); return; } $emit('click', e); }"
   >
     <component :is="icon" v-if="icon && !loading" class="w-4 h-4 flex-shrink-0" />
     <span
