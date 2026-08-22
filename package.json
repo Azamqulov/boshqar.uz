@@ -1,0 +1,22 @@
+{
+  "name": "boshqar-uz-workspace",
+  "version": "2.0.0",
+  "private": true,
+  "description": "boshqar.uz Universal Business Management System Monorepo",
+  "workspaces": [
+    "ubms-backend",
+    "ubms-frontend",
+    "ubms-telegram-bot"
+  ],
+  "scripts": {
+    "dev:backend": "npm --prefix ubms-backend run start:dev",
+    "dev:frontend": "npm --prefix ubms-frontend run dev",
+    "dev:bot": "npm --prefix ubms-telegram-bot run dev",
+    "build:backend": "npm --prefix ubms-backend run build",
+    "build:frontend": "npm --prefix ubms-frontend run build",
+    "build:bot": "npm --prefix ubms-telegram-bot run build",
+    "build:all": "npm run build:backend && npm run build:frontend && npm run build:bot",
+    "test:backend": "npm --prefix ubms-backend run test",
+    "test": "npm run test:backend"
+  }
+}

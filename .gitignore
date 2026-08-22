@@ -50,3 +50,7 @@ backups/
 *.dump
 *.sql
 *.snapshot.json
+
+# Binaries
+stripe.exe
+*.exe

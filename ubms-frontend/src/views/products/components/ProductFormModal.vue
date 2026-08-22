@@ -268,7 +268,7 @@
               <div v-else key="step-3" class="space-y-4">
                 <!-- Rasm Yuklash (Zamonaviy Dropzone) -->
                 <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-3">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
                     <span class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                       <ImageIcon class="w-3.5 h-3.5 text-emerald-500" />
                       <span>Mahsulot Rasmi (Ixtiyoriy)</span>
@@ -291,6 +291,15 @@
                       >
                         <LinkIcon class="w-3 h-3" />
                         <span>Havola</span>
+                      </button>
+                      <button
+                        type="button"
+                        @click="switchToGalleryMode"
+                        class="px-2 py-0.5 rounded-md transition flex items-center gap-1"
+                        :class="imageInputMode === 'gallery' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                      >
+                        <Sparkles class="w-3 h-3" />
+                        <span>Namunalar galereyasi</span>
                       </button>
                     </div>
                   </div>
@@ -343,7 +352,7 @@
                   </div>
 
                   <!-- URL Mode -->
-                  <div v-else class="space-y-2">
+                  <div v-else-if="imageInputMode === 'url'" class="space-y-2">
                     <div class="flex items-center gap-1.5">
                       <input
                         v-model="form.imageUrl"
@@ -373,6 +382,63 @@
                       >
                         {{ preset.name }}
                       </button>
+                    </div>
+                  </div>
+
+                  <!-- Gallery / Google Image Mode -->
+                  <div v-else-if="imageInputMode === 'gallery'" class="space-y-3">
+                    <div class="flex items-center gap-1.5">
+                      <div class="relative flex-1">
+                        <input
+                          v-model="gallerySearchQuery"
+                          @keyup.enter="fetchSampleImages(gallerySearchQuery)"
+                          placeholder="Mahsulot nomi bo'yicha Google'dan qidirish (masalan: Cola, Snickers, Lavash)..."
+                          class="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                      </div>
+                      <button
+                        type="button"
+                        @click="fetchSampleImages(gallerySearchQuery)"
+                        class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1 shrink-0"
+                      >
+                        <Sparkles v-if="!isSearchingImages" class="w-3.5 h-3.5" />
+                        <span v-else class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Izlash</span>
+                      </button>
+                    </div>
+
+
+
+                    <!-- Image Gallery Grid -->
+                    <div v-if="isSearchingImages" class="py-6 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
+                      <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Google va AI bazasidan HD rasmlar qidirilmoqda...</span>
+                    </div>
+
+                    <div v-else-if="sampleImages.length > 0" class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1 custom-scrollbar">
+                      <div
+                        v-for="img in sampleImages"
+                        :key="img.id"
+                        @click="selectSampleImage(img.url)"
+                        class="group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all aspect-square bg-slate-100 dark:bg-slate-900"
+                        :class="form.imageUrl === img.url ? 'border-emerald-500 ring-2 ring-emerald-500/30 shadow-md scale-95' : 'border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 hover:scale-102'"
+                      >
+                        <img :src="img.url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span class="text-[9px] font-black text-white px-1.5 py-0.5 rounded bg-emerald-500">Tanlash</span>
+                        </div>
+                        <div v-if="form.imageUrl === img.url" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                          <CheckCircle2 class="w-3.5 h-3.5" />
+                        </div>
+                        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                          <p class="text-[9px] font-bold text-white truncate text-center">{{ img.title }}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div v-else class="py-4 text-center text-slate-400 text-xs">
+                      Ushbu so'rov bo'yicha rasmlar topilmadi. Boshqa mahsulot nomini kiritib ko'ring.
                     </div>
                   </div>
 
@@ -462,6 +528,7 @@
 </template>
 
 <script setup lang="ts">
+import api from '@/services/api';
 import { ref, computed, watch } from 'vue';
 import {
   X,
@@ -475,6 +542,7 @@ import {
   UploadCloud,
   Link as LinkIcon,
   Sparkles,
+  Search,
   CheckCircle2,
   Trash2,
   ArrowRight,
@@ -511,8 +579,15 @@ const currentStep = ref(1);
 watch(() => props.isOpen, (open) => {
   if (open) {
     currentStep.value = 1;
+    gallerySearchQuery.value = props.form.name || '';
   }
 });
+
+watch(() => props.form.name, (newName) => {
+  if (newName) {
+    gallerySearchQuery.value = newName;
+  }
+}, { immediate: true });
 
 const stepTitle = computed(() => {
   if (currentStep.value === 1) return "Asosiy parametrlar va o'lchov birligi";
@@ -556,7 +631,7 @@ const selectedUnitShortName = computed(() => {
 
 const isDecimalUnit = computed(() => {
   return selectedUnit.value?.allowDecimal === true || 
-    ['kg', 'l', 'g', 'm', 'ml', 'kv.m'].includes(selectedUnitShortName.value.toLowerCase());
+    ['kg', 'g', 'l', 'ml', 'm'].includes(selectedUnitShortName.value.toLowerCase());
 });
 
 const validateStep1 = () => {
@@ -577,9 +652,19 @@ const validateStep2 = () => {
 
 const goToNextStep = () => {
   if (currentStep.value === 1) {
-    if (validateStep1()) currentStep.value = 2;
+    if (validateStep1()) {
+      currentStep.value = 2;
+    }
   } else if (currentStep.value === 2) {
-    if (validateStep2()) currentStep.value = 3;
+    if (validateStep2()) {
+      currentStep.value = 3;
+      if (!gallerySearchQuery.value && props.form.name) {
+        gallerySearchQuery.value = props.form.name;
+        fetchSampleImages();
+      } else if (sampleImages.value.length === 0) {
+        fetchSampleImages();
+      }
+    }
   }
 };
 
@@ -595,8 +680,41 @@ const handleFinalSubmit = () => {
   emit('save');
 };
 
-const imageInputMode = ref<'upload' | 'url'>('upload');
+const imageInputMode = ref<'upload' | 'url' | 'gallery'>('gallery');
 const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const gallerySearchQuery = ref('');
+const isSearchingImages = ref(false);
+const sampleImages = ref<Array<{ id: string; title: string; category: string; url: string }>>([]);
+
+const fetchSampleImages = async (queryStr?: string) => {
+  const query = queryStr !== undefined ? queryStr : (gallerySearchQuery.value || props.form.name || '');
+  gallerySearchQuery.value = query;
+  isSearchingImages.value = true;
+  try {
+    const { data } = await api.get('/products/search-images', { params: { query } });
+    if (data && data.images) {
+      sampleImages.value = data.images;
+    }
+  } catch (err) {
+    console.warn('Sample image search error:', err);
+  } finally {
+    isSearchingImages.value = false;
+  }
+};
+
+const switchToGalleryMode = () => {
+  imageInputMode.value = 'gallery';
+  if (!gallerySearchQuery.value) {
+    gallerySearchQuery.value = props.form.name || '';
+  }
+  fetchSampleImages();
+};
+
+const selectSampleImage = (url: string) => {
+  props.form.imageUrl = url;
+  toast.success("Namunaviy rasm tanlandi!", "Rasm biriktirildi");
+};
 
 const triggerFileInput = () => {
   fileInputRef.value?.click();
@@ -608,6 +726,7 @@ const handleImageFileUpload = (e: Event) => {
   const reader = new FileReader();
   reader.onload = (event) => {
     props.form.imageUrl = event.target?.result as string;
+    toast.success("Fayl muvaffaqiyatli yuklandi!");
   };
   reader.readAsDataURL(file);
 };

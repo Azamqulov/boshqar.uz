@@ -103,6 +103,12 @@ export class ProductsController {
     return this.productsService.deleteCategory(businessId, id);
   }
 
+  @Get('search-images')
+  @RequirePermission('products.view')
+  searchProductImages(@Query('query') query: string) {
+    return this.productsService.searchProductImages(query);
+  }
+
   @Get(':id')
   @RequirePermission('products.view')
   findOne(

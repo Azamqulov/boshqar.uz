@@ -161,24 +161,24 @@ export function useOfflinePOS() {
     isSyncing.value = false;
 
     if (successCount > 0) {
-      toast.success(`✅ ${successCount} ta oflayn chek bazaga muvaffaqiyatli yuklandi!`);
+      toast.success(`${successCount} ta oflayn chek bazaga muvaffaqiyatli yuklandi!`);
       window.dispatchEvent(new CustomEvent('ubms:offline-orders-synced', { detail: { count: successCount } }));
     }
 
     if (remainingQueue.length > 0) {
-      toast.warning(`⚠️ ${remainingQueue.length} ta chekni yuklashda xatolik bo'ldi, qayta uriniladi.`);
+      toast.warning(`${remainingQueue.length} ta chekni yuklashda xatolik bo'ldi, qayta uriniladi.`);
     }
   };
 
   const handleOnline = (customApi?: any) => {
     isOnline.value = true;
-    toast.info('🌐 Internet aloqasi tiklandi! Oflayn ma\'lumotlar sinxronizatsiya qilinmoqda...');
+    toast.info('Internet aloqasi tiklandi! Oflayn ma\'lumotlar sinxronizatsiya qilinmoqda...');
     syncOfflineOrders(customApi);
   };
 
   const handleOffline = () => {
     isOnline.value = false;
-    toast.warning('📴 Internet uzildi. Kassa avtomatik oflayn rejimga o\'tdi (Savdo qilaverishingiz mumkin).');
+    toast.warning('Internet uzildi. Kassa avtomatik oflayn rejimga o\'tdi (Savdo qilaverishingiz mumkin).');
   };
 
   const setupListeners = (customApi?: any) => {

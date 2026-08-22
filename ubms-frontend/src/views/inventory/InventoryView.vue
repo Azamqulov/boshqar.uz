@@ -57,7 +57,7 @@
         </div>
 
         <!-- View Mode Toggle (Hidden on mobile < sm) -->
-        <AppViewToggle class="hidden sm:inline-flex shrink-0" v-model="viewMode" />
+        <AppViewToggle class="inline-flex shrink-0" v-model="viewMode" />
       </div>
     </div>
 

@@ -45,7 +45,7 @@ defineEmits<{
         :max="max"
         :placeholder="placeholder"
         :disabled="disabled"
-        class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white placeholder-slate-400 text-xs px-3.5 py-2.5 outline-none transition duration-200 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full h-[42px] rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white placeholder-slate-400 text-xs px-3.5 outline-none transition duration-200 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
         :class="[
           icon ? 'pl-9' : '',
           error

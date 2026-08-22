@@ -75,7 +75,7 @@
         </div>
         <div>
           <h4 class="font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-            <span>🔒 Kassa Smenasi Ochilmagan</span>
+            <span>Kassa Smenasi Ochilmagan</span>
             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">Stollar bloklangan</span>
           </h4>
           <p class="text-slate-500 dark:text-slate-400 mt-0.5">
@@ -542,7 +542,7 @@ const sendToKitchen = async () => {
     selectedTable.value.status = 'occupied';
     dataStore.invalidate('tables');
     await loadTables(true);
-    toast.success('🔥 Buyurtma oshxonaga (KDS) muvaffaqiyatli yuborildi!', selectedTable.value.name);
+    toast.success('Buyurtma oshxonaga (KDS) muvaffaqiyatli yuborildi!', selectedTable.value.name);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Buyurtmani oshxonaga yuborishda xatolik yuz berdi', 'Xatolik');
   } finally {

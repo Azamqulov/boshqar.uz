@@ -12,7 +12,7 @@ import { validateEnv } from './config/env.validation';
 
 async function bootstrap() {
   validateEnv();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // 1. Request Body Size Limits for File / Image Uploads
   app.use(json({ limit: '20mb' }));

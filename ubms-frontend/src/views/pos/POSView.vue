@@ -446,9 +446,9 @@ const { posSettings } = usePosSettings();
 
 const enabledServiceTypes = computed(() => {
   const list: { key: 'dine_in' | 'takeaway' | 'delivery'; label: string; icon: string }[] = [];
-  if (posSettings.value.allowDineIn) list.push({ key: 'dine_in', label: 'Zalda', icon: '🍽️' });
-  if (posSettings.value.allowTakeaway) list.push({ key: 'takeaway', label: 'Saboy', icon: '🥡' });
-  if (posSettings.value.allowDelivery) list.push({ key: 'delivery', label: 'Dostavka', icon: '🛵' });
+  if (posSettings.value.allowDineIn) list.push({ key: 'dine_in', label: 'Zalda', icon: 'UtensilsCrossed' });
+  if (posSettings.value.allowTakeaway) list.push({ key: 'takeaway', label: 'Saboy', icon: 'ShoppingBag' });
+  if (posSettings.value.allowDelivery) list.push({ key: 'delivery', label: 'Dostavka', icon: 'Truck' });
   return list;
 });
 

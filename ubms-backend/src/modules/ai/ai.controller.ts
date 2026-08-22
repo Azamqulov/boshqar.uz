@@ -43,4 +43,24 @@ export class AiController {
   async getPublicPrompts(@Query('businessId') businessId?: string) {
     return this.aiService.getSuggestedPrompts(businessId);
   }
+
+  @Post('parse-products')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Parse unstructured product prompt, voice note or invoice into catalog table' })
+  async parseProducts(
+    @Body() dto: { prompt: string; businessType?: string },
+    @CurrentBusinessId() businessId: string,
+  ) {
+    return this.aiService.parseProductsPrompt(dto, businessId);
+  }
+
+  @Get('catalog-templates')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get pre-built popular Uzbekistan starter catalogs by business category' })
+  async getCatalogTemplates(@Query('type') type?: string) {
+    return this.aiService.getStarterCatalogTemplates(type);
+  }
 }
+

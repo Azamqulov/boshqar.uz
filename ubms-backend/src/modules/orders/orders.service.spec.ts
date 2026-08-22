@@ -61,6 +61,7 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
         findUnique: jest.fn().mockResolvedValue(mockInventory),
         findMany: jest.fn().mockResolvedValue([mockInventory]),
         update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       inventoryTransaction: {
         create: jest.fn(),

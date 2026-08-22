@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs shrink-0">
+  <div class="relative flex items-center h-[42px] p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs shrink-0">
     <!-- Animated Sliding Background Pill -->
     <div
       v-if="pillStyle"
@@ -11,7 +11,7 @@
       ref="tableBtnRef"
       type="button"
       @click="$emit('update:modelValue', 'table')"
-      class="relative z-10 px-2.5 py-1.5 rounded-lg font-bold transition-colors duration-300 flex items-center gap-1.5 btn-interactive"
+      class="relative z-10 h-full px-3 rounded-lg font-bold transition-colors duration-300 flex items-center justify-center gap-1.5 btn-interactive"
       :class="[
         modelValue === 'table'
           ? 'text-slate-900 dark:text-white font-extrabold'
@@ -20,14 +20,14 @@
       title="Jadval / Ro'yxat ko'rinishi"
     >
       <List class="w-4 h-4" />
-      <span class="hidden sm:inline">Jadval</span>
+      <span>Jadval</span>
     </button>
 
     <button
       ref="gridBtnRef"
       type="button"
       @click="$emit('update:modelValue', 'grid')"
-      class="relative z-10 px-2.5 py-1.5 rounded-lg font-bold transition-colors duration-300 flex items-center gap-1.5 btn-interactive"
+      class="relative z-10 h-full px-3 rounded-lg font-bold transition-colors duration-300 flex items-center justify-center gap-1.5 btn-interactive"
       :class="[
         modelValue === 'grid'
           ? 'text-slate-900 dark:text-white font-extrabold'
@@ -36,7 +36,7 @@
       title="Kartalar ko'rinishi"
     >
       <LayoutGrid class="w-4 h-4" />
-      <span class="hidden sm:inline">Kartalar</span>
+      <span>Kartalar</span>
     </button>
   </div>
 </template>

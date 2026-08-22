@@ -190,8 +190,9 @@
                 <label class="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   2. Obuna Muddati:
                 </label>
-                <span v-if="selectedDiscountPercent > 0" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  🎉 {{ selectedDiscountPercent }}% chegirma qo'llandi!
+                <span v-if="selectedDiscountPercent > 0" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                  <Sparkles class="w-3 h-3 text-emerald-500" />
+                  <span>{{ selectedDiscountPercent }}% chegirma qo'llandi!</span>
                 </span>
               </div>
 

@@ -3,10 +3,10 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface BackupFileInfo {
   filename: string;
@@ -45,13 +45,13 @@ export class BackupService {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const databaseUrl = process.env.DATABASE_URL;
 
-    // A) Try pg_dump if pg_dump is available in system path
+    // A) Try pg_dump safely without shell injection
     if (databaseUrl) {
       try {
         const sqlFilename = `boshqar_backup_${timestamp}.sql`;
         const sqlFilePath = path.join(this.backupDir, sqlFilename);
         
-        await execAsync(`pg_dump "${databaseUrl}" -f "${sqlFilePath}"`);
+        await execFileAsync('pg_dump', ['--dbname', databaseUrl, '-f', sqlFilePath]);
         
         if (fs.existsSync(sqlFilePath)) {
           const stats = fs.statSync(sqlFilePath);

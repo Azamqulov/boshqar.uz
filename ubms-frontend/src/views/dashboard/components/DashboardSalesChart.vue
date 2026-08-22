@@ -162,8 +162,9 @@
           Sof Foyda
         </div>
       </div>
-      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 animate-bounce">
-        👇 Kun ustiga bosing
+      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+        <MousePointerClick class="w-3 h-3" />
+        <span>Kun ustiga bosing</span>
       </span>
     </div>
 
@@ -250,7 +251,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X } from 'lucide-vue-next';
+import { X, MousePointerClick } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
 const props = defineProps<{

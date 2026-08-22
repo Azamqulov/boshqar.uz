@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="products.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+    <div v-if="!products || products.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
       <Package class="w-10 h-10 mx-auto mb-2 opacity-30" />
       <span>Mahsulotlar topilmadi</span>
     </div>
@@ -24,18 +24,18 @@
 
             <span
               class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase backdrop-blur-md shadow-sm"
-              :class="prod.status === 'active' ? 'bg-emerald-500/90 text-white' : 'bg-rose-500/90 text-white'"
+              :class="isProductActive(prod) ? 'bg-emerald-500/90 text-white' : 'bg-rose-500/90 text-white'"
             >
-              {{ prod.status === 'active' ? 'Mavjud' : 'Stop-list' }}
+              {{ isProductActive(prod) ? 'Mavjud' : 'Stop-list' }}
             </span>
           </div>
 
           <div class="space-y-1">
-            <span v-if="prod.category" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              {{ prod.category?.name }}
+            <span v-if="getCategoryName(prod)" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              {{ getCategoryName(prod) }}
             </span>
             <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1">
-              {{ prod.name }}
+              {{ prod.name || 'Nomsiz tovar' }}
             </h4>
             <p v-if="prod.sku" class="text-[11px] font-mono text-slate-500">
               SKU: {{ prod.sku }}
@@ -47,12 +47,12 @@
           <div>
             <div class="flex items-center gap-1.5">
               <span class="text-[10px] text-slate-400 font-semibold">Sotuv Narxi</span>
-              <span v-if="prod.unit?.shortName" class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                1 {{ prod.unit.shortName }}
+              <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                1 {{ getUnitName(prod) }}
               </span>
             </div>
             <span class="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
-              {{ formatCurrency(prod.salePrice) }}
+              {{ formatCurrency(getSalePrice(prod)) }}
             </span>
           </div>
 
@@ -97,4 +97,28 @@ defineEmits<{
 
 const { formatCurrency } = useFormat();
 const { canEdit, canDelete } = usePermissions();
+
+const isProductActive = (prod: any) => {
+  if (prod.status) return prod.status === 'active';
+  if (prod.isActive !== undefined) return prod.isActive !== false;
+  return true;
+};
+
+const getSalePrice = (prod: any) => {
+  return Number(prod.salePrice ?? prod.price ?? 0);
+};
+
+const getCategoryName = (prod: any) => {
+  if (!prod.category) return '';
+  if (typeof prod.category === 'object') return prod.category.name || '';
+  if (typeof prod.category === 'string') return prod.category;
+  return '';
+};
+
+const getUnitName = (prod: any) => {
+  if (prod.unit && typeof prod.unit === 'object') {
+    return prod.unit.shortName || prod.unit.name || 'dona';
+  }
+  return prod.unitName || 'dona';
+};
 </script>

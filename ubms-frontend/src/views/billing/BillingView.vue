@@ -147,7 +147,8 @@ const ALL_AVAILABLE_FEATURES = [
   { key: 'customer_loyalty', label: 'Mijozlar bazasi va Cashback', description: 'Sodiqlik tizimi va mijozlar qarz daftari', icon: Users },
   { key: 'suppliers', label: 'Ta\'minotchilar & Xaridlar', description: 'Ta\'minotchi hisob-kitoblari va partiyalar', icon: Building2 },
   { key: 'ai_assistant', label: 'Boshqar AI Aqlli Yordamchisi', description: 'AI savdo bashorati va biznes maslahatchisi', icon: Sparkles },
-  { key: 'export_reports', label: 'Excel / PDF Hisobotlar', description: 'Barcha hisobotlarni eksport qilish va chop etish', icon: FileText },
+  { key: 'ai_import', label: 'AI Aqlli Mahsulot Kiritish', description: 'AI yordamida tovarlarni 1 marta yozish bilan avtomatik jadvalga kiritish', icon: Sparkles },
+  { key: 'export_reports', label: 'Excel / PDF Hisobotlar & Import', description: 'Excel/1C fayllarni va hisobotlarni eksport/import qilish', icon: FileText },
   { key: 'vip_support', label: '24/7 Shaxsiy VIP Menejer', description: 'Doimiy shaxsiy aloqa va texnik ko\'mak', icon: ShieldCheck },
   { key: 'cloud_backup', label: 'Avtomatik Bulutli Zaxira', description: 'Kunlik xavfsiz cloud backup nusxalari', icon: Lock },
 ];
@@ -269,6 +270,7 @@ const openEditPlanModal = (plan: any) => {
     cloud_backup: true,
     telegram_bot: plan.name !== 'Free',
     ai_assistant: plan.name !== 'Free',
+    ai_import: plan.name !== 'Free',
     vip_support: plan.name === 'Business',
   };
 

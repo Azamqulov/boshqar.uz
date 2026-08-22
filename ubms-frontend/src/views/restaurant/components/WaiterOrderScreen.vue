@@ -72,7 +72,9 @@
           >
             <div class="w-full h-20 rounded-xl bg-slate-200 dark:bg-slate-900 overflow-hidden mb-2 relative">
               <img v-if="prod.imageUrl" :src="prod.imageUrl" class="w-full h-full object-cover group-hover:scale-105 transition" />
-              <div v-else class="w-full h-full flex items-center justify-center text-xl">🍕</div>
+              <div v-else class="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600">
+                <UtensilsCrossed class="w-7 h-7" />
+              </div>
             </div>
 
             <div>
@@ -215,7 +217,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Search, Flame, Receipt, CheckCircle2 } from 'lucide-vue-next';
+import { Search, Flame, Receipt, CheckCircle2, UtensilsCrossed } from 'lucide-vue-next';
 import AppInput from '../../../components/AppInput.vue';
 import { useFormat } from '../../../composables/useFormat';
 

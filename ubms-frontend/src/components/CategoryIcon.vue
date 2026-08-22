@@ -1,6 +1,6 @@
 <template>
   <component :is="resolvedComponent" v-if="resolvedComponent" :class="iconClass || 'w-4 h-4'" />
-  <span v-else :class="iconClass || 'text-base leading-none'">{{ icon || '📦' }}</span>
+  <Package v-else :class="iconClass || 'w-4 h-4'" />
 </template>
 
 <script setup lang="ts">

@@ -11,6 +11,7 @@ const DashboardView = () => import('../views/dashboard/DashboardView.vue');
 const POSView = () => import('../views/pos/POSView.vue');
 const ProductsView = () => import('../views/products/ProductsView.vue');
 const CategoriesView = () => import('../views/products/CategoriesView.vue');
+const AiProductImportView = () => import('../views/products/AiProductImportView.vue');
 const InventoryView = () => import('../views/inventory/InventoryView.vue');
 const WaiterView = () => import('../views/restaurant/WaiterView.vue');
 const KDSView = () => import('../views/restaurant/KDSView.vue');
@@ -81,6 +82,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: DashboardView },
       { path: 'pos', component: POSView },
       { path: 'products', component: ProductsView },
+      { path: 'products/ai-import', component: AiProductImportView },
       { path: 'categories', component: CategoriesView },
       { path: 'products/categories', component: CategoriesView },
       { path: 'inventory', component: InventoryView },
@@ -131,8 +133,21 @@ router.beforeEach((to, _from, next) => {
   const userStr = localStorage.getItem('ubms_user');
   const activeBizStr = localStorage.getItem('ubms_active_business');
 
-  const user = userStr ? JSON.parse(userStr) : null;
-  const activeBiz = activeBizStr ? JSON.parse(activeBizStr) : null;
+  let user: any = null;
+  let activeBiz: any = null;
+  try {
+    user = userStr && userStr !== 'undefined' ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Failed to parse user from localStorage:', e);
+    localStorage.removeItem('ubms_user');
+  }
+
+  try {
+    activeBiz = activeBizStr && activeBizStr !== 'undefined' ? JSON.parse(activeBizStr) : null;
+  } catch (e) {
+    console.error('Failed to parse active business from localStorage:', e);
+    localStorage.removeItem('ubms_active_business');
+  }
 
   const isDemo =
     user?.phone === '+998900000000' ||

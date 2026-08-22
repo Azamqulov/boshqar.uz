@@ -17,7 +17,9 @@
           <div class="min-w-0">
             <h4 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
               <span class="truncate">{{ c.fullName }}</span>
-              <span v-if="c.notes" :title="c.notes" class="p-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400">📝</span>
+              <span v-if="c.notes" :title="c.notes" class="p-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400">
+                <FileText class="w-3 h-3 text-slate-400" />
+              </span>
             </h4>
             <p class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
               {{ c.phone ? formatUzbekPhone(c.phone) : 'Telefon kiritilmagan' }}
@@ -138,9 +140,9 @@
                   <span
                     v-if="c.notes"
                     :title="c.notes"
-                    class="p-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-help"
+                    class="p-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-help"
                   >
-                    📝
+                    <FileText class="w-3 h-3 text-slate-400" />
                   </span>
                 </div>
                 <div v-if="c.notes" class="text-[10px] text-slate-400 line-clamp-1 max-w-xs mt-0.5">
@@ -241,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { Users, Plus, CreditCard, History, Edit2, Trash2 } from 'lucide-vue-next';
+import { Users, Plus, CreditCard, History, Edit2, Trash2, FileText } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 import { formatUzbekPhone } from '../../../composables/usePhoneMask';
 import { usePermissions } from '../../../composables/usePermissions';

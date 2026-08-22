@@ -21,7 +21,7 @@ interface CachedUserAuth {
 
 const userAuthCache = new Map<string, CachedUserAuth>();
 const branchAuthCache = new Map<string, { belongs: boolean; cachedAt: number }>();
-const USER_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+const USER_CACHE_TTL_MS = 10 * 1000; // 10 seconds (responsive security invalidation)
 
 export function invalidateUserAuthCache(userId?: string) {
   if (userId) {

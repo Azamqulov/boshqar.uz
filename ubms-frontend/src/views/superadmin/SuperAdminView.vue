@@ -832,10 +832,6 @@ const saveBusinessPlan = async () => {
 
 onMounted(() => {
   isMounted.value = true;
-  nextTick(() => {
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-  });
   // 1. Priority: Instantly load the active tab's data
   loadActiveTabData(activeTab.value, true);
   // 2. Background async load for stats and plans

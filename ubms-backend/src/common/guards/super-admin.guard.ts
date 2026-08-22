@@ -16,6 +16,10 @@ export class SuperAdminGuard implements CanActivate {
       });
     }
 
+    if (user.isSuperAdmin === true) {
+      return true;
+    }
+
     const dbUser = await this.prisma.user.findUnique({
       where: { id: user.userId },
       select: { isSuperAdmin: true, status: true },

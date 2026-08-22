@@ -9,13 +9,43 @@
 
       <div class="flex flex-wrap items-center gap-2">
         <button
+          v-if="isFeatureVisible('ai_import')"
+          type="button"
+          @click="handleAiImportClick"
+          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+        >
+          <Sparkles class="w-4 h-4 text-emerald-500" />
+          <span>AI Aqlli Kiritish</span>
+          <span
+            v-if="isFeatureEnabled('ai_import')"
+            class="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase"
+          >
+            AI
+          </span>
+          <div
+            v-else
+            class="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"
+            title="Obunada qulflangan"
+          >
+            <Lock class="w-3 h-3" />
+          </div>
+        </button>
+
+        <button
+          v-if="isFeatureVisible('export_reports')"
           type="button"
           @click="openExcelImportModal"
           class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
         >
           <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
           <span>Excel / 1C Import</span>
-          <span class="px-1.5 py-0.2 rounded-md bg-amber-400/20 text-amber-600 dark:text-amber-300 text-[9px] font-black uppercase">PRO</span>
+          <div
+            v-if="isFeatureDisabled('export_reports') || authStore.isDemo"
+            class="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"
+            title="Obunada qulflangan"
+          >
+            <Lock class="w-3 h-3" />
+          </div>
         </button>
 
         <router-link
@@ -56,10 +86,28 @@
     <!-- Products Container -->
     <SkeletonLoader v-if="loading" variant="table" :rows="8" />
 
+    <!-- Empty State when filter yields 0 items -->
+    <div v-else-if="filteredProducts.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
+      <Package class="w-12 h-12 mx-auto mb-3 opacity-30" />
+      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Mahsulotlar Topilmadi</h3>
+      <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+        {{ searchQuery || selectedCategoryId ? "Qidiruv yoki tanlangan kategoriya bo'yicha hech narsa topilmadi. Qidiruvni tozalang." : "Hozircha hech qanday mahsulot kiritilmagan. Yangi mahsulot qo'shing." }}
+      </p>
+      <div v-if="searchQuery || selectedCategoryId" class="mt-4">
+        <button
+          type="button"
+          @click="resetFilters"
+          class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition"
+        >
+          Filtrlarni tozalash
+        </button>
+      </div>
+    </div>
+
     <!-- 1. Table View -->
     <ProductTableView
       v-else-if="viewMode === 'table'"
-      :products="pagination.paginatedItems.value"
+      :products="paginatedProducts"
       @toggle-availability="toggleAvailability"
       @edit="editProduct"
       @delete="deleteProduct"
@@ -68,14 +116,14 @@
     <!-- 2. Grid/Cards View -->
     <ProductGridView
       v-else-if="viewMode === 'grid'"
-      :products="pagination.paginatedItems.value"
+      :products="paginatedProducts"
       @edit="editProduct"
       @delete="deleteProduct"
     />
 
     <!-- Pagination -->
     <AppPagination
-      v-if="!loading"
+      v-if="!loading && filteredProducts.length > 0"
       v-model:current-page="pagination.currentPage.value"
       v-model:page-size="pagination.pageSize.value"
       :total-items="filteredProducts.length"
@@ -128,8 +176,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import api, { getErrorMessage } from '../../services/api';
-import { Plus, FolderTree, FileSpreadsheet } from 'lucide-vue-next';
+import { Plus, FolderTree, FileSpreadsheet, Sparkles, Lock } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import { SelectOption } from '../../components/AppSelect.vue';
@@ -152,17 +201,38 @@ import ProductTableView from './components/ProductTableView.vue';
 import ProductGridView from './components/ProductGridView.vue';
 import ProductFormModal from './components/ProductFormModal.vue';
 
+const router = useRouter();
 const toast = useToast();
 const dataStore = useDataStore();
 const authStore = useAuthStore();
 const { canCreate } = usePermissions();
-const { isFeatureDisabled } = usePlanFeatures();
+const { isFeatureEnabled, isFeatureDisabled, isFeatureVisible } = usePlanFeatures();
 
 const showProModal = ref(false);
 const proModalTitle = ref('');
 const proModalSubtitle = ref('');
 const proModalFeature = ref('');
 const isExcelImportOpen = ref(false);
+
+const handleAiImportClick = () => {
+  if (isFeatureDisabled('ai_import') && isFeatureDisabled('ai_assistant')) {
+    proModalTitle.value = "AI Aqlli Kiritish Tizimi Cheklangan!";
+    proModalSubtitle.value = "AI yordamida mahsulotlarni tez va oson kiritish moduli sizning korxona tarifingizda faollashtirilmagan. Tarifni PRO/AI darajasiga oshiring yoki tizim administratoridan ushbu imkoniyatni yoqishni so'rang.";
+    proModalFeature.value = "AI Aqlli Kiritish Moduli";
+    showProModal.value = true;
+    return;
+  }
+
+  if (authStore.isSubscriptionExpired) {
+    proModalTitle.value = "Obuna Muddati Tugagan!";
+    proModalSubtitle.value = "AI imkoniyatlaridan foydalanish uchun korxona obuna muddatini uzaytiring.";
+    proModalFeature.value = "AI Moduli";
+    showProModal.value = true;
+    return;
+  }
+
+  router.push('/products/ai-import');
+};
 
 const openExcelImportModal = () => {
   if (isFeatureDisabled('export_reports')) {
@@ -327,21 +397,46 @@ const loadProducts = async (force = false) => {
 };
 
 const filteredProducts = computed(() => {
-  return products.value.filter((p) => {
-    const matchesSearch =
-      !searchQuery.value ||
-      p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.barcode?.includes(searchQuery.value);
+  const query = searchQuery.value?.trim().toLowerCase() || '';
+  const catId = selectedCategoryId.value;
 
-    const matchesCategory =
-      !selectedCategoryId.value || p.categoryId === selectedCategoryId.value;
+  return products.value.filter((p: any) => {
+    if (!p) return false;
+
+    const name = (p.name || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+    const barcode = (p.barcode || '').toLowerCase();
+    const categoryName = (typeof p.category === 'object' ? p.category?.name : p.category || '').toLowerCase();
+
+    const matchesSearch =
+      !query ||
+      name.includes(query) ||
+      sku.includes(query) ||
+      barcode.includes(query) ||
+      categoryName.includes(query);
+
+    const productCatId = p.categoryId || p.category?.id || (typeof p.category === 'string' ? p.category : '');
+    const matchesCategory = !catId || productCatId === catId;
 
     return matchesSearch && matchesCategory;
   });
 });
 
 const pagination = usePagination(filteredProducts);
+
+// Guaranteed fresh reactive array for table and grid views
+const paginatedProducts = computed(() => {
+  const items = filteredProducts.value || [];
+  const size = Number(pagination.pageSize.value) || 20;
+  const page = Number(pagination.currentPage.value) || 1;
+  const start = (page - 1) * size;
+  return items.slice(start, start + size);
+});
+
+const resetFilters = () => {
+  searchQuery.value = '';
+  selectedCategoryId.value = '';
+};
 
 watch([searchQuery, selectedCategoryId], () => {
   pagination.resetPage();

@@ -86,12 +86,14 @@
             </div>
 
             <div v-if="selectedCustomerId" class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 font-semibold space-y-1">
-              <p>👤 Tanlangan: <b>{{ selectedCustomerObj?.fullName }}</b> ({{ selectedCustomerObj?.phone || 'Tel yo\'q' }})</p>
-              <p v-if="nasiyaCalcAmount > 0" class="text-rose-600 dark:text-rose-400 font-bold">
-                ⚠️ Qolgan {{ formatCurrency(nasiyaCalcAmount) }} summa ushbu mijozning Nasiya hisobiga yoziladi.
+              <p class="flex items-center gap-1.5"><User class="w-3.5 h-3.5" /> <span>Tanlangan: <b>{{ selectedCustomerObj?.fullName }}</b> ({{ selectedCustomerObj?.phone || 'Tel yo\'q' }})</span></p>
+              <p v-if="nasiyaCalcAmount > 0" class="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5">
+                <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+                <span>Qolgan {{ formatCurrency(nasiyaCalcAmount) }} summa ushbu mijozning Nasiya hisobiga yoziladi.</span>
               </p>
-              <p v-else class="text-emerald-600 dark:text-emerald-400 font-bold">
-                ✅ To'lov to'liq amalga oshiriladi.
+              <p v-else class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 shrink-0" />
+                <span>To'lov to'liq amalga oshiriladi.</span>
               </p>
             </div>
           </div>
@@ -147,9 +149,9 @@
               </span>
             </div>
 
-            <!-- Warning if not full and no customer selected -->
-            <div v-else-if="!selectedCustomerId && tableCashReceived < orderTotalSum" class="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-              <span>⚠️ Nasiyaga yozish uchun yuqoridan Mijozni tanlang, aks holda to'liq summani kiriting</span>
+            <div v-else-if="!selectedCustomerId && tableCashReceived < orderTotalSum" class="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+              <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+              <span>Nasiyaga yozish uchun yuqoridan Mijozni tanlang, aks holda to'liq summani kiriting</span>
             </div>
           </div>
 
@@ -176,6 +178,8 @@ import {
   Smartphone,
   Users,
   CheckCircle2,
+  User,
+  AlertTriangle,
 } from 'lucide-vue-next';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';

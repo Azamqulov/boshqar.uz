@@ -104,7 +104,13 @@
         </div>
       </div>
 
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <transition name="page-fade" mode="out-in">
+          <div :key="route.path" class="w-full">
+            <component :is="Component" />
+          </div>
+        </transition>
+      </router-view>
     </main>
   </div>
 
@@ -430,9 +436,15 @@
             </div>
           </div>
 
-          <!-- Page Content with Smooth Blur when Locked -->
+          <!-- Page Content with Smooth Transition Animation -->
           <div :class="{ 'filter blur-[5px] pointer-events-none select-none opacity-60 transition-all duration-300': isCurrentRouteLocked }">
-            <router-view />
+            <router-view v-slot="{ Component, route }">
+              <transition name="page-fade" mode="out-in">
+                <div :key="route.path" class="w-full">
+                  <component :is="Component" />
+                </div>
+              </transition>
+            </router-view>
           </div>
         </main>
       </div>
@@ -514,10 +526,13 @@ import {
   Lock,
 } from 'lucide-vue-next';
 
+import { usePlanFeatures } from '@/composables/usePlanFeatures';
+
 const authStore = useAuthStore();
 const dataStore = useDataStore();
 const router = useRouter();
 const route = useRoute();
+const { hideLockedFeatures } = usePlanFeatures();
 const isMobileSidebarOpen = ref(false);
 const isSidebarCollapsed = ref(false);
 
@@ -824,6 +839,9 @@ const visibleNavGroups = computed(() => {
   const allowed = authStore.activeBusiness?.allowedModules || [];
 
   const filterItem = (item: NavItem) => {
+    if (hideLockedFeatures.value && isItemLocked(item)) {
+      return false;
+    }
     if (item.types.includes('superadmin')) return isSuper;
     const typeMatch = item.types.includes('all') || item.types.includes(currentType);
     if (!typeMatch) return false;
@@ -925,3 +943,21 @@ onMounted(async () => {
   dataStore.prefetchAll(businessType.value || 'shop');
 });
 </script>
+
+<style>
+/* Modern Smooth Page Transition Animation */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px) scale(0.996);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.996);
+}
+</style>

@@ -105,7 +105,7 @@
                       v-model="catForm.color"
                       class="w-0 h-0 opacity-0"
                     />
-                    <span>🎨</span>
+                    <Palette class="w-3 h-3 text-slate-500" />
                   </label>
                 </div>
               </div>
@@ -114,9 +114,9 @@
             <!-- Live Preview -->
             <div class="p-2.5 rounded-xl border flex items-center justify-between transition" :style="{ backgroundColor: (catForm.color || '#10b981') + '10', borderColor: (catForm.color || '#10b981') + '30' }">
               <div class="flex items-center gap-2">
-                <span class="w-6 h-6 rounded-lg flex items-center justify-center text-sm" :style="{ backgroundColor: (catForm.color || '#10b981') + '25', color: catForm.color || '#10b981' }">
-                  {{ catForm.icon || '📦' }}
-                </span>
+                <div class="w-6 h-6 rounded-lg flex items-center justify-center text-sm" :style="{ backgroundColor: (catForm.color || '#10b981') + '25', color: catForm.color || '#10b981' }">
+                  <CategoryIcon :icon="catForm.icon || 'Package'" iconClass="w-3.5 h-3.5" />
+                </div>
                 <span class="font-bold text-xs text-slate-800 dark:text-slate-200">{{ catForm.name || "Kategoriya Nomi" }}</span>
               </div>
               <span class="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">Prevyu</span>
@@ -196,7 +196,8 @@
 </template>
 
 <script setup lang="ts">
-import { FolderTree, X, Search, Edit2, Trash2 } from 'lucide-vue-next';
+import { FolderTree, X, Search, Edit2, Trash2, Palette } from 'lucide-vue-next';
+import CategoryIcon from '../../../components/CategoryIcon.vue';
 import AppButton from '../../../components/AppButton.vue';
 import AppInput from '../../../components/AppInput.vue';
 

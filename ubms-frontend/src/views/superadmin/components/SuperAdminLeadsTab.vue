@@ -169,18 +169,13 @@
               </td>
 
               <!-- Status Dropdown / Badge -->
-              <td class="py-3.5 px-4 whitespace-nowrap">
-                <select
-                  :value="lead.status"
-                  @change="onStatusChange(lead, ($event.target as HTMLSelectElement).value)"
-                  class="px-2.5 py-1 rounded-xl text-xs font-bold border transition cursor-pointer"
-                  :class="getStatusClasses(lead.status)"
-                >
-                  <option value="new">🟡 Yangi</option>
-                  <option value="contacted">🔵 Bog'lanildi</option>
-                  <option value="converted">🟢 Mijozga aylandi</option>
-                  <option value="rejected">🔴 Rad etildi</option>
-                </select>
+              <td class="py-2 px-3 whitespace-nowrap w-44">
+                <AppSelect
+                  :model-value="lead.status"
+                  @update:model-value="onStatusChange(lead, $event)"
+                  :options="leadStatusOptions"
+                  customClass="!py-1 !px-2.5 !rounded-lg text-xs"
+                />
               </td>
 
               <!-- Notes -->
@@ -249,6 +244,15 @@ import {
   Check,
   X,
 } from 'lucide-vue-next';
+
+import AppSelect from '@/components/AppSelect.vue';
+
+const leadStatusOptions = [
+  { value: 'new', label: 'Yangi', color: '#f59e0b' },
+  { value: 'contacted', label: "Bog'lanildi", color: '#3b82f6' },
+  { value: 'converted', label: 'Mijozga aylandi', color: '#10b981' },
+  { value: 'rejected', label: 'Rad etildi', color: '#ef4444' },
+];
 
 const toast = useToast();
 

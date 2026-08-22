@@ -209,8 +209,14 @@
               ]"
             >
               <span v-if="prod.status === 'inactive'">Stop-list</span>
-              <span v-else-if="isDishItem(prod)">🍕 Taom</span>
-              <span v-else-if="prod.brand === 'service'">🛠 Xizmat</span>
+              <span v-else-if="isDishItem(prod)" class="inline-flex items-center gap-1">
+                <UtensilsCrossed class="w-2.5 h-2.5" />
+                <span>Taom</span>
+              </span>
+              <span v-else-if="prod.brand === 'service'" class="inline-flex items-center gap-1">
+                <Wrench class="w-2.5 h-2.5" />
+                <span>Xizmat</span>
+              </span>
               <span v-else>{{ prod.stockQty <= 0 ? 'Qolmagan' : formatStock(prod.stockQty, prod.unit?.shortName || 'dona') }}</span>
             </span>
 
@@ -228,27 +234,25 @@
           <div>
             <h4
               class="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 line-clamp-1"
-              :class="gridDensity === 'compact' ? 'text-[11px]' : gridDensity === 'large' ? 'text-sm' : 'text-xs'"
+              :class="gridDensity === 'compact' ? 'text-xs' : gridDensity === 'large' ? 'text-sm font-extrabold' : 'text-xs'"
             >
               {{ prod.name }}
             </h4>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{{ prod.sku }}</p>
-          </div>
-
-          <div class="mt-2 flex items-center justify-between">
-            <div>
+            <div class="flex items-center justify-between mt-1">
+              <div class="flex items-baseline">
+                <span
+                  class="font-black text-emerald-600 dark:text-emerald-400 font-mono"
+                  :class="gridDensity === 'compact' ? 'text-[11px]' : gridDensity === 'large' ? 'text-sm' : 'text-xs'"
+                >
+                  {{ formatCurrency(prod.salePrice) }}
+                </span>
+                <span v-if="prod.unit?.shortName && prod.unit.shortName !== 'dona'" class="text-[9px] text-slate-400 font-bold ml-1">/ {{ prod.unit.shortName }}</span>
+              </div>
               <span
-                class="font-black text-emerald-600 dark:text-emerald-400 font-mono"
-                :class="gridDensity === 'compact' ? 'text-[11px]' : gridDensity === 'large' ? 'text-sm' : 'text-xs'"
-              >
-                {{ formatCurrency(prod.salePrice) }}
-              </span>
-              <span v-if="prod.unit?.shortName && prod.unit.shortName !== 'dona'" class="text-[9px] text-slate-400 font-bold ml-1">/ {{ prod.unit.shortName }}</span>
+                class="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                :class="!isItemAvailable(prod) ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
+              >+</span>
             </div>
-            <span
-              class="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-              :class="!isItemAvailable(prod) ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition'"
-            >+</span>
           </div>
         </div>
       </div>
@@ -258,7 +262,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { Search, X, Flame, Package, ChevronLeft, ChevronRight, LayoutGrid, Grid, Maximize2 } from 'lucide-vue-next';
+import { Search, X, Flame, Package, ChevronLeft, ChevronRight, LayoutGrid, Grid, Maximize2, UtensilsCrossed, Wrench } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import { useFormat } from '../../../composables/useFormat';
 

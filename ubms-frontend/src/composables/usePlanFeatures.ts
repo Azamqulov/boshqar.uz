@@ -20,6 +20,32 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', loadCachedBilling);
 }
 
+const getInitialHideLocked = (): boolean => {
+  try {
+    return localStorage.getItem('ubms_hide_locked_features') === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const hideLockedFeaturesState = ref<boolean>(getInitialHideLocked());
+
+const setHideLockedFeatures = (val: boolean) => {
+  hideLockedFeaturesState.value = val;
+  try {
+    localStorage.setItem('ubms_hide_locked_features', val ? 'true' : 'false');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hide-locked-features-changed', { detail: val }));
+    }
+  } catch {}
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('hide-locked-features-changed', (e: any) => {
+    hideLockedFeaturesState.value = !!e.detail;
+  });
+}
+
 export function usePlanFeatures() {
   const authStore = useAuthStore();
 
@@ -60,6 +86,7 @@ export function usePlanFeatures() {
       suppliers: true,
       telegram_bot: true,
       ai_assistant: true,
+      ai_import: true,
       export_reports: true,
       vip_support: true,
       cloud_backup: true,
@@ -76,10 +103,21 @@ export function usePlanFeatures() {
     return !isFeatureEnabled(key);
   };
 
+  const isFeatureVisible = (key: string): boolean => {
+    const enabled = isFeatureEnabled(key);
+    if (!enabled && hideLockedFeaturesState.value) {
+      return false;
+    }
+    return true;
+  };
+
   return {
     planFeatures,
+    hideLockedFeatures: computed(() => hideLockedFeaturesState.value),
+    setHideLockedFeatures,
     isFeatureEnabled,
     isFeatureDisabled,
+    isFeatureVisible,
     fetchFeatures,
   };
 }

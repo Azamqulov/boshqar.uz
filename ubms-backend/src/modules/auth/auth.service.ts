@@ -1,10 +1,13 @@
 import {
   Injectable,
+  Inject,
   BadRequestException,
   UnauthorizedException,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
@@ -35,13 +38,41 @@ const registerOtpStore = new Map<string, RegisterOtpRecord>();
 
 @Injectable()
 export class AuthService {
-  private loginAttempts = new Map<string, LoginAttemptRecord>();
+  private localAttemptsFallback = new Map<string, LoginAttemptRecord>();
 
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private telegramService: TelegramService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  private async getLoginAttempt(key: string): Promise<LoginAttemptRecord> {
+    try {
+      const cached = await this.cacheManager.get<LoginAttemptRecord>(`auth_login:${key}`);
+      if (cached) return cached;
+    } catch (e) {}
+    return this.localAttemptsFallback.get(key) || {
+      failedAttempts: 0,
+      lockoutCount: 0,
+      lockedUntil: null,
+    };
+  }
+
+  private async setLoginAttempt(key: string, record: LoginAttemptRecord): Promise<void> {
+    this.localAttemptsFallback.set(key, record);
+    try {
+      // 24 hours TTL for lock tracking
+      await this.cacheManager.set(`auth_login:${key}`, record, 24 * 60 * 60 * 1000);
+    } catch (e) {}
+  }
+
+  private async clearLoginAttempt(key: string): Promise<void> {
+    this.localAttemptsFallback.delete(key);
+    try {
+      await this.cacheManager.del(`auth_login:${key}`);
+    } catch (e) {}
+  }
 
   private getLockoutDurationMinutes(lockoutCount: number): number {
     if (lockoutCount === 1) return 3;
@@ -151,12 +182,8 @@ export class AuthService {
     const cleanLogin = normalizePhone(dto.login);
     const rawDigits = cleanLogin.replace(/\D/g, '');
 
-    // Check if currently locked out
-    const attemptRecord = this.loginAttempts.get(cleanLogin) || {
-      failedAttempts: 0,
-      lockoutCount: 0,
-      lockedUntil: null,
-    };
+    // Check if currently locked out via CacheManager
+    const attemptRecord = await this.getLoginAttempt(cleanLogin);
 
     if (attemptRecord.lockedUntil && attemptRecord.lockedUntil > Date.now()) {
       const remainingSeconds = Math.ceil((attemptRecord.lockedUntil - Date.now()) / 1000);
@@ -207,7 +234,7 @@ export class AuthService {
         const lockSeconds = lockMinutes * 60;
         attemptRecord.lockedUntil = Date.now() + lockSeconds * 1000;
         attemptRecord.failedAttempts = 0; // reset for next round
-        this.loginAttempts.set(cleanLogin, attemptRecord);
+        await this.setLoginAttempt(cleanLogin, attemptRecord);
 
         throw new UnauthorizedException({
           code: 'ACCOUNT_LOCKED',
@@ -216,7 +243,7 @@ export class AuthService {
           lockoutCount: attemptRecord.lockoutCount,
         });
       } else {
-        this.loginAttempts.set(cleanLogin, attemptRecord);
+        await this.setLoginAttempt(cleanLogin, attemptRecord);
         const attemptsLeft = 3 - attemptRecord.failedAttempts;
         throw new UnauthorizedException({
           code: 'INVALID_PASSWORD',
@@ -227,8 +254,8 @@ export class AuthService {
       }
     }
 
-    // Password is valid - reset lock & attempts
-    this.loginAttempts.delete(cleanLogin);
+    // Password is valid - reset lock & attempts in Cache
+    await this.clearLoginAttempt(cleanLogin);
 
     if (user.status !== 'active') {
       throw new UnauthorizedException({
@@ -432,8 +459,8 @@ export class AuthService {
         throw new BadRequestException({ code: 'USER_NOT_FOUND', message: 'Foydalanuvchi topilmadi' });
       }
 
-      if (!dto.newPassword || dto.newPassword.length < 6) {
-        throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
+      if (!dto.newPassword || dto.newPassword.length < 4) {
+        throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak' });
       }
 
       const passwordHash = await bcrypt.hash(dto.newPassword, 10);
@@ -519,8 +546,8 @@ export class AuthService {
       throw new BadRequestException({ code: 'INVALID_CURRENT_PASSWORD', message: 'Amaldagi parol noto\'g\'ri kiritildi' });
     }
 
-    if (!dto.newPassword || dto.newPassword.length < 6) {
-      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' });
+    if (!dto.newPassword || dto.newPassword.length < 4) {
+      throw new BadRequestException({ code: 'WEAK_PASSWORD', message: 'Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak' });
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
@@ -575,7 +602,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: process.env.JWT_SECRET!,
-        expiresIn: '7d',
+        expiresIn: '15m',
       }),
       this.jwtService.signAsync(payload, {
         secret: process.env.JWT_SECRET!,
@@ -586,7 +613,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 7 * 24 * 60 * 60,
+      expiresIn: 15 * 60, // 15 daqiqa (900 soniya)
     };
   }
 

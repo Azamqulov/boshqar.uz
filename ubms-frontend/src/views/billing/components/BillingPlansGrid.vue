@@ -123,9 +123,10 @@
             </button>
             <div
               v-else
-              class="text-center py-2.5 px-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300"
+              class="text-center py-2.5 px-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-1.5"
             >
-              ✓ Boshlang'ich bepul rejadasiz
+              <Check class="w-3.5 h-3.5" />
+              <span>Boshlang'ich bepul rejadasiz</span>
             </div>
           </template>
 

@@ -91,57 +91,13 @@
     </div>
 
     <!-- Connected Status Details Card (Multi-Account Support) -->
-    <div v-if="status.isConnected" class="glass-card rounded-2xl p-4 sm:p-5 space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ulangan Telegram Akkauntlar</h4>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            {{ status.accounts?.length || 1 }} ta hisob
-          </span>
-        </div>
-        <button
-          type="button"
-          @click="openConnectFlow"
-          :disabled="generatingLink"
-          class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition flex items-center gap-1.5 btn-interactive"
-        >
-          <Plus class="w-3.5 h-3.5" />
-          <span>Yana hisob ulash</span>
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div
-          v-for="acc in (status.accounts?.length ? status.accounts : [{ chatId: status.chatId, username: status.username, connectedAt: status.connectedAt }])"
-          :key="acc.chatId"
-          class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-3 group hover:border-emerald-500/40 transition shadow-xs"
-        >
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0 border border-emerald-500/20">
-              <Bot class="w-4.5 h-4.5" />
-            </div>
-            <div class="min-w-0">
-              <div class="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1.5">
-                <span>{{ acc.username ? '@' + acc.username : (acc.firstName || 'Telegram Foydalanuvchi') }}</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              </div>
-              <div class="text-[11px] font-mono text-slate-400">ID: {{ acc.chatId }}</div>
-              <div class="text-[10px] text-slate-400 font-medium mt-0.5">Ulangan: {{ formatDate(acc.connectedAt) }}</div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            @click="disconnectAccount(acc.chatId)"
-            :disabled="disconnectingChatId === acc.chatId"
-            title="Ushbu akkauntni uzish"
-            class="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition shrink-0"
-          >
-            <Trash2 class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
+    <TelegramAccountList
+      v-if="status.isConnected"
+      :accounts="status.accounts?.length ? status.accounts : [{ chatId: status.chatId, username: status.username, connectedAt: status.connectedAt }]"
+      :generating-link="generatingLink"
+      @connect-more="openConnectFlow"
+      @remove-account="disconnectAccount"
+    />
 
     <!-- 1. Automatic Push Notifications Section -->
     <div class="glass-card rounded-2xl p-5 sm:p-6 space-y-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
@@ -601,6 +557,7 @@ import { useToast } from '../../../composables/useToast';
 import { useAuthStore } from '../../../stores/auth.store';
 import TimePickerSelect from '../../../components/TimePickerSelect.vue';
 import ProUpgradeModal from '../../../components/ProUpgradeModal.vue';
+import TelegramAccountList from './telegram/TelegramAccountList.vue';
 
 const toast = useToast();
 const authStore = useAuthStore();

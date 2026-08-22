@@ -1,8 +1,8 @@
 <template>
   <div
     v-if="totalItems > 0"
-    class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm text-xs select-none transition-all duration-200"
-    :class="{ 'mt-4': !inline }"
+    class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs select-none transition-all duration-200"
+    :class="inline ? 'pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80 bg-transparent' : 'px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm mt-4'"
   >
     <!-- Left Section: Custom Page Size Selector & Showing Counter -->
     <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3 text-slate-600 dark:text-slate-300 w-full sm:w-auto">
@@ -80,7 +80,7 @@
     </div>
 
     <!-- Right Section: Navigation Controls -->
-    <div v-if="totalPages > 1" class="flex items-center justify-center gap-1 w-full sm:w-auto overflow-x-auto py-0.5">
+    <div class="flex items-center justify-center gap-1 w-full sm:w-auto overflow-x-auto py-0.5">
       <!-- First Page Button -->
       <button
         type="button"

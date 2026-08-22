@@ -112,7 +112,7 @@
                       v-model="catForm.color"
                       class="w-0 h-0 opacity-0"
                     />
-                    <span>🎨</span>
+                    <Palette class="w-3.5 h-3.5 text-slate-500" />
                   </label>
                 </div>
               </div>
@@ -167,7 +167,7 @@
 </template>
 
 <script setup lang="ts">
-import { X, CheckCircle2 } from 'lucide-vue-next';
+import { X, CheckCircle2, Palette } from 'lucide-vue-next';
 import CategoryIcon from '../../../components/CategoryIcon.vue';
 import AppButton from '../../../components/AppButton.vue';
 

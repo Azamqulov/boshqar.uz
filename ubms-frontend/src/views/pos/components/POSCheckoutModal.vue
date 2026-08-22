@@ -349,13 +349,15 @@
                 v-if="allowDebt"
                 class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-[11px] font-semibold flex items-center gap-1.5"
               >
-                <span>⚠️ Mijoz to'liq summa bermadi. Qolgan summa nasiyaga yozilishi uchun pastda mijozni tanlang.</span>
+                <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+                <span>Mijoz to'liq summa bermadi. Qolgan summa nasiyaga yozilishi uchun pastda mijozni tanlang.</span>
               </div>
               <div
                 v-else
                 class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-300 text-[11px] font-bold flex items-center gap-1.5"
               >
-                <span>⛔ Nasiya savdosi o'chirilgan! To'lov to'liq summa bo'lishi shart.</span>
+                <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                <span>Nasiya savdosi o'chirilgan! To'lov to'liq summa bo'lishi shart.</span>
               </div>
             </div>
           </div>
@@ -455,6 +457,8 @@ import {
   UtensilsCrossed,
   ShoppingBag,
   Truck,
+  AlertTriangle,
+  AlertCircle,
 } from 'lucide-vue-next';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
