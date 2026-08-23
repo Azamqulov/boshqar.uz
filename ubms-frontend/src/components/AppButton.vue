@@ -34,9 +34,9 @@ defineEmits<{ (e: 'click', event: MouseEvent): void }>();
       variant === 'ghost' && 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-600 dark:text-slate-300',
 
       // Sizes
-      size === 'sm' && 'px-3 py-1.5 text-xs',
-      size === 'md' && 'px-4 py-2.5 text-xs',
-      size === 'lg' && 'px-6 py-3.5 text-sm',
+      size === 'sm' && 'h-[36px] px-3.5 text-xs',
+      size === 'md' && 'h-[40px] px-4 text-xs',
+      size === 'lg' && 'h-[48px] px-6 text-sm',
     ]"
     @click="(e) => { if (disabled || loading) { e.preventDefault(); e.stopPropagation(); return; } $emit('click', e); }"
   >

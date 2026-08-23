@@ -634,20 +634,24 @@ const difference = computed(() => {
 // Load summary when closing or reporting
 const loadShiftSummary = async (shift: any) => {
   if (shift) {
-    const defaultExp = Math.max(0, Number(shift.expectedCash ?? shift.totalSales ?? shift.startingCash ?? 0));
+    const start = Number(shift.startingCash || 0);
+    const cash = Number(shift.cashSales || 0);
+    const exp = Number(shift.cashExpenses || 0);
+    const calculatedExp = Math.max(0, start + cash - exp);
+
     shiftSummary.value = {
-      startingCash: Number(shift.startingCash || 0),
-      cashSales: Number(shift.cashSales || 0),
+      startingCash: start,
+      cashSales: cash,
       cardSales: Number(shift.cardSales || 0),
       otherSales: Number(shift.otherSales || 0),
       totalSales: Number(shift.totalSales || 0),
-      cashExpenses: Number(shift.cashExpenses || 0),
-      expectedCash: defaultExp,
+      cashExpenses: exp,
+      expectedCash: calculatedExp,
       occupiedTables: [],
       pendingKitchenItems: [],
       canClose: true,
     };
-    actualCash.value = defaultExp;
+    actualCash.value = calculatedExp;
   }
 
   try {
@@ -660,8 +664,17 @@ const loadShiftSummary = async (shift: any) => {
       data = res.data;
     }
     if (data) {
-      shiftSummary.value = data;
-      actualCash.value = Math.max(0, Number(data.expectedCash ?? data.totalSales ?? 0));
+      const start = Number(data.startingCash ?? shift?.startingCash ?? 0);
+      const cash = Number(data.cashSales || 0);
+      const exp = Number(data.cashExpenses || 0);
+      const calculatedExp = Math.max(0, start + cash - exp);
+
+      shiftSummary.value = {
+        ...data,
+        startingCash: start,
+        expectedCash: calculatedExp,
+      };
+      actualCash.value = calculatedExp;
     }
   } catch {
     // Keep local shiftSummary

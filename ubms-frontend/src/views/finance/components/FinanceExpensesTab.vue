@@ -10,10 +10,10 @@
           <p class="text-xs text-slate-500 dark:text-slate-400">Biznes bo'yicha kiritilgan barcha operatsion xarajatlar</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <!-- Category Filter -->
-          <div class="w-44">
-            <AppSelect v-model="expenseCategoryFilter" :options="[
+          <div class="w-full sm:w-48">
+            <AppSelect size="sm" v-model="expenseCategoryFilter" :options="[
               { value: '', label: 'Barcha kategoriyalar' },
               { value: 'salary', label: 'Xodimlar maoshi' },
               { value: 'rent', label: 'Ijara to\'lovi' },
@@ -24,14 +24,37 @@
             ]" />
           </div>
 
-          <AppButton variant="danger" size="sm" :icon="Plus" @click="$emit('openExpenseModal')">
+          <AppButton variant="danger" size="sm" :icon="Plus" @click="$emit('openExpenseModal')" class="w-full sm:w-auto">
             Qo'shish
           </AppButton>
         </div>
       </div>
 
+      <!-- Skeleton -->
+      <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+      <!-- Empty State -->
+      <AppEmptyState
+        v-else-if="filteredExpenses.length === 0"
+        :title="expenseCategoryFilter ? 'Xarajatlar topilmadi' : 'Xarajatlar yo\'q'"
+        :description="expenseCategoryFilter ? 'Tanlangan kategoriya bo\'yicha xarajat topilmadi. Filtrni o\'zgartirib ko\'ring.' : 'Hozircha hech qanday operatsion xarajat kiritilmagan. Birinchi xarajatni kiriting.'"
+        :button-text="expenseCategoryFilter ? '' : 'Xarajat qo\'shish'"
+        :variant="expenseCategoryFilter ? 'search' : 'finance'"
+        @action="$emit('openExpenseModal')"
+      >
+        <template v-if="expenseCategoryFilter" #action>
+          <button
+            type="button"
+            @click="expenseCategoryFilter = ''"
+            class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+          >
+            Filtrni tozalash
+          </button>
+        </template>
+      </AppEmptyState>
+
       <!-- 3.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
-      <div v-if="viewMode === 'table'" class="w-full">
+      <div v-else-if="viewMode === 'table'" class="w-full">
         <!-- Mobile cards on small screens (< md) -->
         <div class="block md:hidden space-y-3">
           <div v-if="!loading && filteredExpenses.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
@@ -181,6 +204,7 @@ import AppButton from '../../../components/AppButton.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppEmptyState from '../../../components/AppEmptyState.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
 

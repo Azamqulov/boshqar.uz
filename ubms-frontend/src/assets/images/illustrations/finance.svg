@@ -1,0 +1,13 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cash Register Body -->
+  <rect x="25" y="45" width="70" height="45" rx="6" fill="#10B981" fill-opacity="0.15" stroke="#059669" stroke-width="3.5"/>
+  <rect x="35" y="22" width="50" height="23" rx="4" fill="#059669" fill-opacity="0.3" stroke="#047857" stroke-width="3"/>
+  <text x="43" y="37" fill="#047857" font-size="8" font-family="sans-serif" font-weight="bold">0.00 SO'M</text>
+  <!-- Cash Drawer -->
+  <rect x="30" y="70" width="60" height="15" rx="3" fill="#059669" stroke="#047857" stroke-width="2.5"/>
+  <!-- BOSHQAR Badge on Drawer -->
+  <text x="38" y="81" fill="#FFFFFF" font-size="7" font-family="sans-serif" font-weight="bold">BOSHQAR.UZ</text>
+  <!-- Currency Coins -->
+  <circle cx="24" cy="85" r="7" fill="#10B981" stroke="#059669" stroke-width="2.5"/>
+  <circle cx="96" cy="85" r="7" fill="#10B981" stroke="#059669" stroke-width="2.5"/>
+</svg>

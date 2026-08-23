@@ -317,7 +317,7 @@ const emit = defineEmits<{
 const sizeClasses = computed(() => {
   if (props.size === 'sm') {
     return {
-      trigger: 'h-[34px] px-2.5 rounded-lg text-xs font-medium',
+      trigger: 'h-[36px] px-3 rounded-xl text-xs font-medium',
       item: 'px-2.5 py-1.5 rounded-lg text-xs',
     };
   }
@@ -328,7 +328,7 @@ const sizeClasses = computed(() => {
     };
   }
   return {
-    trigger: 'h-[42px] px-3.5 rounded-xl text-xs font-medium',
+    trigger: 'h-[40px] px-3.5 rounded-xl text-xs font-medium',
     item: 'px-2.5 py-1.5 rounded-lg text-xs',
   };
 });

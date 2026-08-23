@@ -33,7 +33,11 @@ export class DashboardService {
           where: {
             ...whereBase,
             status: 'completed',
-            completedAt: { gte: todayStart, lte: todayEnd },
+            OR: [
+              { completedAt: { gte: todayStart, lte: todayEnd } },
+              { completedAt: null, createdAt: { gte: todayStart, lte: todayEnd } },
+              { createdAt: { gte: todayStart, lte: todayEnd } },
+            ],
           },
           select: {
             total: true,
@@ -138,7 +142,11 @@ export class DashboardService {
     const where: any = {
       businessId,
       status: 'completed',
-      completedAt: { gte: startDate, lte: today },
+      OR: [
+        { completedAt: { gte: startDate, lte: today } },
+        { completedAt: null, createdAt: { gte: startDate, lte: today } },
+        { createdAt: { gte: startDate, lte: today } },
+      ],
     };
     if (branchId) where.branchId = branchId;
 
@@ -147,6 +155,7 @@ export class DashboardService {
         where,
         select: {
           completedAt: true,
+          createdAt: true,
           total: true,
           discountAmount: true,
           items: {
@@ -199,9 +208,9 @@ export class DashboardService {
 
     const dailyMap = new Map<string, DailyItem>();
 
+    const baseTime = startDate.getTime();
     for (let i = 0; i < days; i++) {
-      const d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
+      const d = new Date(baseTime + i * 86400000);
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -232,8 +241,9 @@ export class DashboardService {
 
     // Process orders
     for (const order of orders) {
-      if (!order.completedAt) continue;
-      const d = new Date(order.completedAt);
+      const orderDate = order.completedAt || (order as any).createdAt;
+      if (!orderDate) continue;
+      const d = new Date(orderDate);
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
       const entry = dailyMap.get(dateKey);

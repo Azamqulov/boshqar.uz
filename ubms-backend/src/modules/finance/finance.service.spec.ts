@@ -16,6 +16,7 @@ describe('FinanceService - Financial Calculations & Tenant Isolation', () => {
         findMany: jest.fn(),
         create: jest.fn(),
         findFirst: jest.fn(),
+        findUnique: jest.fn(),
         delete: jest.fn(),
       },
       order: {

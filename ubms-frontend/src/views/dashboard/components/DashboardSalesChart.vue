@@ -1,13 +1,13 @@
 <template>
-  <div class="glass-card rounded-2xl p-5 relative overflow-hidden">
+  <div class="glass-card rounded-3xl p-4 sm:p-6 relative overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-xl">
     <!-- Top Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <div>
         <div class="flex items-center gap-2">
-          <h3 class="font-bold text-base text-slate-900 dark:text-white">Savdo va Foyda Dinamikasi</h3>
+          <h3 class="font-black text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">Savdo va Foyda Dinamikasi</h3>
           <span
             v-if="selectedDay"
-            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white animate-pulse shadow-sm"
+            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white animate-pulse shadow-xs"
           >
             ● {{ formatChartDate(selectedDay.date) }}
           </span>
@@ -18,15 +18,15 @@
       </div>
 
       <!-- Period Filter Tabs -->
-      <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+      <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 self-start sm:self-auto">
         <button
           v-for="period in chartPeriods"
           :key="period.days"
           @click="selectPeriod(period.days)"
-          class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition whitespace-nowrap"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap active:scale-95 btn-interactive"
           :class="[
             selectedChartPeriod === period.days
-              ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm font-black'
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
           ]"
         >
@@ -41,7 +41,7 @@
       <div
         v-if="selectedDay"
         key="inline-breakdown"
-        class="mb-4 p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-blue-500/10 border border-emerald-500/20 backdrop-blur-sm relative"
+        class="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-blue-500/10 border border-emerald-500/20 backdrop-blur-xs relative"
       >
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
           <!-- Doiraviy (Donut) Ko'rinish -->
@@ -100,23 +100,23 @@
           <!-- Faqat 2 ta Karta: Savdo va Sof Foyda -->
           <div class="grid grid-cols-2 gap-2.5 w-full sm:w-auto flex-1 max-w-sm">
             <!-- Savdo -->
-            <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-emerald-500/20 shadow-sm">
+            <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-emerald-500/20 shadow-xs">
               <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-teal-400"></span>
                 <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Savdo</span>
               </div>
-              <p class="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <p class="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 whitespace-nowrap">
                 {{ formatCurrency(selectedDay.sales || 0) }}
               </p>
             </div>
 
             <!-- Sof Foyda -->
-            <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-blue-500/20 shadow-sm">
+            <div class="p-2.5 rounded-xl bg-white dark:bg-slate-800/80 border border-blue-500/20 shadow-xs">
               <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-blue-600 to-sky-400"></span>
                 <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Sof Foyda</span>
               </div>
-              <p class="text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5">
+              <p class="text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5 whitespace-nowrap">
                 {{ formatCurrency(selectedDay.profit || 0) }}
               </p>
             </div>
@@ -133,19 +133,45 @@
         </div>
       </div>
 
-      <!-- 2. DEFAULT PERIOD SUMMARY (Hech qaysi kun tanlanmaganda) -->
-      <div v-else key="period-summary" class="grid grid-cols-3 gap-2.5 mb-4">
-        <div class="p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-          <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Jami Savdo</span>
-          <p class="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{{ formatCurrency(chartTotalSales) }}</p>
+      <!-- 2. DEFAULT PERIOD SUMMARY (Mobile Scrollable Cards, Desktop Grid) -->
+      <div v-else key="period-summary" class="flex sm:grid sm:grid-cols-3 gap-2.5 mb-4 overflow-x-auto pb-1 pt-0.5 no-scrollbar snap-x snap-mandatory">
+        <!-- Card 1: Jami Savdo -->
+        <div class="min-w-[145px] sm:min-w-0 snap-start flex-1 p-3 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 shadow-xs backdrop-blur-xs">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wide">Jami Savdo</span>
+            <div class="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <TrendingUp class="w-3 h-3" />
+            </div>
+          </div>
+          <p class="text-sm sm:text-base font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight whitespace-nowrap">
+            {{ formatCurrency(chartTotalSales) }}
+          </p>
         </div>
-        <div class="p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
-          <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Sof Foyda</span>
-          <p class="text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5">{{ formatCurrency(chartTotalProfit) }}</p>
+
+        <!-- Card 2: Sof Foyda -->
+        <div class="min-w-[145px] sm:min-w-0 snap-start flex-1 p-3 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/25 shadow-xs backdrop-blur-xs">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wide">Sof Foyda</span>
+            <div class="w-5 h-5 rounded-md bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Wallet class="w-3 h-3" />
+            </div>
+          </div>
+          <p class="text-sm sm:text-base font-black font-mono text-blue-600 dark:text-blue-400 tracking-tight whitespace-nowrap">
+            {{ formatCurrency(chartTotalProfit) }}
+          </p>
         </div>
-        <div class="p-2.5 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-          <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Buyurtmalar</span>
-          <p class="text-sm font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{{ chartTotalOrders }} ta</p>
+
+        <!-- Card 3: Buyurtmalar -->
+        <div class="min-w-[130px] sm:min-w-0 snap-start flex-1 p-3 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-500/25 shadow-xs backdrop-blur-xs">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[10px] text-slate-600 dark:text-slate-300 font-bold uppercase tracking-wide">Buyurtmalar</span>
+            <div class="w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <ShoppingBag class="w-3 h-3" />
+            </div>
+          </div>
+          <p class="text-sm sm:text-base font-black font-mono text-indigo-600 dark:text-indigo-400 tracking-tight whitespace-nowrap">
+            {{ chartTotalOrders }} ta
+          </p>
         </div>
       </div>
     </transition>
@@ -153,23 +179,23 @@
     <!-- Chart Legend & Tap Hint -->
     <div class="flex items-center justify-between mb-3 px-1">
       <div class="flex items-center gap-4">
-        <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-          <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-teal-400 inline-block"></span>
-          Savdo
+        <div class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-bold">
+          <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-teal-400 inline-block shadow-xs"></span>
+          <span>Savdo</span>
         </div>
-        <div class="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-          <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-blue-600 to-sky-400 inline-block"></span>
-          Sof Foyda
+        <div class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-bold">
+          <span class="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-blue-600 to-sky-400 inline-block shadow-xs"></span>
+          <span>Sof Foyda</span>
         </div>
       </div>
-      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
         <MousePointerClick class="w-3 h-3" />
         <span>Kun ustiga bosing</span>
       </span>
     </div>
 
     <!-- Chart Loading State -->
-    <div v-if="chartLoading" class="h-60 flex items-center justify-center">
+    <div v-if="chartLoading" class="h-64 sm:h-72 flex items-center justify-center">
       <div class="flex items-center gap-2 text-xs text-slate-400">
         <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -180,7 +206,7 @@
     </div>
 
     <!-- Dual Bar Chart -->
-    <div v-else class="h-60 flex items-end gap-1.5 sm:gap-2 pt-8 px-2 relative overflow-visible">
+    <div v-else class="h-64 sm:h-72 flex items-end gap-1.5 sm:gap-2 pt-8 px-2 relative overflow-visible">
       <div
         v-for="(item, idx) in displayChartData"
         :key="idx"
@@ -212,7 +238,7 @@
         <div class="w-full flex items-end justify-center gap-[3px] h-full pb-1">
           <!-- Sales Bar -->
           <div
-            class="flex-1 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
+            class="flex-1 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-xs"
             :class="[
               { 'brightness-125 ring-1 ring-emerald-400': selectedDay?.date === item.date },
               barMaxWidthClass
@@ -221,7 +247,7 @@
           ></div>
           <!-- Profit Bar -->
           <div
-            class="flex-1 bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-sm"
+            class="flex-1 bg-gradient-to-t from-blue-600 to-sky-400 rounded-t-md transition-all duration-300 group-hover:brightness-125 group-hover:scale-y-[1.03] origin-bottom shadow-xs"
             :class="[
               { 'brightness-125 ring-1 ring-blue-400': selectedDay?.date === item.date },
               barMaxWidthClass
@@ -232,7 +258,7 @@
 
         <!-- Date Labels -->
         <span
-          class="text-[9px] mt-1 truncate transition-colors font-medium text-center"
+          class="text-[9.5px] mt-1 truncate transition-colors font-semibold text-center"
           :class="[
             selectedDay?.date === item.date
               ? 'font-black text-emerald-600 dark:text-emerald-400 scale-105'
@@ -240,7 +266,6 @@
               ? 'font-black text-emerald-600 dark:text-emerald-400'
               : 'text-slate-400 dark:text-slate-500 group-hover:text-emerald-500'
           ]"
-          :style="{ transform: displayChartData.length > 20 ? 'rotate(45deg)' : 'none', transformOrigin: 'left top' }"
         >
           {{ formatChartDateShort(item.date) }}
         </span>
@@ -251,7 +276,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X, MousePointerClick } from 'lucide-vue-next';
+import { X, MousePointerClick, TrendingUp, Wallet, ShoppingBag } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
 
 const props = defineProps<{
@@ -322,16 +347,9 @@ const chartTotalOrders = computed(() => {
   return displayChartData.value.reduce((sum: number, c: any) => sum + (Number(c.count) || 0), 0);
 });
 
-// Profit percentage and SVG Donut length (circumference = 2 * PI * 38 ≈ 238.76)
-const CIRCUMFERENCE = 238.76;
-
 const dayProfitPercent = computed(() => {
   if (!selectedDay.value || !selectedDay.value.sales || selectedDay.value.sales === 0) return 0;
   return Math.min(100, Math.max(0, Math.round(((selectedDay.value.profit || 0) / selectedDay.value.sales) * 100)));
-});
-
-const profitDashLength = computed(() => {
-  return (dayProfitPercent.value / 100) * CIRCUMFERENCE;
 });
 
 const formatFullDate = (dateStr: string) => {
@@ -348,12 +366,18 @@ const formatChartDate = (dateStr: string) => {
 };
 
 const formatChartDateShort = (dateStr: string) => {
+  if (!dateStr) return '';
   const d = new Date(dateStr);
-  const months = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
-  if (props.selectedChartPeriod <= 30) {
-    return `${d.getDate()}/${d.getMonth() + 1}`;
+  const len = displayChartData.value.length;
+  const day = d.getDate();
+
+  if (len > 30) {
+    return day % 7 === 0 || day === 1 ? `${day}/${d.getMonth() + 1}` : '';
   }
-  return `${d.getDate()}-${months[d.getMonth()]}`;
+  if (len > 14) {
+    return day % 3 === 0 ? `${day}/${d.getMonth() + 1}` : '';
+  }
+  return `${day}/${d.getMonth() + 1}`;
 };
 
 const isToday = (dateStr: string) => {

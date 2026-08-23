@@ -25,10 +25,12 @@
 
       <SkeletonLoader v-if="loading" variant="table" :rows="5" />
 
-      <div v-else-if="shifts.length === 0" class="p-12 text-center text-slate-400 text-xs">
-        <History class="w-10 h-10 mx-auto mb-2 opacity-30" />
-        <span>Hozircha smenalar ochilmagan</span>
-      </div>
+      <AppEmptyState
+        v-else-if="shifts.length === 0"
+        title="Smenalar tarixi yo'q"
+        description="Hozircha kassa smenalari va Z-hisobotlar ochilmagan. Kassa oynasida smena ochib savdo qilishni boshlang."
+        variant="finance"
+      />
 
       <!-- 8.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
       <div v-else-if="viewMode === 'table'" class="w-full">
@@ -259,6 +261,7 @@ import { computed } from 'vue';
 import { History, RefreshCw, Receipt, Trash2 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppPagination from '../../../components/AppPagination.vue';
+import AppEmptyState from '../../../components/AppEmptyState.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
 

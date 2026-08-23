@@ -232,6 +232,7 @@ export const useDataStore = defineStore('ubms_data', () => {
 
     fetchFinanceSummary: financeStore.fetchFinanceSummary,
     fetchFinanceExpenses: financeStore.fetchFinanceExpenses,
+    deleteExpenseLocally: financeStore.deleteExpenseLocally,
     fetchDashboardSummary: financeStore.fetchDashboardSummary,
     fetchDashboardCharts: financeStore.fetchDashboardCharts,
 

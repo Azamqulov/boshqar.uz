@@ -1,0 +1,15 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Supermarket Shelf -->
+  <path d="M20 30H100M20 60H100M20 90H100" stroke="#059669" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M25 20V95M95 20V95" stroke="#059669" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Product Boxes & Bottles -->
+  <rect x="32" y="38" width="16" height="22" rx="3" fill="#10B981" fill-opacity="0.25" stroke="#059669" stroke-width="2.5"/>
+  <rect x="52" y="34" width="14" height="26" rx="3" fill="#059669" stroke="#047857" stroke-width="2.5"/>
+  <rect x="70" y="42" width="18" height="18" rx="3" fill="#10B981" fill-opacity="0.4" stroke="#059669" stroke-width="2.5"/>
+  <!-- Shopping Cart with Boshqar Tag -->
+  <path d="M30 75L40 75L55 92H85L95 75" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="42" y="66" width="38" height="14" rx="2" fill="#10B981" stroke="#047857" stroke-width="2"/>
+  <text x="45" y="76" fill="#FFFFFF" font-size="6" font-family="sans-serif" font-weight="bold">BOSHQAR</text>
+  <circle cx="58" cy="98" r="4" fill="#064E3B" stroke="#047857" stroke-width="2"/>
+  <circle cx="82" cy="98" r="4" fill="#064E3B" stroke="#047857" stroke-width="2"/>
+</svg>

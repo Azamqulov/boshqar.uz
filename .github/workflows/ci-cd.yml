@@ -1,94 +1,51 @@
-# ════════════════════════════════════════════════════
-#  boshqar.uz — Enterprise CI/CD Pipeline
-#  Trigger: push & pull_request -> main branch
-# ════════════════════════════════════════════════════
-
-name: Enterprise CI/CD Pipeline - boshqar.uz
+name: boshqar.uz CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
-
-env:
-  NODE_VERSION: '20'
+    branches: [ main ]
 
 jobs:
-  # ───────────────────────────────────────────────────
-  # JOB 1: Frontend - Lint, TypeCheck & Production Build
-  # ───────────────────────────────────────────────────
-  frontend-build:
-    name: "Frontend: TypeCheck & Build"
+  lint-and-typecheck:
+    name: 🛡️ Code Quality & Type Check
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Checkout repo"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: "Setup Node.js"
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: "ubms-frontend/package-lock.json"
+          node-version: '20'
+          cache: 'npm'
 
-      - name: "Install Shared Types"
-        run: |
-          cd ubms-shared-types
-          npm ci
+      - name: Install Monorepo Dependencies
+        run: npm ci
 
-      - name: "Install Frontend Dependencies"
-        run: |
-          cd ubms-frontend
-          npm ci
+      - name: Generate Prisma Client
+        run: npm --prefix ubms-backend run prisma:generate
 
-      - name: "Build Frontend (vue-tsc + vite build)"
-        run: |
-          cd ubms-frontend
-          npm run build
+      - name: Type Check Backend
+        run: npm --prefix ubms-backend run build
 
-  # ───────────────────────────────────────────────────
-  # JOB 2: Backend - Prisma, TypeCheck, Build & Unit Tests
-  # ───────────────────────────────────────────────────
-  backend-test-build:
-    name: "Backend: Tests & Build"
+      - name: Type Check Frontend
+        run: npm --prefix ubms-frontend run build
+
+  backend-tests:
+    name: 🧪 Backend Unit & Integration Tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: "Checkout repo"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: "Setup Node.js"
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: "ubms-backend/package-lock.json"
+          node-version: '20'
 
-      - name: "Install Backend Dependencies"
-        run: |
-          cd ubms-backend
-          npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: "Prisma Schema Validate & Generate"
-        run: |
-          cd ubms-backend
-          npx prisma validate
-          npx prisma generate
-
-      - name: "Run Backend Unit & Integration Tests (Jest)"
-        run: |
-          cd ubms-backend
-          npm test -- --passWithNoTests
-        env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars-2026"
-
-      - name: "Build Backend (NestJS Build)"
-        run: |
-          cd ubms-backend
-          npm run build
-        env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-          JWT_SECRET: "test-jwt-secret-key-for-ci-only-minimum-32-chars-2026"
+      - name: Run Backend Unit Tests
+        run: npm --prefix ubms-backend run test -- --passWithNoTests

@@ -540,7 +540,11 @@ export class ProductsService {
         order: {
           businessId,
           status: 'completed',
-          createdAt: { gte: dateFrom },
+          OR: [
+            { completedAt: { gte: dateFrom } },
+            { completedAt: null, createdAt: { gte: dateFrom } },
+            { createdAt: { gte: dateFrom } },
+          ],
         },
       },
       _sum: {

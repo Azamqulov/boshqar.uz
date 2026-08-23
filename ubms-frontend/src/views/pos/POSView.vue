@@ -316,96 +316,33 @@ const categories = computed(() => dataStore.categories);
 const customers = computed(() => dataStore.customers || []);
 const bestsellers = ref<any[]>([]);
 
-// Customer Selection & Quick Add State
-const selectedCustomerId = ref('');
-const selectedCustomer = computed(() => customers.value.find((c) => c.id === selectedCustomerId.value) || null);
-const isNewCustomerModalOpen = ref(false);
-const newCustomerForm = ref({ fullName: '', phone: '' });
-const savingCustomer = ref(false);
+import { usePOSCustomer } from './composables/usePOSCustomer';
+import { usePOSHeldOrders } from './composables/usePOSHeldOrders';
 
-// Held orders state with localStorage persistence
-const isHeldOrdersOpen = ref(false);
-const heldOrders = ref<any[]>(JSON.parse(localStorage.getItem('pos_held_orders') || '[]'));
+const {
+  selectedCustomerId,
+  selectedCustomer,
+  isNewCustomerModalOpen,
+  newCustomerForm,
+  savingCustomer,
+  customerSelectOptions,
+  saveNewCustomer,
+} = usePOSCustomer();
 
-const saveHeldOrdersToStorage = () => {
-  localStorage.setItem('pos_held_orders', JSON.stringify(heldOrders.value));
-};
+const {
+  isHeldOrdersOpen,
+  heldOrders,
+  holdCurrentCart: rawHoldCart,
+  recallHeldOrder: rawRecallHeldOrder,
+  deleteHeldOrder,
+} = usePOSHeldOrders();
 
 const holdCurrentCart = () => {
-  if (cartStore.items.length === 0) return;
-  heldOrders.value.push({
-    id: 'held-' + Date.now(),
-    items: [...cartStore.items],
-    orderType: orderType.value,
-    tableNumber: currentTableDisplayName.value,
-    customerId: selectedCustomerId.value,
-    grandTotal: cartStore.grandTotal,
-    savedAt: new Date().toISOString(),
-  });
-  saveHeldOrdersToStorage();
-  cartStore.clearCart();
-  toast.success('Buyurtma kutish rejimiga olindi', 'Kutish');
+  rawHoldCart(orderType.value, currentTableDisplayName.value, selectedCustomerId.value);
 };
 
 const recallHeldOrder = (order: any) => {
-  cartStore.clearCart();
-  order.items.forEach((item: any) => {
-    cartStore.addItem(item, item.quantity);
-  });
-  if (order.tableNumber) {
-    selectedTableNumber.value = order.tableNumber;
-  }
-  if (order.customerId) {
-    selectedCustomerId.value = order.customerId;
-  }
-  if (order.orderType) {
-    orderType.value = order.orderType;
-  }
-  heldOrders.value = heldOrders.value.filter((o) => o.id !== order.id);
-  saveHeldOrdersToStorage();
-  isHeldOrdersOpen.value = false;
-  toast.success('Buyurtma savatga qaytarildi', 'Kutish');
-};
-
-const deleteHeldOrder = (idx: number) => {
-  heldOrders.value.splice(idx, 1);
-  saveHeldOrdersToStorage();
-  toast.info('Kutishdagi buyurtma o\'chirildi');
-};
-
-const customerSelectOptions = computed(() => {
-  return [
-    { value: '', label: '— Mijoz tanlanmagan (Oddiy to\'lov) —' },
-    ...customers.value.map((c) => ({
-      value: c.id,
-      label: `${c.fullName} (${c.phone || 'Tel yo\'q'})`,
-      badge: Number(c.debt || 0) > 0 ? `Qarzi: ${formatCurrency(c.debt)}` : undefined,
-    })),
-  ];
-});
-
-const saveNewCustomer = async () => {
-  if (!newCustomerForm.value.fullName) {
-    toast.warning('Mijoz ismini kiriting!', 'Ogohlantirish');
-    return;
-  }
-  savingCustomer.value = true;
-  try {
-    const { data } = await api.post('/customers', {
-      fullName: newCustomerForm.value.fullName,
-      phone: newCustomerForm.value.phone || undefined,
-    });
-    toast.success(`"${data.fullName}" muvaffaqiyatli saqlandi!`, 'Yangi Mijoz');
-    dataStore.invalidate('customers');
-    await dataStore.fetchCustomers(true);
-    selectedCustomerId.value = data.id;
-    isNewCustomerModalOpen.value = false;
-    newCustomerForm.value = { fullName: '', phone: '' };
-  } catch (err: any) {
-    toast.error(err.response?.data?.message || err.message || 'Mijozni saqlashda xatolik', 'Xatolik');
-  } finally {
-    savingCustomer.value = false;
-  }
+  rawRecallHeldOrder(order, selectedTableNumber, selectedCustomerId, orderType);
 };
 
 const currentShift = computed(() => shiftStore.currentShift);

@@ -74,8 +74,28 @@
       </div>
     </div>
 
-    <!-- Customer Table Skeleton -->
+    <!-- Skeleton -->
     <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+    <!-- Empty State -->
+    <AppEmptyState
+      v-else-if="filteredCustomers.length === 0"
+      :title="searchQuery ? 'Mijozlar topilmadi' : 'Mijozlar yo\'q'"
+      :description="searchQuery ? 'Qidiruv bo\'yicha hech qanday mijoz topilmadi. Qidiruvni tozalab ko\'ring.' : 'Hozircha hech qanday mijoz qo\'shilmagan. Birinchi mijozingizni qo\'shib boshlang.'"
+      :button-text="searchQuery ? '' : 'Mijoz qo\'shish'"
+      :variant="searchQuery ? 'search' : 'customers'"
+      @action="openCreateModal"
+    >
+      <template v-if="searchQuery" #action>
+        <button
+          type="button"
+          @click="searchQuery = ''"
+          class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+        >
+          Qidiruvni tozalash
+        </button>
+      </template>
+    </AppEmptyState>
 
     <!-- 1. Table View -->
     <CustomerTableView
@@ -171,6 +191,7 @@ import AppInput from '../../components/AppInput.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
+import AppEmptyState from '../../components/AppEmptyState.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';

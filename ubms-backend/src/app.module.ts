@@ -29,7 +29,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { BackupModule } from './modules/backup/backup.module';
-import { FiscalModule } from './modules/fiscal/fiscal.module';
+import { SoliqFiscalModule } from './modules/soliq/soliq-fiscal.module';
 
 import { createKeyv } from '@keyv/redis';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -106,7 +106,7 @@ import { HealthController } from './health.controller';
     AnalyticsModule,
     BillingModule,
     BackupModule,
-    FiscalModule,
+    SoliqFiscalModule,
   ],
   controllers: [HealthController],
   providers: [

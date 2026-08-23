@@ -26,7 +26,7 @@
     <!-- Value & Subtitle -->
     <div class="mt-2">
       <div
-        class="text-xl font-black font-mono tracking-tight line-clamp-1"
+        class="text-lg sm:text-xl font-black font-mono tracking-tight line-clamp-1"
         :class="valueClass || 'text-slate-900 dark:text-white'"
       >
         {{ value }}

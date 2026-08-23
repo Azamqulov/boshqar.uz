@@ -64,6 +64,26 @@
     <!-- Inventory Container -->
     <SkeletonLoader v-if="loading" variant="table" :rows="8" />
 
+    <!-- Empty State -->
+    <AppEmptyState
+      v-else-if="filteredInventory.length === 0"
+      :title="searchQuery || activeStatusFilter !== 'all' ? 'Ombor qoldiqlari topilmadi' : 'Omborxona bo\'sh'"
+      :description="searchQuery || activeStatusFilter !== 'all' ? 'Qidiruv bo\'yicha hech qanday tovar topilmadi. Qidiruvni tozalang.' : 'Hozircha omborga hech qanday tovar kirim qilinmagan. Birinchi tovaringizni kirim qiling.'"
+      :button-text="searchQuery || activeStatusFilter !== 'all' ? '' : 'Kirim qilish'"
+      :variant="searchQuery || activeStatusFilter !== 'all' ? 'search' : 'inventory'"
+      @action="openStockInModal"
+    >
+      <template v-if="searchQuery || activeStatusFilter !== 'all'" #action>
+        <button
+          type="button"
+          @click="searchQuery = ''; activeStatusFilter = 'all'"
+          class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+        >
+          Filtrlarni tozalash
+        </button>
+      </template>
+    </AppEmptyState>
+
     <!-- 1. Table View -->
     <InventoryTableView
       v-else-if="viewMode === 'table'"
@@ -145,6 +165,7 @@ import AppButton from '../../components/AppButton.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
+import AppEmptyState from '../../components/AppEmptyState.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePermissions } from '../../composables/usePermissions';

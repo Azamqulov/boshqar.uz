@@ -7,12 +7,12 @@
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Barcha tovarlar, tayyorlanadigan taomlar, kategoriyalar va qoldiqlar boshqaruvi</p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
         <button
           v-if="isFeatureVisible('ai_import')"
           type="button"
           @click="handleAiImportClick"
-          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+          class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
         >
           <Sparkles class="w-4 h-4 text-emerald-500" />
           <span>AI Aqlli Kiritish</span>
@@ -35,7 +35,7 @@
           v-if="isFeatureVisible('export_reports')"
           type="button"
           @click="openExcelImportModal"
-          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+          class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
         >
           <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
           <span>Excel / 1C Import</span>
@@ -50,7 +50,7 @@
 
         <router-link
           to="/categories"
-          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+          class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
         >
           <FolderTree class="w-4 h-4 text-emerald-500" />
           <span>Kategoriyalar ({{ categories.length }})</span>
@@ -59,7 +59,7 @@
         <button
           v-if="canCreate('products')"
           @click="openCreateModal"
-          class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive"
+          class="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 transition btn-interactive w-full sm:w-auto"
         >
           <Plus class="w-4 h-4" />
           <span>Yangi Mahsulot Qo'shish</span>
@@ -87,22 +87,24 @@
     <SkeletonLoader v-if="loading" variant="table" :rows="8" />
 
     <!-- Empty State when filter yields 0 items -->
-    <div v-else-if="filteredProducts.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
-      <Package class="w-12 h-12 mx-auto mb-3 opacity-30" />
-      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Mahsulotlar Topilmadi</h3>
-      <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-        {{ searchQuery || selectedCategoryId ? "Qidiruv yoki tanlangan kategoriya bo'yicha hech narsa topilmadi. Qidiruvni tozalang." : "Hozircha hech qanday mahsulot kiritilmagan. Yangi mahsulot qo'shing." }}
-      </p>
-      <div v-if="searchQuery || selectedCategoryId" class="mt-4">
+    <AppEmptyState
+      v-else-if="filteredProducts.length === 0"
+      :title="searchQuery || selectedCategoryId ? 'Mahsulotlar topilmadi' : 'Mahsulotlar yo\'q'"
+      :description="searchQuery || selectedCategoryId ? 'Qidiruv yoki tanlangan kategoriya bo\'yicha hech narsa topilmadi. Qidiruvni tozalang.' : 'Hozircha hech qanday mahsulot kiritilmagan. Birinchi mahsulotingizni qo\'shib boshlang.'"
+      :button-text="searchQuery || selectedCategoryId ? '' : 'Yangi Mahsulot Qo\'shish'"
+      :variant="searchQuery || selectedCategoryId ? 'search' : 'products'"
+      @action="openCreateModal"
+    >
+      <template v-if="searchQuery || selectedCategoryId" #action>
         <button
           type="button"
           @click="resetFilters"
-          class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition"
+          class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
         >
           Filtrlarni tozalash
         </button>
-      </div>
-    </div>
+      </template>
+    </AppEmptyState>
 
     <!-- 1. Table View -->
     <ProductTableView
@@ -195,6 +197,7 @@ import { usePermissions } from '../../composables/usePermissions';
 import { usePagination } from '../../composables/usePagination';
 import { usePlanFeatures } from '../../composables/usePlanFeatures';
 
+import AppEmptyState from '../../components/AppEmptyState.vue';
 import ProductStatsCards from './components/ProductStatsCards.vue';
 import ProductFilterBar from './components/ProductFilterBar.vue';
 import ProductTableView from './components/ProductTableView.vue';

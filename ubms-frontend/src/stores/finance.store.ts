@@ -117,7 +117,7 @@ export const useFinanceStore = defineStore('ubms_finance', () => {
     const days = typeof daysOrForce === 'number' ? daysOrForce : undefined;
     const force = typeof daysOrForce === 'boolean' ? daysOrForce : forceParam;
     const cacheKey = days ? `dashboard_charts_${days}` : 'dashboardCharts';
-    if (!force && dashboardCharts.value && isCacheValid(cacheKey, 60000)) {
+    if (!force && dashboardCharts.value && Array.isArray(dashboardCharts.value) && dashboardCharts.value.length > 0 && isCacheValid(cacheKey, 30000)) {
       return dashboardCharts.value;
     }
     if (inFlightPromises[cacheKey]) {
@@ -141,6 +141,13 @@ export const useFinanceStore = defineStore('ubms_finance', () => {
     return p;
   };
 
+  const deleteExpenseLocally = (id: string) => {
+    if (Array.isArray(financeExpenses.value)) {
+      financeExpenses.value = financeExpenses.value.filter((e: any) => e.id !== id);
+      saveToStorage('financeExpenses', financeExpenses.value);
+    }
+  };
+
   return {
     financeSummary,
     financeExpenses,
@@ -151,5 +158,6 @@ export const useFinanceStore = defineStore('ubms_finance', () => {
     fetchFinanceExpenses,
     fetchDashboardSummary,
     fetchDashboardCharts,
+    deleteExpenseLocally,
   };
 });

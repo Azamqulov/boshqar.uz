@@ -127,7 +127,7 @@ const changeChartPeriod = async (days: number) => {
   chartLoading.value = true;
   try {
     await Promise.all([
-      dataStore.fetchChartData(days),
+      dataStore.fetchChartData(days, true),
       fetchBestsellers(days),
     ]);
   } finally {

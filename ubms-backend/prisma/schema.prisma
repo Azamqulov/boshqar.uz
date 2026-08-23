@@ -985,3 +985,42 @@ model DemoLead {
 
   @@map("demo_leads")
 }
+
+model SoliqFiscalReceipt {
+  id           String   @id @default(uuid()) @db.Uuid
+  businessId   String   @map("business_id") @db.Uuid
+  orderId      String   @unique @map("order_id") @db.Uuid
+  fiscalSign   String   @map("fiscal_sign") @db.Text
+  qrCodeUrl    String   @map("qr_code_url") @db.Text
+  terminalId   String   @map("terminal_id") @db.VarChar(100)
+  receiptSeq   BigInt   @default(1) @map("receipt_seq")
+  status       String   @default("SUCCESS") @db.VarChar(30)
+  errorMessage String?  @map("error_message") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("soliq_fiscal_receipts")
+}
+
+model SystemBackupLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  backupName      String   @map("backup_name") @db.VarChar(255)
+  sizeBytes       BigInt   @map("size_bytes")
+  storageProvider String   @map("storage_provider") @db.VarChar(50)
+  status          String   @db.VarChar(30)
+  checksumSha256  String   @map("checksum_sha256") @db.VarChar(128)
+  completedAt     DateTime @default(now()) @map("completed_at")
+
+  @@map("system_backup_logs")
+}
+
+model OfflineSyncQueue {
+  id          String    @id @default(uuid()) @db.Uuid
+  businessId  String    @map("business_id") @db.Uuid
+  deviceId    String    @map("device_id") @db.VarChar(100)
+  payloadJson Json      @map("payload_json")
+  status      String    @default("PENDING") @db.VarChar(30)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+
+  @@map("offline_sync_queues")
+}

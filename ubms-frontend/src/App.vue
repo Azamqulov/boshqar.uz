@@ -22,8 +22,8 @@ import OfflineStatusBar from './components/OfflineStatusBar.vue';
 import PwaInstallPrompt from './components/PwaInstallPrompt.vue';
 
 onMounted(() => {
-  // Register Service Worker for PWA Offline caching
-  if ('serviceWorker' in navigator && typeof window !== 'undefined') {
+  // Register Service Worker for PWA Offline caching only in production mode
+  if (import.meta.env.PROD && 'serviceWorker' in navigator && typeof window !== 'undefined') {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/sw.js')
@@ -33,6 +33,14 @@ onMounted(() => {
         .catch((err) => {
           console.warn('[PWA] Service Worker registration failed:', err);
         });
+    });
+  } else if (import.meta.env.DEV && 'serviceWorker' in navigator && typeof window !== 'undefined') {
+    // Unregister any active service worker during local development to ensure fresh hot-reloading
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+        console.log('[PWA Dev] Unregistered existing Service Worker for hot reload');
+      }
     });
   }
 });

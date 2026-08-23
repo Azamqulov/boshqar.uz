@@ -52,10 +52,12 @@
       <div v-if="viewMode === 'table'" class="w-full">
         <!-- Mobile cards on small screens (< md) -->
         <div class="block md:hidden space-y-3">
-          <div v-if="!loading && filteredSoldProducts.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
-            <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <span>Hech qanday mahsulot topilmadi</span>
-          </div>
+          <AppEmptyState
+            v-if="!loading && filteredSoldProducts.length === 0"
+            variant="products"
+            title="Mahsulotlar topilmadi"
+            description="Tanlangan davr uchun hech qanday mahsulot sotilmagan yoki qidiruv natijasi topilmadi"
+          />
 
           <div
             v-for="prod in pagination.paginatedItems.value"
@@ -121,9 +123,12 @@
             </thead>
             <tbody class="divide-y divide-slate-200/80 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200 text-xs">
               <tr v-if="!loading && filteredSoldProducts.length === 0">
-                <td colspan="7" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                  <PackageCheck class="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <span>Hech qanday mahsulot topilmadi</span>
+                <td colspan="7" class="py-6 px-4">
+                  <AppEmptyState
+                    variant="products"
+                    title="Mahsulotlar topilmadi"
+                    description="Tanlangan davr uchun hech qanday mahsulot sotilmagan yoki qidiruv natijasi topilmadi"
+                  />
                 </td>
               </tr>
               <tr v-for="(prod, idx) in pagination.paginatedItems.value" :key="prod.id || idx"
@@ -170,10 +175,12 @@
       <div v-else-if="viewMode === 'grid'">
         <SkeletonLoader v-if="loading" variant="cards" :count="6" />
 
-        <div v-else-if="filteredSoldProducts.length === 0" class="p-12 text-center text-slate-400 dark:text-slate-500 glass-card rounded-2xl">
-          <PackageCheck class="w-10 h-10 mx-auto mb-2 opacity-40" />
-          <span>Hech qanday mahsulot topilmadi</span>
-        </div>
+        <AppEmptyState
+          v-else-if="filteredSoldProducts.length === 0"
+          variant="products"
+          title="Mahsulotlar topilmadi"
+          description="Tanlangan davr uchun hech qanday mahsulot sotilmagan yoki qidiruv natijasi topilmadi"
+        />
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
@@ -241,6 +248,7 @@
 import { ref, computed, watch } from 'vue';
 import { PackageCheck, Search } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppEmptyState from '../../../components/AppEmptyState.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';

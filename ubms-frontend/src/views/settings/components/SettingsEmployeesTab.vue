@@ -86,19 +86,14 @@
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
               <tr v-if="!loading && filteredEmployees.length === 0">
-                <td colspan="6" class="py-12 text-center text-slate-400 dark:text-slate-500">
-                  <Users class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p class="font-bold text-slate-700 dark:text-slate-300">Xodimlar topilmadi</p>
-                  <p class="text-xs text-slate-400 mt-0.5" v-if="searchQuery || statusFilter || positionFilter">
-                    Qidiruv shartlarini o'zgartiring yoki filtrlarni tozalang
-                  </p>
-                  <button
-                    v-if="searchQuery || statusFilter || positionFilter"
-                    @click="resetFilters"
-                    class="mt-3 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-slate-200 transition"
-                  >
-                    Filtrlarni tozalash
-                  </button>
+                <td colspan="6" class="py-6 px-4">
+                  <AppEmptyState
+                    variant="employees"
+                    title="Xodimlar topilmadi"
+                    description="Xodimlar ro'yxatiga yangi xodim qo'shing yoki qidiruv filtrlarini tozalang"
+                    button-text="Yangi Xodim Qo'shish"
+                    @action="$emit('openAddModal')"
+                  />
                 </td>
               </tr>
               <tr v-for="emp in pagination.paginatedItems.value" :key="emp.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
@@ -162,20 +157,14 @@
 
       <!-- Grid / Cards View -->
       <div v-else>
-        <div v-if="!loading && filteredEmployees.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
-          <Users class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-          <p class="font-bold text-slate-700 dark:text-slate-300">Xodimlar topilmadi</p>
-          <p class="text-xs text-slate-400 mt-0.5" v-if="searchQuery || statusFilter || positionFilter">
-            Qidiruv shartlarini o'zgartiring yoki filtrlarni tozalang
-          </p>
-          <button
-            v-if="searchQuery || statusFilter || positionFilter"
-            @click="resetFilters"
-            class="mt-3 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-slate-200 transition"
-          >
-            Filtrlarni tozalash
-          </button>
-        </div>
+        <AppEmptyState
+          v-if="!loading && filteredEmployees.length === 0"
+          variant="employees"
+          title="Xodimlar topilmadi"
+          description="Xodimlar ro'yxatiga yangi xodim qo'shing yoki qidiruv filtrlarini tozalang"
+          button-text="Yangi Xodim Qo'shish"
+          @action="$emit('openAddModal')"
+        />
 
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
@@ -270,6 +259,7 @@ import {
   Briefcase,
 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppEmptyState from '../../../components/AppEmptyState.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import AppInput from '../../../components/AppInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';

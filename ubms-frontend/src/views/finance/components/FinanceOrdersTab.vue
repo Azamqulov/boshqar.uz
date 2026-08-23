@@ -47,9 +47,29 @@
           </div>
         </div>
       </div>
+      <!-- Skeleton -->
+      <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+      <!-- Empty State -->
+      <AppEmptyState
+        v-else-if="filteredOrders.length === 0"
+        :title="orderSearch || orderPaymentFilter !== 'all' ? 'Cheklar topilmadi' : 'Cheklar yo\'q'"
+        :description="orderSearch || orderPaymentFilter !== 'all' ? 'Qidiruv yoki filtr bo\'yicha chek topilmadi. Qidiruvni tozalang.' : 'Hozircha hech qanday sotuv cheki rasmiylashtirilmagan.'"
+        :variant="orderSearch || orderPaymentFilter !== 'all' ? 'search' : 'finance'"
+      >
+        <template v-if="orderSearch || orderPaymentFilter !== 'all'" #action>
+          <button
+            type="button"
+            @click="orderSearch = ''; orderPaymentFilter = 'all'"
+            class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+          >
+            Filtrlarni tozalash
+          </button>
+        </template>
+      </AppEmptyState>
 
       <!-- 2.1 TABLE VIEW (Desktop Table + Mobile Cards) -->
-      <div v-if="viewMode === 'table'" class="w-full">
+      <div v-else-if="viewMode === 'table'" class="w-full">
         <!-- Mobile cards when on small screens (< md) -->
         <div class="block md:hidden space-y-3">
           <div v-if="!loading && filteredOrders.length === 0" class="py-8 text-center text-slate-400 dark:text-slate-500">
@@ -290,9 +310,10 @@
 import { ref, computed, watch } from 'vue';
 import { Receipt, Search, Eye, Trash2 } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
+import AppPagination from '../../../components/AppPagination.vue';
+import AppEmptyState from '../../../components/AppEmptyState.vue';
 import { useFormat } from '../../../composables/useFormat';
 import { usePagination } from '../../../composables/usePagination';
-import AppPagination from '../../../components/AppPagination.vue';
 
 const props = defineProps<{
   orders: any[];

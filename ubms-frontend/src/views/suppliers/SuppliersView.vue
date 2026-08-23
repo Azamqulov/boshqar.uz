@@ -74,8 +74,28 @@
       </div>
     </div>
 
-    <!-- Table Skeleton -->
+    <!-- Skeleton -->
     <SkeletonLoader v-if="loading" variant="table" :rows="6" />
+
+    <!-- Empty State -->
+    <AppEmptyState
+      v-else-if="filteredSuppliers.length === 0"
+      :title="searchQuery ? 'Ta\'minotchilar topilmadi' : 'Ta\'minotchilar yo\'q'"
+      :description="searchQuery ? 'Qidiruv bo\'yicha hech qanday ta\'minotchi topilmadi. Qidiruvni tozalab ko\'ring.' : 'Hozircha hech qanday ta\'minotchi qo\'shilmagan. Birinchi ta\'minotchingizni qo\'shib boshlang.'"
+      :button-text="searchQuery ? '' : 'Ta\'minotchi qo\'shish'"
+      :variant="searchQuery ? 'search' : 'suppliers'"
+      @action="openCreateModal"
+    >
+      <template v-if="searchQuery" #action>
+        <button
+          type="button"
+          @click="searchQuery = ''"
+          class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+        >
+          Qidiruvni tozalash
+        </button>
+      </template>
+    </AppEmptyState>
 
     <!-- 1. Table View -->
     <SupplierTableView
@@ -173,6 +193,7 @@ import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
+import AppEmptyState from '../../components/AppEmptyState.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';

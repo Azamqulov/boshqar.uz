@@ -34,8 +34,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests and API requests from cache-first handling
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) {
+  // Skip non-GET requests, API requests, and localhost development requests
+  if (
+    event.request.method !== 'GET' ||
+    url.pathname.startsWith('/api/') ||
+    url.hostname === 'localhost' ||
+    url.hostname === '127.0.0.1' ||
+    url.port === '5173'
+  ) {
     return;
   }
 

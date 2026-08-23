@@ -1,0 +1,11 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Customer Avatar Circle -->
+  <circle cx="60" cy="42" r="20" fill="#10B981" fill-opacity="0.2" stroke="#059669" stroke-width="3.5"/>
+  <circle cx="60" cy="36" r="8" fill="#059669" stroke="#047857" stroke-width="2.5"/>
+  <path d="M46 54C46 47 52 44 60 44C68 44 74 47 74 54" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Body Outline -->
+  <path d="M24 95C24 74 40 60 60 60C80 60 96 74 96 95" stroke="#059669" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- BOSHQAR VIP Badge -->
+  <rect x="64" y="24" width="42" height="16" rx="4" fill="#059669" stroke="#047857" stroke-width="2"/>
+  <text x="68" y="35" fill="#FFFFFF" font-size="6" font-family="sans-serif" font-weight="bold">VIP BOSHQAR</text>
+</svg>

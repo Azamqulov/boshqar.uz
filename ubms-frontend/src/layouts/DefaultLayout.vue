@@ -118,323 +118,47 @@
   <div v-else
     class="flex flex-col h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
     <div class="flex-1 flex overflow-hidden relative">
-      <!-- Mobile Backdrop for Sidebar -->
-      <div
-        v-if="isMobileSidebarOpen"
-        class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden transition-opacity"
-        @click="isMobileSidebarOpen = false"
+      <!-- AppSidebar Component -->
+      <AppSidebar
+        v-model:is-sidebar-collapsed="isSidebarCollapsed"
+        v-model:is-mobile-sidebar-open="isMobileSidebarOpen"
+        :visible-nav-groups="visibleNavGroups"
+        :out-of-stock-count="outOfStockCount"
+        :low-stock-count="lowStockCount"
+        :is-subscription-expired="isSubscriptionExpired"
+        :is-subscription-expiring-soon="isSubscriptionExpiringSoon"
+        :is-item-active="isItemActive"
+        :is-item-locked="isItemLocked"
+        :user-full-name="authStore.user?.fullName"
+        :user-role="authStore.activeBusiness?.role"
+        @logout="handleLogout"
       />
-
-      <!-- Sidebar (Collapsible on desktop, fixed drawer on mobile) -->
-      <aside
-        class="bg-white/95 dark:bg-slate-900/95 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 z-50 md:z-20 shrink-0 fixed md:relative inset-y-0 left-0"
-        :class="[
-          isSidebarCollapsed ? 'md:w-20' : 'md:w-64',
-          isMobileSidebarOpen ? 'w-72 translate-x-0 shadow-2xl' : 'w-72 -translate-x-full md:translate-x-0 md:w-auto'
-        ]">
-        <!-- Logo Header (Start-aligned wide logo with sidebar toggle button) -->
-        <div
-          class="h-16 flex items-center border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 overflow-hidden"
-          :class="isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3.5'">
-          <!-- Expanded view: Logo aligned to start -->
-          <div v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="flex items-center gap-2 overflow-hidden min-w-0">
-            <AppLogo size="lg" />
-          </div>
-
-          <!-- Mobile Close Button -->
-          <button
-            @click="isMobileSidebarOpen = false"
-            class="md:hidden p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white transition"
-          >
-            <X class="w-5 h-5" />
-          </button>
-
-          <!-- Sidebar Collapse / Expand Toggle Button -->
-          <button
-            @click="isSidebarCollapsed = !isSidebarCollapsed"
-            class="hidden md:flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
-            :class="isSidebarCollapsed ? 'w-10 h-10' : 'ml-1'"
-            :title="isSidebarCollapsed ? 'Sidebarni kengaytirish' : 'Sidebarni yopish'">
-            <PanelLeftClose v-if="!isSidebarCollapsed" class="w-5 h-5" />
-            <PanelLeftOpen v-else class="w-5 h-5 text-emerald-500" />
-          </button>
-        </div>
-
-        <!-- Navigation Links (Grouped Sections) -->
-        <nav class="flex-1 px-3 py-3 space-y-3 overflow-y-auto">
-          <div v-for="(group, gIdx) in visibleNavGroups" :key="gIdx" class="space-y-0.5">
-            <!-- Section Header -->
-            <div
-              v-if="group.title && (!isSidebarCollapsed || isMobileSidebarOpen)"
-              class="px-3.5 pt-2.5 pb-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider select-none"
-            >
-              {{ group.title }}
-            </div>
-            <div
-              v-else-if="group.title && isSidebarCollapsed && !isMobileSidebarOpen"
-              class="my-1.5 border-t border-slate-200 dark:border-slate-800 mx-2"
-            ></div>
-
-            <!-- Group Items -->
-            <div v-for="item in group.items" :key="item.name" class="space-y-1">
-              <router-link
-                :to="item.to"
-                @click="isMobileSidebarOpen = false"
-                class="flex items-center rounded-xl text-sm font-medium transition-all group btn-interactive"
-                :class="[
-                  isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0 py-2.5' : 'px-3.5 py-2',
-                  isItemActive(item)
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                ]"
-                :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
-              >
-                <div class="relative shrink-0 flex items-center">
-                  <component
-                    :is="item.icon"
-                    class="w-5 h-5 transition-colors shrink-0"
-                    :class="[
-                      isSidebarCollapsed && !isMobileSidebarOpen ? 'mr-0' : 'mr-3',
-                      isItemActive(item)
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
-                    ]"
-                  />
-                  <!-- Collapsed mode dot indicator: Red if out of stock, Amber if low stock -->
-                  <span
-                    v-if="item.name === 'inventory' && (outOfStockCount > 0 || lowStockCount > 0) && isSidebarCollapsed && !isMobileSidebarOpen"
-                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 animate-ping"
-                    :class="outOfStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'"
-                  />
-                  <span
-                    v-if="item.name === 'inventory' && (outOfStockCount > 0 || lowStockCount > 0) && isSidebarCollapsed && !isMobileSidebarOpen"
-                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900"
-                    :class="outOfStockCount > 0 ? 'bg-rose-500' : 'bg-amber-500'"
-                  />
-
-                  <!-- Collapsed mode dot indicator for billing (red if expired, amber if 1-3 days left) -->
-                  <span
-                    v-if="item.name === 'billing' && (isSubscriptionExpired || isSubscriptionExpiringSoon) && isSidebarCollapsed && !isMobileSidebarOpen"
-                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 animate-ping"
-                    :class="isSubscriptionExpired ? 'bg-rose-500' : 'bg-amber-500'"
-                  />
-                  <span
-                    v-if="item.name === 'billing' && (isSubscriptionExpired || isSubscriptionExpiringSoon) && isSidebarCollapsed && !isMobileSidebarOpen"
-                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-slate-900"
-                    :class="isSubscriptionExpired ? 'bg-rose-500' : 'bg-amber-500'"
-                  />
-                </div>
-
-                <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold" :class="{ 'text-slate-400 dark:text-slate-500': isItemLocked(item) }">
-                  {{ item.label }}
-                </span>
-
-                <!-- 0. Locked Badge when Subscription Expired -->
-                <span
-                  v-if="(!isSidebarCollapsed || isMobileSidebarOpen) && isItemLocked(item)"
-                  class="ml-auto w-5 h-5 rounded-lg shrink-0 inline-flex items-center justify-center bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20"
-                  title="Obuna muddati tugagan. Bo'lim qulflangan."
-                >
-                  <Lock class="w-3 h-3" />
-                </span>
-
-                <!-- 1. Out of stock (Tugagan) -> RED exact circle badge -->
-                <span
-                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && outOfStockCount > 0"
-                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse shadow-2xs"
-                  :title="`Omborda ${outOfStockCount} ta mahsulot butunlay tugagan!`"
-                >
-                  {{ outOfStockCount }}
-                </span>
-
-                <!-- 2. Low stock (Kam qolgan) -> AMBER exact circle badge -->
-                <span
-                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'inventory' && lowStockCount > 0"
-                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse shadow-2xs"
-                  :title="`Omborda ${lowStockCount} ta mahsulot kam qolgan!`"
-                >
-                  {{ lowStockCount }}
-                </span>
-
-                <!-- 3. Billing Expiry Exclamation Badge (!) -> EXACT MATCHING CIRCLE -->
-                <span
-                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.name === 'billing' && (isSubscriptionExpiringSoon || isSubscriptionExpired)"
-                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-xs font-black shadow-2xs animate-pulse"
-                  :class="isSubscriptionExpired
-                    ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'"
-                  :title="isSubscriptionExpired ? 'Obunangiz muddati tugagan!' : 'Obunangiz tugashiga 1 kun qoldi!'"
-                >
-                  !
-                </span>
-
-                <!-- 4. Standard badge (AI on Qo'llanma) -> GREEN exact circle badge -->
-                <span
-                  v-else-if="(!isSidebarCollapsed || isMobileSidebarOpen) && item.badge"
-                  class="ml-auto w-6 h-6 rounded-full shrink-0 inline-flex items-center justify-center text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs"
-                >
-                  {{ item.badge }}
-                </span>
-              </router-link>
-            </div>
-          </div>
-        </nav>
-
-        <!-- Bottom User Profile & Logout -->
-        <div class="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/60">
-          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400"
-            :class="isSidebarCollapsed && !isMobileSidebarOpen ? 'justify-center px-0' : 'px-1.5'">
-            <div v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate flex-1 min-w-0 mr-2">
-              <p class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ authStore.user?.fullName }}</p>
-              <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">{{
-                authStore.activeBusiness?.role ||
-                'Owner' }}</p>
-            </div>
-            <button @click="handleLogout" title="Tizimdan chiqish"
-              class="transition flex items-center justify-center btn-interactive"
-              :class="[
-                isSidebarCollapsed && !isMobileSidebarOpen
-                  ? 'w-10 h-10 mx-auto rounded-xl bg-slate-100 hover:bg-rose-500/15 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700 shadow-sm'
-                  : 'p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:bg-rose-500/20'
-              ]">
-              <LogOut class="w-4 h-4 shrink-0" />
-            </button>
-          </div>
-        </div>
-      </aside>
 
       <!-- Main Content Area -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <!-- DEMO WORKSPACE WATERMARK BANNER (CLICKABLE DIRECTLY TO REGISTER) -->
-        <div
-          v-if="authStore.isDemo"
-          @click="goToRegister"
-          class="bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 text-white px-4 py-2 text-xs font-bold flex items-center justify-between gap-3 shadow-md shrink-0 z-20 hover:brightness-105 transition group cursor-pointer"
-        >
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shrink-0">Demo Rejim</span>
-            <span class="truncate">
-              Tizimni haqiqiy biznesingizda ishlatish, Telegram AI Bot va barcha PRO imkoniyatlarni ochish uchun ro'yxatdan o'ting.
-            </span>
-          </div>
-          <div class="shrink-0 flex items-center gap-1.5 px-3.5 py-1 rounded-xl bg-white text-emerald-800 group-hover:bg-emerald-50 text-[11px] font-black shadow-sm transition">
-            <Sparkles class="w-3.5 h-3.5 text-amber-500" />
-            <span>14 Kun Bepul Boshlash →</span>
-          </div>
-        </div>
-
-        <!-- Top Header -->
-        <header
-          class="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3.5 sm:px-6 z-10 shrink-0">
-          <div class="flex items-center space-x-2.5 sm:space-x-3">
-            <button @click="isMobileSidebarOpen = !isMobileSidebarOpen"
-              class="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Menyuni ochish">
-              <Menu class="w-5 h-5" />
-            </button>
-
-            <!-- Quick Toggle button in topbar if collapsed -->
-            <button v-if="isSidebarCollapsed" @click="isSidebarCollapsed = false"
-              class="hidden md:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-              title="Sidebarni ochish">
-              <PanelLeftOpen class="w-4 h-4 text-emerald-500" />
-              <span>Kengaytirish</span>
-            </button>
-
-            <!-- Branch badge -->
-            <div
-              class="flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs truncate">
-              <Store class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-              <span class="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[120px] sm:max-w-[200px]">{{ authStore.activeBusiness?.name }}</span>
-              <span class="hidden sm:inline text-slate-400 dark:text-slate-500">•</span>
-              <span class="hidden sm:inline text-emerald-600 dark:text-emerald-400 font-semibold uppercase">{{
-                authStore.activeBusiness?.businessType }}</span>
-            </div>
-
-            <!-- Currency Rate Ticker Badge (Auto CBU vs Custom Manual) -->
-            <router-link
-              v-if="posSettings.showCurrencyTicker !== false"
-              to="/settings?tab=profile"
-              class="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition shadow-2xs group cursor-pointer"
-              :class="currencyStore.rateMode === 'custom'
-                ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/5 to-transparent border-amber-500/30 text-amber-900 dark:text-amber-200 hover:border-amber-500/60'
-                : 'bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border-emerald-500/20 text-slate-700 dark:text-slate-300 hover:border-emerald-500/40'"
-              :title="currencyStore.rateMode === 'custom'
-                ? 'Maxsus (qo\'lda kiritilgan) kurs faol. O\'zgartirish uchun bosing.'
-                : `Markaziy Bank (CBU) kursi faol. Sana: ${currencyStore.rates.USD?.date || 'Bugun'}`"
-            >
-              <span class="flex h-2 w-2 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="currencyStore.rateMode === 'custom' ? 'bg-amber-400' : 'bg-emerald-400'"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2" :class="currencyStore.rateMode === 'custom' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
-              </span>
-              <span class="text-[11px] font-black" :class="currencyStore.rateMode === 'custom' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'">
-                {{ currencyStore.rateMode === 'custom' ? 'Maxsus:' : 'CBU:' }}
-              </span>
-              <span class="text-[11px] text-slate-800 dark:text-slate-200">$1={{ currencyStore.usdRate.toLocaleString('uz-UZ') }}</span>
-              <span class="text-slate-400">|</span>
-              <span class="text-[11px] text-slate-800 dark:text-slate-200">₽1={{ currencyStore.rubRate.toLocaleString('uz-UZ') }}</span>
-            </router-link>
-          </div>
-
-          <!-- Right Header Actions: POS, Theme Toggle, Settings -->
-          <div class="flex items-center space-x-2 sm:space-x-3">
-            <router-link to="/pos"
-              class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition btn-interactive">
-              <Zap class="w-3.5 h-3.5" />
-              <span>Tezkor Sotuv</span>
-            </router-link>
-
-            <!-- Theme Toggle Switcher -->
-            <ThemeToggle />
-
-            <!-- Guide & AI Center shortcut -->
-            <router-link to="/guide"
-              class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
-              :class="{ 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40': $route.path === '/guide' }"
-              title="Qo'llanma & Boshqar AI">
-              <BookOpen class="w-5 h-5" />
-            </router-link>
-
-            <router-link to="/settings"
-              class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Sozlamalar">
-              <Settings class="w-5 h-5" />
-            </router-link>
-          </div>
-        </header>
+        <!-- AppHeader Component -->
+        <AppHeader
+          :is-sidebar-collapsed="isSidebarCollapsed"
+          :active-business-name="authStore.activeBusiness?.name"
+          :active-business-type="authStore.activeBusiness?.businessType"
+          :show-currency-ticker="posSettings.showCurrencyTicker !== false"
+          :currency-rate-mode="currencyStore.rateMode"
+          :usd-rate="currencyStore.usdRate"
+          :rub-rate="currencyStore.rubRate"
+          :usd-date="currencyStore.rates.USD?.date"
+          :is-demo="authStore.isDemo"
+          @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
+          @expand-sidebar="isSidebarCollapsed = false"
+          @go-to-register="goToRegister"
+        />
 
         <!-- Main Router View -->
-        <main class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 bg-slate-100/70 dark:bg-slate-950 pb-20 md:pb-6 relative">
+        <main class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 bg-slate-100/70 dark:bg-slate-950 pb-28 md:pb-6 relative">
           <!-- Full Screen Feature / Subscription Expired Blur & Lock Overlay -->
-          <div
-            v-if="isCurrentRouteLocked"
-            class="absolute inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 rounded-2xl animate-fade-in"
-          >
-            <div class="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-2xl text-center space-y-4 animate-in zoom-in-95 duration-200">
-              <div class="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center mx-auto shadow-inner">
-                <Lock class="w-8 h-8 text-amber-500" />
-              </div>
-
-              <div>
-                <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {{ currentDisabledFeature ? `«${currentDisabledFeature.label}» xizmati o'chirilgan` : "Obunangiz muddati tugagan" }}
-                </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                  {{ currentDisabledFeature ? "Ushbu xizmat sizning joriy tarifingizda faollashtirilmagan. Foydalanish uchun tarif parametrlarini yoqing yoki tarifni yangilang." : "Dasturdan to'liq foydalanishni davom ettirish uchun obunani yangilang. Faqat Obuna, Qo'llanma va Sozlamalar bo'limlari ochiq." }}
-                </p>
-              </div>
-
-              <div class="pt-2">
-                <router-link
-                  to="/billing"
-                  class="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 transition transform active:scale-98 btn-interactive"
-                >
-                  <CreditCard class="w-5 h-5" />
-                  <span>{{ currentDisabledFeature ? "Tariflarni Ko'rish" : "Obunani Yangilash" }}</span>
-                </router-link>
-              </div>
-            </div>
-          </div>
+          <AppLockOverlay
+            :is-current-route-locked="isCurrentRouteLocked"
+            :current-disabled-feature="currentDisabledFeature"
+          />
 
           <!-- Page Content with Smooth Transition Animation -->
           <div :class="{ 'filter blur-[5px] pointer-events-none select-none opacity-60 transition-all duration-300': isCurrentRouteLocked }">
@@ -448,31 +172,9 @@
           </div>
         </main>
       </div>
+      <!-- Floating Curved Mobile Bottom Dock Navigation Bar Component -->
+      <AppMobileBottomDock @openMobileSidebar="isMobileSidebarOpen = true" />
     </div>
-
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="md:hidden flex items-center justify-around bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 z-30 shrink-0">
-      <router-link to="/pos" class="flex flex-col items-center py-1 px-3 rounded-xl text-[10px] font-bold transition" :class="$route.path === '/pos' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-slate-500 dark:text-slate-400'">
-        <ShoppingCart class="w-4 h-4 mb-0.5" />
-        <span>Kassa</span>
-      </router-link>
-      <router-link to="/dashboard" class="flex flex-col items-center py-1 px-3 rounded-xl text-[10px] font-bold transition" :class="$route.path === '/dashboard' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-slate-500 dark:text-slate-400'">
-        <LayoutDashboard class="w-4 h-4 mb-0.5" />
-        <span>Asosiy</span>
-      </router-link>
-      <router-link to="/products" class="flex flex-col items-center py-1 px-3 rounded-xl text-[10px] font-bold transition" :class="$route.path.startsWith('/products') ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-slate-500 dark:text-slate-400'">
-        <Package class="w-4 h-4 mb-0.5" />
-        <span>Tovarlar</span>
-      </router-link>
-      <router-link to="/finance" class="flex flex-col items-center py-1 px-3 rounded-xl text-[10px] font-bold transition" :class="$route.path === '/finance' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-slate-500 dark:text-slate-400'">
-        <DollarSign class="w-4 h-4 mb-0.5" />
-        <span>Moliya</span>
-      </router-link>
-      <button @click="isMobileSidebarOpen = true" class="flex flex-col items-center py-1 px-3 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
-        <Menu class="w-4 h-4 mb-0.5" />
-        <span>Menyu</span>
-      </button>
-    </nav>
   </div>
 </template>
 
@@ -484,6 +186,10 @@ import { useDataStore } from '../stores/data.store';
 import { useCurrencyStore } from '../stores/currency.store';
 import ThemeToggle from '../components/ThemeToggle.vue';
 import AppLogo from '../components/AppLogo.vue';
+import AppHeader from '../components/AppHeader.vue';
+import AppSidebar from '../components/AppSidebar.vue';
+import AppLockOverlay from '../components/AppLockOverlay.vue';
+import AppMobileBottomDock from '../components/AppMobileBottomDock.vue';
 import { useLanguage } from '../composables/useLanguage';
 import { usePosSettings } from '../composables/usePosSettings';
 import api from '../services/api';
@@ -500,6 +206,7 @@ import {
   Users,
   Truck,
   DollarSign,
+  Wallet,
   UtensilsCrossed,
   Flame,
   Scissors,
@@ -959,5 +666,44 @@ onMounted(async () => {
 .page-fade-leave-to {
   opacity: 0;
   transform: translateY(-6px) scale(0.996);
+}
+
+/* Water Drop Liquid Animation when switching tabs */
+@keyframes liquidDrop {
+  0% {
+    transform: scale(0.4) translateY(-10px);
+    border-radius: 40% 40% 55% 55% / 60% 60% 40% 40%;
+  }
+  45% {
+    transform: scale(1.18) translateY(2px);
+    border-radius: 35% 35% 65% 65% / 45% 45% 55% 55%;
+  }
+  75% {
+    transform: scale(0.92) translateY(-1px);
+    border-radius: 55% 55% 45% 45% / 55% 55% 45% 45%;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    border-radius: 9999px;
+  }
+}
+
+@keyframes waterRipple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.animate-liquid-drop {
+  animation: liquidDrop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-water-ripple {
+  animation: waterRipple 0.45s ease-out forwards;
 }
 </style>

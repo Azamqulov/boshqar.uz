@@ -1,0 +1,9 @@
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stacked Cardboard Boxes -->
+  <path d="M60 20L95 38V76L60 94L25 76V38L60 20Z" fill="#10B981" fill-opacity="0.2" stroke="#059669" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M60 20V94" stroke="#059669" stroke-width="3.5"/>
+  <path d="M25 38L60 56L95 38" stroke="#059669" stroke-width="3.5"/>
+  <!-- Barcode Badge -->
+  <rect x="38" y="62" width="44" height="18" rx="4" fill="#059669" stroke="#047857" stroke-width="2"/>
+  <text x="42" y="74" fill="#FFFFFF" font-size="7" font-family="sans-serif" font-weight="bold">BOSHQAR</text>
+</svg>

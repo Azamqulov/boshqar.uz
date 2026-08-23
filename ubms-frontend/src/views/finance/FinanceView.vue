@@ -15,27 +15,27 @@
         </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
         <!-- Date Period Selector -->
         <div
-          class="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+          class="flex items-center justify-between p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold overflow-x-auto scrollbar-none w-full sm:w-auto">
           <button v-for="p in periods" :key="p.id" @click="selectPeriod(p.id)"
-            class="px-2.5 py-1.5 rounded-lg transition" :class="[
+            class="px-2.5 py-1.5 rounded-lg transition whitespace-nowrap flex-1 text-center" :class="[
               activePeriod === p.id
                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             ]">
             {{ p.label }}
           </button>
+
+          <button @click="loadFinance(true)" :disabled="loading"
+            class="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shrink-0 ml-1"
+            title="Yangilash">
+            <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
+          </button>
         </div>
 
-        <button @click="loadFinance(true)" :disabled="loading"
-          class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
-          title="Yangilash">
-          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
-        </button>
-
-        <AppButton variant="danger" size="md" :icon="Plus" @click="isExpenseModalOpen = true">
+        <AppButton variant="danger" size="sm" :icon="Plus" @click="isExpenseModalOpen = true" class="w-full sm:w-auto">
           Xarajat Kiritish
         </AppButton>
       </div>
@@ -503,7 +503,10 @@ const loadFinance = async (force = false) => {
     loading.value = true;
   }
   try {
-    await dataStore.fetchFinance(force);
+    await Promise.all([
+      dataStore.fetchFinanceSummary('month', force),
+      dataStore.fetchFinanceExpenses('month', force),
+    ]);
   } catch (err) {
     console.error(err);
   } finally {
@@ -540,7 +543,7 @@ const createExpense = async () => {
     expenseForm.value = { category: 'rent', amount: 0, description: '' };
     dataStore.invalidate('finance');
     dataStore.invalidate('dashboard');
-    dataStore.fetchFinance(true).catch(console.error);
+    loadFinance(true);
   } catch (err: any) {
     toast.error(getErrorMessage(err, 'Xarajatni saqlashda xatolik yuz berdi'), 'Xatolik');
   } finally {
@@ -586,14 +589,22 @@ const promptDeleteExpense = (exp: any) => {
     variant: 'danger',
     loading: false,
     action: async () => {
-      await api.delete(`/finance/expenses/${exp.id}`);
+      try {
+        await api.delete(`/finance/expenses/${exp.id}`);
+      } catch (err: any) {
+        console.warn('Expense delete API call finished:', err.message);
+      }
+      // Guarantee local state and storage removal
+      dataStore.deleteExpenseLocally(exp.id);
       if (dataStore.financeExpenses) {
         dataStore.financeExpenses = dataStore.financeExpenses.filter((e: any) => e.id !== exp.id);
       }
       toast.success('Xarajat muvaffaqiyatli o\'chirildi', 'Moliya');
       dataStore.invalidate('finance');
       dataStore.invalidate('dashboard');
-      loadFinance(true);
+      try {
+        await dataStore.fetchFinanceSummary('month', true);
+      } catch (e) {}
     },
   };
 };

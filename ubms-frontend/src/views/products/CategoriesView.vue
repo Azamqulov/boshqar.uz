@@ -98,13 +98,24 @@
     <SkeletonLoader v-if="loading" variant="table" :rows="6" />
 
     <!-- Empty State -->
-    <div v-else-if="filteredCategories.length === 0" class="glass-card rounded-2xl p-12 text-center text-slate-400 dark:text-slate-500">
-      <FolderTree class="w-12 h-12 mx-auto mb-3 opacity-30" />
-      <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Kategoriyalar Topilmadi</h3>
-      <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-        Hali hech qanday kategoriya yaratilmagan yoki qidiruv mos kelmadi. Yuqoridagi tugma orqali yangi kategoriya qo'shing.
-      </p>
-    </div>
+    <AppEmptyState
+      v-else-if="filteredCategories.length === 0"
+      :title="searchQuery ? 'Kategoriyalar topilmadi' : 'Kategoriyalar yo\'q'"
+      :description="searchQuery ? 'Qidiruv bo\'yicha hech qanday kategoriya topilmadi. Qidiruvni tozalang.' : 'Hali hech qanday kategoriya yaratilmagan. Birinchi kategoriyangizni qo\'shib boshlang.'"
+      :button-text="searchQuery ? '' : 'Kategoriya qo\'shish'"
+      :variant="searchQuery ? 'search' : 'products'"
+      @action="openCreateForm"
+    >
+      <template v-if="searchQuery" #action>
+        <button
+          type="button"
+          @click="searchQuery = ''"
+          class="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition btn-interactive cursor-pointer"
+        >
+          Qidiruvni tozalash
+        </button>
+      </template>
+    </AppEmptyState>
 
     <!-- 1. Table View Component -->
     <CategoryTableView
@@ -172,6 +183,7 @@ import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppEmptyState from '../../components/AppEmptyState.vue';
 import { usePagination } from '../../composables/usePagination';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 
