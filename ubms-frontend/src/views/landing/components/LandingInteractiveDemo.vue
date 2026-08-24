@@ -20,7 +20,7 @@
         <div class="inline-flex p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm max-w-full overflow-x-auto gap-1">
           <button
             type="button"
-            @click="activeDemoTab = 'pos'"
+            @click="selectTab('pos')"
             :class="[
               'h-10 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer',
               activeDemoTab === 'pos'
@@ -34,7 +34,7 @@
 
           <button
             type="button"
-            @click="activeDemoTab = 'dashboard'"
+            @click="selectTab('dashboard')"
             :class="[
               'h-10 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer',
               activeDemoTab === 'dashboard'
@@ -48,7 +48,7 @@
 
           <button
             type="button"
-            @click="activeDemoTab = 'crm'"
+            @click="selectTab('crm')"
             :class="[
               'h-10 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer',
               activeDemoTab === 'crm'
@@ -62,7 +62,7 @@
 
           <button
             type="button"
-            @click="activeDemoTab = 'restaurant'"
+            @click="selectTab('restaurant')"
             :class="[
               'h-10 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer',
               activeDemoTab === 'restaurant'
@@ -610,7 +610,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import AOS from 'aos';
 import {
   Zap,
@@ -637,6 +637,45 @@ defineEmits<{
 }>();
 
 const activeDemoTab = ref<'pos' | 'dashboard' | 'crm' | 'restaurant'>('pos');
+const tabsList: Array<'pos' | 'dashboard' | 'crm' | 'restaurant'> = ['pos', 'dashboard', 'crm', 'restaurant'];
+
+let autoSlideTimer: any = null;
+const isUserInteracting = ref(false);
+
+function startAutoSlide() {
+  stopAutoSlide();
+  autoSlideTimer = setInterval(() => {
+    if (!isUserInteracting.value) {
+      const currentIndex = tabsList.indexOf(activeDemoTab.value);
+      const nextIndex = (currentIndex + 1) % tabsList.length;
+      activeDemoTab.value = tabsList[nextIndex];
+    }
+  }, 4000);
+}
+
+function stopAutoSlide() {
+  if (autoSlideTimer) {
+    clearInterval(autoSlideTimer);
+    autoSlideTimer = null;
+  }
+}
+
+function selectTab(tab: 'pos' | 'dashboard' | 'crm' | 'restaurant') {
+  activeDemoTab.value = tab;
+  // User interacted manually, temporarily delay auto slide
+  isUserInteracting.value = true;
+  setTimeout(() => {
+    isUserInteracting.value = false;
+  }, 8000);
+}
+
+onMounted(() => {
+  startAutoSlide();
+});
+
+onUnmounted(() => {
+  stopAutoSlide();
+});
 
 watch(activeDemoTab, async () => {
   await nextTick();
