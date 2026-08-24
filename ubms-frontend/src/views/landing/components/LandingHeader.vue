@@ -6,34 +6,70 @@
         <AppLogo size="lg" />
       </div>
 
-      <!-- Desktop Navigation Links with animated underlines & hover lifts -->
+      <!-- Desktop Navigation Links with animated dropdown & hover lifts -->
       <nav class="hidden lg:flex items-center gap-4 xl:gap-6 text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 shrink-0">
-        <router-link to="/telegram-bot" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>Telegram Bot</span>
-          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </router-link>
-        <router-link to="/sohalar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>Sohalar</span>
-          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </router-link>
-        <router-link to="/kalkulyator" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>Kalkulyator</span>
-          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </router-link>
-        <router-link to="/taqqoslash" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>Taqqoslash</span>
-          <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </router-link>
+        <!-- Xizmatlar Dropdown -->
+        <div class="relative group py-2" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <span>Xizmatlar & Yechimlar</span>
+            <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': isDropdownOpen }" />
+          </button>
+
+          <!-- Dropdown Card -->
+          <div
+            v-if="isDropdownOpen"
+            class="absolute top-full left-0 w-64 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            <router-link
+              to="/telegram-bot"
+              class="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+            >
+              <Send class="w-4 h-4 text-emerald-500" />
+              <div>
+                <div class="font-bold text-xs">Telegram Bot</div>
+                <div class="text-[10px] text-slate-400">Kunlik hisobotlar & TMA POS</div>
+              </div>
+            </router-link>
+
+            <router-link
+              to="/sohalar"
+              class="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+            >
+              <Layers class="w-4 h-4 text-teal-500" />
+              <div>
+                <div class="font-bold text-xs">Sohalar & Modullar</div>
+                <div class="text-[10px] text-slate-400">Do'kon, Restoran, Dorixona...</div>
+              </div>
+            </router-link>
+
+            <router-link
+              to="/tahlil"
+              class="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+            >
+              <Calculator class="w-4 h-4 text-amber-500" />
+              <div>
+                <div class="font-bold text-xs">Kalkulyator & Taqqoslash</div>
+                <div class="text-[11px] text-slate-400">Daromad tahlili va matrisa</div>
+              </div>
+            </router-link>
+          </div>
+        </div>
+
         <router-link to="/tariflar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Tariflar</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
         </router-link>
-        <router-link to="/sharhlar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>Sharhlar</span>
+
+        <router-link to="/yordam" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+          <span>Sharhlar & FAQ</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
         </router-link>
-        <router-link to="/faq" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
-          <span>FAQ</span>
+
+        <router-link to="/aloqa" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+          <span>Aloqa</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
         </router-link>
       </nav>
@@ -87,7 +123,8 @@
 </template>
 
 <script setup lang="ts">
-import { Play, ArrowRight, Sparkles } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Play, ArrowRight, Sparkles, ChevronDown, Send, Layers, Calculator } from 'lucide-vue-next';
 import AppLogo from '../../../components/AppLogo.vue';
 import ThemeToggle from '../../../components/ThemeToggle.vue';
 
@@ -98,4 +135,6 @@ defineProps<{
 defineEmits<{
   (e: 'openDemo'): void;
 }>();
+
+const isDropdownOpen = ref(false);
 </script>
