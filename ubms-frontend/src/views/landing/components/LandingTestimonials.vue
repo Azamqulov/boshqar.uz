@@ -40,22 +40,17 @@
 
       <!-- Testimonials Carousel Viewport -->
       <div
-        class="overflow-hidden relative"
+        class="overflow-hidden relative min-h-[220px]"
         @mouseenter="pauseAutoPlay"
         @mouseleave="resumeAutoPlay"
       >
-        <div
-          class="flex transition-transform duration-500 ease-out"
-          :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
-        >
-          <!-- Slide Groups (Each group contains 3 cards on desktop) -->
+        <Transition name="tab-slide" mode="out-in">
           <div
-            v-for="(group, gIdx) in slideGroups"
-            :key="gIdx"
-            class="w-full shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 px-0.5"
+            :key="currentSlide"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 px-0.5"
           >
             <div
-              v-for="(t, tIdx) in group"
+              v-for="(t, tIdx) in slideGroups[currentSlide]"
               :key="tIdx"
               class="p-6 sm:p-7 rounded-3xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-xs hover:-translate-y-1 hover:shadow-xl hover:border-emerald-500/40 transition-all duration-300 text-left"
             >
@@ -91,7 +86,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </Transition>
       </div>
 
       <!-- Carousel Navigation & Pagination Bar -->
@@ -278,7 +273,7 @@ const startAutoPlay = () => {
   stopAutoPlay();
   autoPlayTimer = setInterval(() => {
     nextSlide();
-  }, 7000);
+  }, 4500);
 };
 
 const stopAutoPlay = () => {
@@ -304,3 +299,20 @@ onUnmounted(() => {
   stopAutoPlay();
 });
 </script>
+
+<style scoped>
+.tab-slide-enter-active,
+.tab-slide-leave-active {
+  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-slide-enter-from {
+  opacity: 0;
+  transform: translateX(24px) scale(0.99);
+}
+
+.tab-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-24px) scale(0.99);
+}
+</style>
