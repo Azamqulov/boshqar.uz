@@ -15,6 +15,7 @@
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">Mijoz Ism Familiyasi *</label>
               <input
                 v-model="customerForm.fullName"
+                @input="handleFullNameInput"
                 required
                 placeholder="Masalan: Jamshid Aliyev"
                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
@@ -70,7 +71,7 @@ import AppButton from '../../../components/AppButton.vue';
 import PhoneInput from '../../../components/PhoneInput.vue';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean;
   editingCustomerId: string | null;
   customerForm: {
@@ -86,4 +87,12 @@ defineEmits<{
   (e: 'close'): void;
   (e: 'save'): void;
 }>();
+
+const handleFullNameInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.value) {
+    props.customerForm.fullName = target.value.replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+    target.value = props.customerForm.fullName;
+  }
+};
 </script>

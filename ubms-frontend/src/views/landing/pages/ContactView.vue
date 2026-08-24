@@ -182,9 +182,10 @@ const submitted = ref(false);
 
 const handleNameInput = (e: Event) => {
   const input = e.target as HTMLInputElement;
-  const val = input.value;
-  // Auto capitalize first letter of each word
-  form.value.name = val.replace(/\b\w/g, (char) => char.toUpperCase());
+  if (input.value) {
+    form.value.name = input.value.replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+    input.value = form.value.name;
+  }
 };
 
 const handlePhoneInput = (e: Event) => {

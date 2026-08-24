@@ -16,6 +16,7 @@
         </label>
         <input
           v-model="fullName"
+          @input="handleFullNameInput"
           type="text"
           required
           placeholder="Ismingiz va familiyangiz"
@@ -75,6 +76,14 @@ const phone = ref('+998 ');
 const password = ref('');
 const errorMessage = ref('');
 const isLoading = ref(false);
+
+const handleFullNameInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.value) {
+    fullName.value = target.value.replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+    target.value = fullName.value;
+  }
+};
 
 const handleRegister = async () => {
   errorMessage.value = '';

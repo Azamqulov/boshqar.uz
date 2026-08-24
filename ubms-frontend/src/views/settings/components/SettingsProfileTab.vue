@@ -77,6 +77,7 @@
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">To'liq Ism Familiya *</label>
               <input
                 v-model="profileForm.fullName"
+                @input="handleFullNameInput"
                 required
                 placeholder="Ism Familiyangizni kiriting"
                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
@@ -337,7 +338,7 @@ const scriptOptions = [
   { value: 'cyrillic', label: "O'zbek Kirill (Аа)", icon: Languages },
 ];
 
-defineProps<{
+const props = defineProps<{
   profileForm: {
     fullName: string;
     phone: string;
@@ -359,4 +360,11 @@ defineEmits<{
 }>();
 
 const authStore = useAuthStore();
+const handleFullNameInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (target.value) {
+    props.profileForm.fullName = target.value.replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+    target.value = props.profileForm.fullName;
+  }
+};
 </script>

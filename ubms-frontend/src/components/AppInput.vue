@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 interface Props {
   modelValue: string | number;
   label?: string;
@@ -12,18 +14,41 @@ interface Props {
   required?: boolean;
   disabled?: boolean;
   icon?: any;
+  autoCapitalize?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   step: 'any',
   required: false,
   disabled: false,
+  autoCapitalize: undefined,
 });
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void;
 }>();
+
+const shouldCapitalize = computed(() => {
+  if (props.autoCapitalize !== undefined) {
+    return props.autoCapitalize;
+  }
+  const labelMatch = props.label && /ism|familiya|fullname|name|f\.?i\.?o/i.test(props.label);
+  const placeholderMatch = props.placeholder && /ism|familiya|fullname|name|f\.?i\.?o/i.test(props.placeholder);
+  return !!(labelMatch || placeholderMatch);
+});
+
+const handleInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  let val = target.value;
+
+  if (shouldCapitalize.value && typeof val === 'string' && val.length > 0) {
+    val = val.replace(/(?:^|\s|-)\S/g, (char) => char.toUpperCase());
+    target.value = val;
+  }
+
+  emit('update:modelValue', val);
+};
 </script>
 
 <template>
@@ -52,7 +77,7 @@ defineEmits<{
             ? 'border-rose-400 dark:border-rose-600 focus:border-rose-500'
             : 'border-slate-300 dark:border-slate-700 focus:border-emerald-500',
         ]"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="handleInput"
       />
     </div>
 
