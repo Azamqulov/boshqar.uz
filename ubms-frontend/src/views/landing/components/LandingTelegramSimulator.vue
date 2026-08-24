@@ -35,7 +35,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              @click="simulateMessage('sale')"
+              @click="userTriggerSimulate('sale')"
               class="p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center gap-3.5"
               :class="activeAction === 'sale' 
                 ? 'bg-emerald-500/15 border-emerald-500 text-emerald-950 dark:text-white shadow-md shadow-emerald-500/10 scale-[1.02]' 
@@ -52,7 +52,7 @@
 
             <button
               type="button"
-              @click="simulateMessage('daily')"
+              @click="userTriggerSimulate('daily')"
               class="p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center gap-3.5"
               :class="activeAction === 'daily' 
                 ? 'bg-emerald-500/15 border-emerald-500 text-emerald-950 dark:text-white shadow-md shadow-emerald-500/10 scale-[1.02]' 
@@ -69,7 +69,7 @@
 
             <button
               type="button"
-              @click="simulateMessage('low_stock')"
+              @click="userTriggerSimulate('low_stock')"
               class="p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center gap-3.5"
               :class="activeAction === 'low_stock' 
                 ? 'bg-emerald-500/15 border-emerald-500 text-emerald-950 dark:text-white shadow-md shadow-emerald-500/10 scale-[1.02]' 
@@ -86,7 +86,7 @@
 
             <button
               type="button"
-              @click="simulateMessage('shift')"
+              @click="userTriggerSimulate('shift')"
               class="p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center gap-3.5"
               :class="activeAction === 'shift' 
                 ? 'bg-emerald-500/15 border-emerald-500 text-emerald-950 dark:text-white shadow-md shadow-emerald-500/10 scale-[1.02]' 
@@ -290,7 +290,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import {
   Send,
   Receipt,
@@ -311,6 +311,10 @@ const activeAction = ref<string>('sale');
 const isTyping = ref<boolean>(false);
 const chatContainer = ref<HTMLElement | null>(null);
 const currentTime = ref<string>('09:48');
+
+const actionsList = ['sale', 'daily', 'low_stock', 'shift'];
+let autoSimTimer: any = null;
+const isUserInteracting = ref(false);
 
 const messages = ref<BotMessage[]>([
   {
@@ -398,11 +402,25 @@ const simulateMessage = (type: string) => {
       });
     }
 
+    // Keep chat message history clean (max 4 messages)
+    if (messages.value.length > 4) {
+      messages.value.shift();
+    }
+
     scrollToBottom();
-  }, 500);
+  }, 600);
+};
+
+const userTriggerSimulate = (type: string) => {
+  isUserInteracting.value = true;
+  simulateMessage(type);
+  setTimeout(() => {
+    isUserInteracting.value = false;
+  }, 8000);
 };
 
 const triggerCommand = (cmd: string) => {
+  isUserInteracting.value = true;
   const t = getNowTime();
   messages.value.push({
     isUser: true,
@@ -417,9 +435,36 @@ const triggerCommand = (cmd: string) => {
   } else if (cmd === '/ombor') {
     simulateMessage('low_stock');
   }
+
+  setTimeout(() => {
+    isUserInteracting.value = false;
+  }, 8000);
 };
+
+function startAutoSimulation() {
+  stopAutoSimulation();
+  autoSimTimer = setInterval(() => {
+    if (!isUserInteracting.value) {
+      const idx = actionsList.indexOf(activeAction.value);
+      const nextIdx = (idx + 1) % actionsList.length;
+      simulateMessage(actionsList[nextIdx]);
+    }
+  }, 4000);
+}
+
+function stopAutoSimulation() {
+  if (autoSimTimer) {
+    clearInterval(autoSimTimer);
+    autoSimTimer = null;
+  }
+}
 
 onMounted(() => {
   currentTime.value = getNowTime();
+  startAutoSimulation();
+});
+
+onUnmounted(() => {
+  stopAutoSimulation();
 });
 </script>
