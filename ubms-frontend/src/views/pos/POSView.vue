@@ -725,6 +725,7 @@ const handleCompleteOrder = async () => {
           name: i.name,
           quantity: i.quantity,
           unitPrice: i.price,
+          isManualPrice: Boolean(i.isManualPrice),
           discountAmount: i.discount || 0,
         })),
         discountAmount: cartStore.generalDiscount || 0,
@@ -750,6 +751,7 @@ const handleCompleteOrder = async () => {
             serviceId: i.serviceId,
             quantity: i.quantity,
             unitPrice: i.price,
+            isManualPrice: Boolean(i.isManualPrice),
             discountAmount: i.discount || 0,
           })),
           discountAmount: cartStore.generalDiscount || 0,
@@ -774,6 +776,7 @@ const handleCompleteOrder = async () => {
               name: i.name,
               quantity: i.quantity,
               unitPrice: i.price,
+              isManualPrice: Boolean(i.isManualPrice),
               discountAmount: i.discount || 0,
             })),
             discountAmount: cartStore.generalDiscount || 0,
@@ -864,6 +867,22 @@ const handleCompleteOrder = async () => {
 };
 
 import { usePOSKeyboard } from './composables/usePOSKeyboard';
+import { useBarcodeScanner } from './composables/useBarcodeScanner';
+
+// Global Barcode Hardware Scanner listener
+useBarcodeScanner({
+  onScan: (scannedCode) => {
+    const matched = dataStore.products.find(
+      (p) => p.barcode === scannedCode || p.sku?.toLowerCase() === scannedCode.toLowerCase()
+    );
+    if (matched) {
+      handleProductClick(matched);
+      toast.success(`Sktrix-kod o'qildi: "${matched.name}"`, 'Skaner');
+    } else {
+      toast.warning(`Shtrix-kod bo'yicha mahsulot topilmadi: ${scannedCode}`, 'Skaner');
+    }
+  },
+});
 
 // Setup POS Keyboard hotkeys composable
 usePOSKeyboard({

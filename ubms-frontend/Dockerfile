@@ -7,12 +7,12 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY ubms-shared-types ./ubms-shared-types
-RUN cd ubms-shared-types && npm ci && npm run build
+RUN cd ubms-shared-types && npm install && npm run build
 
 COPY ubms-frontend ./ubms-frontend
 WORKDIR /app/ubms-frontend
 
-RUN npm ci
+RUN npm install
 RUN npm run build
 
 # Nginx Production Server

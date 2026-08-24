@@ -1,0 +1,187 @@
+diff --git a/ubms-backend/prisma/seed.ts b/ubms-backend/prisma/seed.ts
+index 861bb09..1a1328b 100644
+--- a/ubms-backend/prisma/seed.ts
++++ b/ubms-backend/prisma/seed.ts
+@@ -60,6 +60,7 @@ async function main() {
+     { code: 'orders.view', module: 'orders', description: 'Buyurtmalarni ko\'rish' },
+     { code: 'orders.create', module: 'orders', description: 'Kassada savdo qilish' },
+     { code: 'orders.cancel', module: 'orders', description: 'Buyurtmani bekor qilish' },
++    { code: 'orders.manualPrice', module: 'orders', description: 'Qo\'lda narx belgilash (katalog narxini o\'zgartirish)' },
+     { code: 'refunds.create', module: 'refunds', description: 'Mahsulot qaytarishni rasmiylashtirish' },
+     { code: 'inventory.view', module: 'inventory', description: 'Ombor qoldiqlarini ko\'rish' },
+     { code: 'inventory.create', module: 'inventory', description: 'Kirim/chiqim amallarini bajarish' },
+diff --git a/ubms-backend/src/modules/orders/orders.controller.ts b/ubms-backend/src/modules/orders/orders.controller.ts
+index b12ee83..2a8afd0 100644
+--- a/ubms-backend/src/modules/orders/orders.controller.ts
++++ b/ubms-backend/src/modules/orders/orders.controller.ts
+@@ -98,9 +98,10 @@ export class OrdersController {
+     @CurrentBusinessId() businessId: string,
+     @CurrentBranchId() branchId: string,
+     @CurrentUser('userId') userId: string,
++    @CurrentUser() user: any,
+     @Body() dto: CreateOrderDto,
+   ) {
+-    return this.ordersService.create(businessId, branchId, userId, dto);
++    return this.ordersService.create(businessId, branchId, userId, dto, user);
+   }
+ 
+   @Post(':id/complete')
+diff --git a/ubms-backend/src/modules/orders/orders.service.spec.ts b/ubms-backend/src/modules/orders/orders.service.spec.ts
+index 76485f1..583068c 100644
+--- a/ubms-backend/src/modules/orders/orders.service.spec.ts
++++ b/ubms-backend/src/modules/orders/orders.service.spec.ts
+@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
+ import { OrdersService } from './orders.service';
+ import { PrismaService } from '../../prisma/prisma.service';
+ import { TelegramService } from '../telegram/telegram.service';
+-import { NotFoundException, ConflictException } from '@nestjs/common';
++import { NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+ 
+ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
+   let service: OrdersService;
+@@ -177,7 +177,7 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
+     );
+   });
+ 
+-  it('should allow custom price only when isManualPrice is explicitly set', async () => {
++  it('should allow custom price only when isManualPrice is set AND user has orders.manualPrice permission', async () => {
+     prisma.order.create.mockResolvedValue({
+       id: 'order-3',
+       orderNumber: '#0008',
+@@ -200,7 +200,8 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
+       payments: [{ paymentMethodId: 'pm-1', amount: 50000 }],
+     };
+ 
+-    await service.create('tenant-a', 'branch-1', 'user-1', dto);
++    const permittedUser = { userId: 'user-1', permissions: ['orders.manualPrice'] };
++    await service.create('tenant-a', 'branch-1', 'user-1', dto, permittedUser);
+ 
+     expect(prisma.order.create).toHaveBeenCalledWith(
+       expect.objectContaining({
+@@ -211,6 +212,57 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
+     );
+   });
+ 
++  it('should reject isManualPrice from a cashier without orders.manualPrice permission (Manual Price Guard)', async () => {
++    const dto: any = {
++      orderType: 'dine_in',
++      branchId: 'branch-1',
++      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 100, isManualPrice: true }],
++      payments: [{ paymentMethodId: 'pm-1', amount: 200 }],
++    };
++
++    // Ordinary cashier: only has orders.create, NOT orders.manualPrice
++    const cashierUser = { userId: 'user-1', permissions: ['orders.create'] };
++
++    await expect(service.create('tenant-a', 'branch-1', 'user-1', dto, cashierUser)).rejects.toThrow(
++      ForbiddenException,
++    );
++    expect(prisma.order.create).not.toHaveBeenCalled();
++  });
++
++  it('should fall back to server catalog price if isManualPrice is set but no user/permission context is provided', async () => {
++    prisma.order.create.mockResolvedValue({
++      id: 'order-4',
++      orderNumber: '#0009',
++      total: 56000,
++      status: 'completed',
++      items: [],
++    });
++    prisma.order.findUnique.mockResolvedValue({
++      id: 'order-4',
++      orderNumber: '#0009',
++      total: 56000,
++      status: 'completed',
++      items: [],
++    });
++
++    const dto: any = {
++      orderType: 'dine_in',
++      branchId: 'branch-1',
++      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 1, isManualPrice: false }],
++      payments: [{ paymentMethodId: 'pm-1', amount: 56000 }],
++    };
++
++    await service.create('tenant-a', 'branch-1', 'user-1', dto);
++
++    expect(prisma.order.create).toHaveBeenCalledWith(
++      expect.objectContaining({
++        data: expect.objectContaining({
++          total: 56000, // 2 * 28000 catalog price, unitPrice/isManualPrice ignored
++        }),
++      }),
++    );
++  });
++
+   it('should throw NotFoundException when trying to order a product belonging to another tenant (IDOR Protection)', async () => {
+     const dto: any = {
+       orderType: 'dine_in',
+diff --git a/ubms-backend/src/modules/orders/orders.service.ts b/ubms-backend/src/modules/orders/orders.service.ts
+index 62a3274..8afd11d 100644
+--- a/ubms-backend/src/modules/orders/orders.service.ts
++++ b/ubms-backend/src/modules/orders/orders.service.ts
+@@ -3,6 +3,7 @@ import {
+   NotFoundException,
+   BadRequestException,
+   ConflictException,
++  ForbiddenException,
+ } from '@nestjs/common';
+ import { PrismaService } from '../../prisma/prisma.service';
+ import { OrderType, OrderStatus, Prisma } from '@prisma/client';
+@@ -152,11 +153,37 @@ export class OrdersService {
+     return order;
+   }
+ 
+-  async create(businessId: string, branchId: string, userId: string, dto: CreateOrderDto) {
++  /**
++   * SECURITY: isManualPrice=true bilan kelgan unitPrice faqat shu ruxsatga
++   * ega foydalanuvchilar uchun qabul qilinadi. Aks holda har qanday kassir
++   * (orders.create huquqi bilan) narxni o'zi xohlagancha (hatto 0) belgilab,
++   * moliyaviy zarar yetkazishi mumkin edi.
++   */
++  private canOverridePrice(user: any): boolean {
++    if (!user) return false;
++    if (user.isSuperAdmin) return true;
++    const permissions: string[] = Array.isArray(user.permissions) ? user.permissions : [];
++    if (permissions.includes('*') || permissions.includes('ALL') || permissions.includes('orders.manualPrice')) {
++      return true;
++    }
++    const isOwnerOrAdmin =
++      user.isOwner || (user.roleId && ['owner', 'admin'].includes(String(user.roleId).toLowerCase()));
++    return !!isOwnerOrAdmin;
++  }
++
++  async create(businessId: string, branchId: string, userId: string, dto: CreateOrderDto, user?: any) {
+     if (!dto.items || dto.items.length === 0) {
+       throw new BadRequestException({ code: 'EMPTY_ITEMS', message: 'Savatda kamida 1 ta mahsulot yoki xizmat bo\'lishi shart' });
+     }
+ 
++    const canManualPrice = this.canOverridePrice(user);
++    if (dto.items.some((i) => i.isManualPrice) && !canManualPrice) {
++      throw new ForbiddenException({
++        code: 'MANUAL_PRICE_FORBIDDEN',
++        message: 'Qo\'lda narx belgilash uchun ruxsatingiz yo\'q (orders.manualPrice kerak)',
++      });
++    }
++
+     const productIds = dto.items.map((i) => i.productId).filter((id): id is string => Boolean(id));
+     const serviceIds = dto.items.map((i) => i.serviceId).filter((id): id is string => Boolean(id));
+     const todayStart = new Date();
+@@ -221,7 +248,7 @@ export class OrdersService {
+           throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
+         }
+ 
+-        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
++        if (item.isManualPrice && canManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+           unitPrice = Number(item.unitPrice);
+         } else {
+           unitPrice = Number(product.salePrice);
+@@ -232,7 +259,7 @@ export class OrdersService {
+           throw new NotFoundException({ code: 'SERVICE_NOT_FOUND', message: 'Xizmat topilmadi' });
+         }
+ 
+-        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
++        if (item.isManualPrice && canManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+           unitPrice = Number(item.unitPrice);
+         } else {
+           unitPrice = Number(service.price);

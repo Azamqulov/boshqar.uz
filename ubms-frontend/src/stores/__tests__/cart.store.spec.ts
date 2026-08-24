@@ -93,4 +93,28 @@ describe('useCartStore Pinia Store', () => {
     expect(store.discountValue).toBe(0);
     expect(store.grandTotal).toBe(0);
   });
+
+  it("qator bo'yicha va kasrli miqdorlar bo'yicha chegirma va narx to'g'ri hisoblanishi kerak", () => {
+    const store = useCartStore();
+    store.addItem({ id: 'prod-kg', name: 'Olma', salePrice: 15000, unit: { shortName: 'kg', allowDecimal: true } }, false, 1.5);
+
+    expect(store.items[0].quantity).toBe(1.5);
+    expect(store.rawSubtotal).toBe(22500); // 1.5 * 15000
+
+    store.updateDiscount('prod-kg', 2500); // 2500 so'm qator chegirmasi
+    expect(store.subtotal).toBe(20000);
+    expect(store.grandTotal).toBe(20000);
+  });
+
+  it("isManualPrice o'zgartirilganda item o'zining yangi narxini saqlashi kerak", () => {
+    const store = useCartStore();
+    store.addItem({ id: 'prod-manual', name: 'Maxsus Buyum', salePrice: 50000 });
+
+    store.items[0].isManualPrice = true;
+    store.items[0].price = 45000;
+
+    expect(store.items[0].isManualPrice).toBe(true);
+    expect(store.rawSubtotal).toBe(45000);
+    expect(store.grandTotal).toBe(45000);
+  });
 });

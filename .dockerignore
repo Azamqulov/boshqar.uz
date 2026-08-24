@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.github
+dist
+**/dist
+build
+**/build
+.vscode
+.idea
+*.log
+coverage
+**/coverage

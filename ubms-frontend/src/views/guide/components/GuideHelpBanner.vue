@@ -3,7 +3,7 @@
     <div class="flex items-center gap-4">
       <div class="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center">
         <img
-          src="/topa_olmadingizmi_transparent.png"
+          src="/topa-olmadingizmi-transparent.webp"
           alt="Topa olmadingizmi?"
           class="w-full h-full object-contain select-none drop-shadow-sm"
         />

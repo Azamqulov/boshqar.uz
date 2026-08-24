@@ -60,6 +60,7 @@ async function main() {
     { code: 'orders.view', module: 'orders', description: 'Buyurtmalarni ko\'rish' },
     { code: 'orders.create', module: 'orders', description: 'Kassada savdo qilish' },
     { code: 'orders.cancel', module: 'orders', description: 'Buyurtmani bekor qilish' },
+    { code: 'orders.manualPrice', module: 'orders', description: 'Qo\'lda narx belgilash' },
     { code: 'refunds.create', module: 'refunds', description: 'Mahsulot qaytarishni rasmiylashtirish' },
     { code: 'inventory.view', module: 'inventory', description: 'Ombor qoldiqlarini ko\'rish' },
     { code: 'inventory.create', module: 'inventory', description: 'Kirim/chiqim amallarini bajarish' },
@@ -588,7 +589,40 @@ async function main() {
     ],
   });
 
-  console.log('✅ Demo Business, Branches, Categories, Products, Customers, Suppliers, Orders, and Expenses created!');
+  // 19. Sample Audit Logs
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        businessId: business.id,
+        userId: demoUser.id,
+        action: 'login',
+        entity: 'auth',
+        ipAddress: '127.0.0.1',
+        createdAt: new Date(Date.now() - 3600000 * 24),
+      },
+      {
+        businessId: business.id,
+        userId: demoUser.id,
+        action: 'create',
+        entity: 'product',
+        ipAddress: '127.0.0.1',
+        newValue: { name: 'Americano Coffee', price: 18000 },
+        createdAt: new Date(Date.now() - 3600000 * 12),
+      },
+      {
+        businessId: business.id,
+        userId: demoUser.id,
+        action: 'update',
+        entity: 'settings',
+        ipAddress: '127.0.0.1',
+        oldValue: { currency: 'USD' },
+        newValue: { currency: 'UZS' },
+        createdAt: new Date(Date.now() - 3600000 * 2),
+      },
+    ],
+  });
+
+  console.log('✅ Demo Business, Branches, Categories, Products, Customers, Suppliers, Orders, Expenses, and Audit Logs created!');
   console.log(`🔑 SuperAdmin User: ${demoUser.phone} (Hisob to'liq DB da saqlanadi)`);
   console.log('--- 🚀 Seed Completed Successfully ---');
 }

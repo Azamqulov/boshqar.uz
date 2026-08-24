@@ -15,8 +15,12 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "system:healthcheck": "ts-node -O '{\"module\":\"commonjs\"}' scripts/system-healthcheck.ts",
     "backfill:subscriptions": "ts-node scripts/backfill-subscriptions.ts",
     "test": "jest"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@keyv/redis": "^5.1.6",

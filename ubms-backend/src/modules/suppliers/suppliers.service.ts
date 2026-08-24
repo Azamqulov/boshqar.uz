@@ -62,60 +62,67 @@ export class SuppliersService {
   }
 
   async create(businessId: string, userId: string, data: CreateSupplierDto) {
-    const supplier = await this.prisma.supplier.create({
-      data: {
-        businessId,
-        name: data.name,
-        companyName: data.companyName || null,
-        phone: data.phone || null,
-        address: data.address || null,
-        balance: data.balance || 0,
-        notes: data.notes || null,
-      },
-    });
-
-    // Create Audit Log
-    await this.prisma.auditLog.create({
-      data: {
-        businessId,
-        userId,
-        action: 'SUPPLIER_CREATED',
-        entity: 'supplier',
-        entityId: supplier.id,
-        newValue: {
-          name: supplier.name,
-          companyName: supplier.companyName,
-          initialBalance: Number(supplier.balance),
+    return this.prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.create({
+        data: {
+          businessId,
+          name: data.name,
+          companyName: data.companyName || null,
+          phone: data.phone || null,
+          address: data.address || null,
+          balance: data.balance || 0,
+          notes: data.notes || null,
         },
-      },
-    });
+      });
 
-    return supplier;
+      // Create Audit Log
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          userId,
+          action: 'SUPPLIER_CREATED',
+          entity: 'supplier',
+          entityId: supplier.id,
+          newValue: {
+            name: supplier.name,
+            companyName: supplier.companyName,
+            initialBalance: Number(supplier.balance),
+          },
+        },
+      });
+
+      return supplier;
+    });
   }
 
   async update(businessId: string, userId: string, id: string, data: UpdateSupplierDto) {
-    const supplier = await this.findOne(businessId, id);
-    const oldBalance = Number(supplier.balance);
+    return this.prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.findFirst({
+        where: { id, businessId },
+      });
+      if (!supplier) throw new NotFoundException('Ta\'minotchi topilmadi');
+      const oldBalance = Number(supplier.balance);
 
-    const updated = await this.prisma.supplier.update({
-      where: { id: supplier.id },
-      data,
+      const updated = await tx.supplier.update({
+        where: { id: supplier.id },
+        data,
+      });
+
+      // Create Audit Log
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          userId,
+          action: 'SUPPLIER_UPDATED',
+          entity: 'supplier',
+          entityId: supplier.id,
+          oldValue: { name: supplier.name, balance: oldBalance },
+          newValue: { name: updated.name, balance: Number(updated.balance) },
+        },
+      });
+
+      return updated;
     });
-
-    // Create Audit Log
-    await this.prisma.auditLog.create({
-      data: {
-        businessId,
-        userId,
-        action: 'SUPPLIER_UPDATED',
-        entity: 'supplier',
-        entityId: supplier.id,
-        oldValue: { name: supplier.name, balance: oldBalance },
-        newValue: { name: updated.name, balance: Number(updated.balance) },
-      },
-    });
-
-    return updated;
   }
 
   async paySupplier(
@@ -245,20 +252,26 @@ export class SuppliersService {
   }
 
   async remove(businessId: string, userId: string, id: string) {
-    const supplier = await this.findOne(businessId, id);
+    return this.prisma.$transaction(async (tx) => {
+      const supplier = await tx.supplier.findFirst({
+        where: { id, businessId },
+      });
+      if (!supplier) throw new NotFoundException('Ta\'minotchi topilmadi');
 
-    await this.prisma.auditLog.create({
-      data: {
-        businessId,
-        userId,
-        action: 'SUPPLIER_DELETED',
-        entity: 'supplier',
-        entityId: supplier.id,
-        oldValue: { name: supplier.name, balance: Number(supplier.balance) },
-      },
+      await tx.supplier.delete({ where: { id: supplier.id } });
+
+      await tx.auditLog.create({
+        data: {
+          businessId,
+          userId,
+          action: 'SUPPLIER_DELETED',
+          entity: 'supplier',
+          entityId: supplier.id,
+          oldValue: { name: supplier.name, balance: Number(supplier.balance) },
+        },
+      });
+
+      return { success: true };
     });
-
-    await this.prisma.supplier.delete({ where: { id: supplier.id } });
-    return { success: true };
   }
 }

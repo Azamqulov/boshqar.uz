@@ -111,12 +111,61 @@ describe('SuppliersService', () => {
       });
 
       expect(result.id).toBe('s-new');
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             action: 'SUPPLIER_CREATED',
             entity: 'supplier',
             entityId: 's-new',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('update', () => {
+    it('ta\'minotchi ma\'lumotlarini yangilashi va audit log yozishi kerak', async () => {
+      const mockSupplier = { id: 's1', businessId: 'biz-1', name: 'Nestle', balance: 50000 };
+      const updatedSupplier = { id: 's1', businessId: 'biz-1', name: 'Nestle UZ', balance: 50000 };
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.update.mockResolvedValue(updatedSupplier);
+      mockPrismaService.auditLog.create.mockResolvedValue({});
+
+      const result = await service.update('biz-1', 'user-1', 's1', { name: 'Nestle UZ' });
+
+      expect(result.name).toBe('Nestle UZ');
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'SUPPLIER_UPDATED',
+            entity: 'supplier',
+            entityId: 's1',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('remove', () => {
+    it('ta\'minotchini o\'chirishi va audit log yozishi kerak', async () => {
+      const mockSupplier = { id: 's1', businessId: 'biz-1', name: 'Nestle', balance: 0 };
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.delete.mockResolvedValue(mockSupplier);
+      mockPrismaService.auditLog.create.mockResolvedValue({});
+
+      const result = await service.remove('biz-1', 'user-1', 's1');
+
+      expect(result.success).toBe(true);
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(mockPrismaService.supplier.delete).toHaveBeenCalledWith({ where: { id: 's1' } });
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'SUPPLIER_DELETED',
+            entity: 'supplier',
+            entityId: 's1',
           }),
         }),
       );

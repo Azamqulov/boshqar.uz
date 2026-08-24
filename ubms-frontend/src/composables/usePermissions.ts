@@ -18,6 +18,17 @@ export function usePermissions() {
     );
   });
 
+  const canManualPrice = computed(() => {
+    if (isOwner.value) return true;
+    const user = authStore.user as any;
+    const biz = authStore.activeBusiness as any;
+    const perms = user?.permissions || biz?.permissions || [];
+    if (Array.isArray(perms) && (perms.includes('*') || perms.includes('ALL') || perms.includes('orders.manualPrice'))) {
+      return true;
+    }
+    return false;
+  });
+
   const can = (moduleName: string, action: ActionType = 'view'): boolean => {
     // 1. Owner & SuperAdmin & Admin have FULL permissions across all modules
     if (isOwner.value) return true;
@@ -52,6 +63,7 @@ export function usePermissions() {
 
   return {
     isOwner,
+    canManualPrice,
     can,
     canView,
     canCreate,

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrderType, OrderStatus, Prisma } from '@prisma/client';
@@ -152,9 +153,29 @@ export class OrdersService {
     return order;
   }
 
-  async create(businessId: string, branchId: string, userId: string, dto: CreateOrderDto) {
+  private canOverridePrice(user: any): boolean {
+    if (!user) return false;
+    if (user.isSuperAdmin) return true;
+    const permissions: string[] = Array.isArray(user.permissions) ? user.permissions : [];
+    if (permissions.includes('*') || permissions.includes('ALL') || permissions.includes('orders.manualPrice')) {
+      return true;
+    }
+    const isOwnerOrAdmin =
+      user.isOwner || (user.roleId && ['owner', 'admin'].includes(String(user.roleId).toLowerCase()));
+    return !!isOwnerOrAdmin;
+  }
+
+  async create(businessId: string, branchId: string, userId: string, dto: CreateOrderDto, user?: any) {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException({ code: 'EMPTY_ITEMS', message: 'Savatda kamida 1 ta mahsulot yoki xizmat bo\'lishi shart' });
+    }
+
+    const canManualPrice = this.canOverridePrice(user);
+    if (dto.items.some((i) => i.isManualPrice) && !canManualPrice) {
+      throw new ForbiddenException({
+        code: 'MANUAL_PRICE_FORBIDDEN',
+        message: 'Qo\'lda narx belgilash uchun ruxsatingiz yo\'q (orders.manualPrice kerak)',
+      });
     }
 
     const productIds = dto.items.map((i) => i.productId).filter((id): id is string => Boolean(id));
@@ -221,7 +242,7 @@ export class OrdersService {
           throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Mahsulot topilmadi' });
         }
 
-        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+        if (item.isManualPrice && canManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
           unitPrice = Number(item.unitPrice);
         } else {
           unitPrice = Number(product.salePrice);
@@ -232,7 +253,7 @@ export class OrdersService {
           throw new NotFoundException({ code: 'SERVICE_NOT_FOUND', message: 'Xizmat topilmadi' });
         }
 
-        if (item.isManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
+        if (item.isManualPrice && canManualPrice && item.unitPrice !== undefined && item.unitPrice >= 0) {
           unitPrice = Number(item.unitPrice);
         } else {
           unitPrice = Number(service.price);

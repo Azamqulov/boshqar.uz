@@ -70,9 +70,9 @@
     <!-- Top Stat Cards Grid -->
     <ProductStatsCards
       :products-count="products.length"
-      :active-products-count="products.filter((p: any) => p.isActive !== false).length"
-      :low-stock-count="products.filter((p: any) => p.minStock && p.stock <= p.minStock).length"
-      :categories-count="categories.length"
+      :active-products-count="products.filter((p: any) => p.status !== 'inactive' && p.isActive !== false).length"
+      :low-stock-count="lowStockCount"
+      :out-of-stock-count="outOfStockCount"
     />
 
     <!-- Search, Category Filter and View Toggle (ProductFilterBar Component) -->
@@ -261,6 +261,35 @@ const viewMode = usePersistentViewMode('products', 'table');
 const loading = ref(dataStore.products.length === 0);
 const products = computed(() => dataStore.products);
 const categories = computed(() => dataStore.categories);
+
+const getStockQty = (p: any) => {
+  if (p.stockQty !== undefined && p.stockQty !== null) return Number(p.stockQty);
+  if (p.stock !== undefined && p.stock !== null) return Number(p.stock);
+  if (p.quantity !== undefined && p.quantity !== null) return Number(p.quantity);
+  if (p.availableQty !== undefined && p.availableQty !== null) return Number(p.availableQty);
+  return 0;
+};
+
+const isSpecialItem = (p: any) => {
+  return p.brand === 'dish' || p.brand === 'service' || p.unit?.shortName === 'por';
+};
+
+const lowStockCount = computed(() => {
+  return products.value.filter((p: any) => {
+    if (isSpecialItem(p)) return false;
+    const qty = getStockQty(p);
+    const min = Number(p.minStock ?? 5);
+    return qty > 0 && qty <= min;
+  }).length;
+});
+
+const outOfStockCount = computed(() => {
+  return products.value.filter((p: any) => {
+    if (isSpecialItem(p)) return false;
+    const qty = getStockQty(p);
+    return qty <= 0;
+  }).length;
+});
 
 const isModalOpen = ref(false);
 const editingId = ref<string | null>(null);

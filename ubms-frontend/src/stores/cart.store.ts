@@ -13,6 +13,7 @@ export interface CartItem {
   availableStock?: number;
   unit?: string;
   allowDecimal?: boolean;
+  isManualPrice?: boolean;
 }
 
 export type DiscountType = 'percent' | 'fixed';

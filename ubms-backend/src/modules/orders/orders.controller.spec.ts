@@ -53,9 +53,10 @@ describe('OrdersController', () => {
       const mockResult = { id: 'o-1', ...dto };
       mockOrdersService.create.mockResolvedValue(mockResult);
 
-      const res = await controller.create('biz-1', 'br-1', 'u-1', dto as any);
+      const mockUser = { userId: 'u-1' };
+      const res = await controller.create('biz-1', 'br-1', 'u-1', mockUser, dto as any);
       expect(res).toEqual(mockResult);
-      expect(mockOrdersService.create).toHaveBeenCalledWith('biz-1', 'br-1', 'u-1', dto);
+      expect(mockOrdersService.create).toHaveBeenCalledWith('biz-1', 'br-1', 'u-1', dto, mockUser);
     });
   });
 

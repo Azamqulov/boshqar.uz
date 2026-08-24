@@ -98,9 +98,10 @@ export class OrdersController {
     @CurrentBusinessId() businessId: string,
     @CurrentBranchId() branchId: string,
     @CurrentUser('userId') userId: string,
+    @CurrentUser() user: any,
     @Body() dto: CreateOrderDto,
   ) {
-    return this.ordersService.create(businessId, branchId, userId, dto);
+    return this.ordersService.create(businessId, branchId, userId, dto, user);
   }
 
   @Post(':id/complete')

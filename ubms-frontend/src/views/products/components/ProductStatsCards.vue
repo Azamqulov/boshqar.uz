@@ -25,23 +25,23 @@
     />
 
     <AppStatCard
-      title="Kategoriyalar Soni"
-      :value="`${categoriesCount} ta`"
-      subtitle="Mahsulot toifalari"
-      :icon="FolderTree"
-      variant="purple"
+      title="Tugagan Mahsulotlar"
+      :value="`${outOfStockCount} ta`"
+      subtitle="Omborda qolmagan (0 dona)"
+      :icon="PackageX"
+      variant="rose"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { Package, CheckCircle2, AlertTriangle, FolderTree } from 'lucide-vue-next';
+import { Package, CheckCircle2, AlertTriangle, PackageX } from 'lucide-vue-next';
 import AppStatCard from '../../../components/AppStatCard.vue';
 
 defineProps<{
   productsCount: number;
   activeProductsCount: number;
   lowStockCount: number;
-  categoriesCount: number;
+  outOfStockCount: number;
 }>();
 </script>

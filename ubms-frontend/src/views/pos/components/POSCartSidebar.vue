@@ -144,7 +144,17 @@
         <div class="flex items-start justify-between">
           <div class="flex-1 pr-2">
             <h5 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{{ item.name }}</h5>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400">{{ formatCurrency(item.price) }} / {{ item.unit }}</span>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[10px] text-slate-500 dark:text-slate-400">{{ formatCurrency(item.price) }} / {{ item.unit }}</span>
+              <label v-if="canManualPrice" class="inline-flex items-center gap-1 cursor-pointer text-[10px] text-amber-600 dark:text-amber-400 font-bold hover:underline select-none">
+                <input
+                  type="checkbox"
+                  v-model="item.isManualPrice"
+                  class="w-3 h-3 rounded border-amber-300 dark:border-amber-700 text-amber-500 focus:ring-amber-500"
+                />
+                <span>Erkin narx</span>
+              </label>
+            </div>
           </div>
           <button
             @click="cartStore.removeItem(item.id)"
@@ -152,6 +162,19 @@
           >
             <Trash2 class="w-3.5 h-3.5" />
           </button>
+        </div>
+
+        <!-- Manual Unit Price Input (Renders when isManualPrice is checked) -->
+        <div v-if="canManualPrice && item.isManualPrice" class="flex items-center gap-1.5 p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs">
+          <span class="text-[10px] font-bold text-amber-700 dark:text-amber-300">Yangi narx:</span>
+          <input
+            type="number"
+            min="0"
+            v-model.number="item.price"
+            class="w-24 px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded text-slate-900 dark:text-white font-bold font-mono focus:ring-1 focus:ring-amber-500"
+            placeholder="0"
+          />
+          <span class="text-[10px] font-semibold text-amber-600 dark:text-amber-400">so'm</span>
         </div>
 
         <div class="flex items-center justify-between pt-1">
@@ -295,6 +318,9 @@ import {
   Truck,
 } from 'lucide-vue-next';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
+
+const { canManualPrice } = usePermissions();
 
 const props = withDefaults(
   defineProps<{

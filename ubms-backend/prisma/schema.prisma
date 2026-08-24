@@ -1024,3 +1024,39 @@ model OfflineSyncQueue {
 
   @@map("offline_sync_queues")
 }
+
+model PaymentTerminal {
+  id             String                @id @default(uuid()) @db.Uuid
+  businessId     String                @map("business_id") @db.Uuid
+  branchId       String                @map("branch_id") @db.Uuid
+  name           String                @db.VarChar(100)
+  provider       String                @db.VarChar(30)
+  terminalId     String                @map("terminal_id") @db.VarChar(50)
+  merchantId     String                @map("merchant_id") @db.VarChar(50)
+  connectionType String                @default("ethernet") @map("connection_type") @db.VarChar(20)
+  ipAddress      String?               @map("ip_address") @db.VarChar(45)
+  port           Int?
+  isActive       Boolean               @default(true) @map("is_active")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  transactions   TerminalTransaction[]
+
+  @@map("payment_terminals")
+}
+
+model TerminalTransaction {
+  id           String          @id @default(uuid()) @db.Uuid
+  terminalId   String          @map("terminal_id") @db.Uuid
+  orderId      String?         @map("order_id") @db.Uuid
+  amount       Decimal         @db.Decimal(14, 2)
+  currency     String          @default("UZS") @db.VarChar(3)
+  rrn          String?         @db.VarChar(50)
+  stan         String?         @db.VarChar(50)
+  responseCode String?         @map("response_code") @db.VarChar(10)
+  cardMask     String?         @map("card_mask") @db.VarChar(20)
+  status       String          @default("PENDING") @db.VarChar(20)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  terminal     PaymentTerminal @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@map("terminal_transactions")
+}

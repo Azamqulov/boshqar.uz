@@ -11,12 +11,12 @@ RUN apk add --no-cache openssl libc6-compat
 
 # Install dependencies for shared types and backend
 COPY ubms-shared-types ./ubms-shared-types
-RUN cd ubms-shared-types && npm ci && npm run build
+RUN cd ubms-shared-types && npm install && npm run build
 
 COPY ubms-backend ./ubms-backend
 WORKDIR /app/ubms-backend
 
-RUN npm ci
+RUN npm install
 RUN npx prisma generate
 RUN npm run build
 

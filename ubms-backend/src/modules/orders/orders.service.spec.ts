@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 
 describe('OrdersService - Pricing Security & Tenant Isolation', () => {
   let service: OrdersService;
@@ -177,7 +177,7 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
     );
   });
 
-  it('should allow custom price only when isManualPrice is explicitly set', async () => {
+  it('should allow custom price only when isManualPrice is set AND user has orders.manualPrice permission', async () => {
     prisma.order.create.mockResolvedValue({
       id: 'order-3',
       orderNumber: '#0008',
@@ -200,12 +200,63 @@ describe('OrdersService - Pricing Security & Tenant Isolation', () => {
       payments: [{ paymentMethodId: 'pm-1', amount: 50000 }],
     };
 
-    await service.create('tenant-a', 'branch-1', 'user-1', dto);
+    const permittedUser = { userId: 'user-1', permissions: ['orders.manualPrice'] };
+    await service.create('tenant-a', 'branch-1', 'user-1', dto, permittedUser);
 
     expect(prisma.order.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           total: 50000, // 2 * 25000
+        }),
+      }),
+    );
+  });
+
+  it('should reject isManualPrice from a cashier without orders.manualPrice permission (Manual Price Guard)', async () => {
+    const dto: any = {
+      orderType: 'dine_in',
+      branchId: 'branch-1',
+      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 100, isManualPrice: true }],
+      payments: [{ paymentMethodId: 'pm-1', amount: 200 }],
+    };
+
+    const cashierUser = { userId: 'user-1', permissions: ['orders.create'] };
+
+    await expect(service.create('tenant-a', 'branch-1', 'user-1', dto, cashierUser)).rejects.toThrow(
+      ForbiddenException,
+    );
+    expect(prisma.order.create).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to server catalog price if isManualPrice is set but no user/permission context is provided', async () => {
+    prisma.order.create.mockResolvedValue({
+      id: 'order-4',
+      orderNumber: '#0009',
+      total: 56000,
+      status: 'completed',
+      items: [],
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      id: 'order-4',
+      orderNumber: '#0009',
+      total: 56000,
+      status: 'completed',
+      items: [],
+    });
+
+    const dto: any = {
+      orderType: 'dine_in',
+      branchId: 'branch-1',
+      items: [{ productId: 'prod-100', quantity: 2, unitPrice: 1, isManualPrice: false }],
+      payments: [{ paymentMethodId: 'pm-1', amount: 56000 }],
+    };
+
+    await service.create('tenant-a', 'branch-1', 'user-1', dto);
+
+    expect(prisma.order.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          total: 56000, // 2 * 28000 catalog price, unitPrice/isManualPrice ignored
         }),
       }),
     );
