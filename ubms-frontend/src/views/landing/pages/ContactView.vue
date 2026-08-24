@@ -1,10 +1,11 @@
 <template>
-  <div class="min-h-screen pt-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-    <!-- Unified Top Header Navigation -->
-    <LandingHeader
-      :is-authenticated="isAuthenticated"
-      @open-demo="openDemoModal"
-    />
+  <div class="min-h-screen pt-24 sm:pt-28 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 flex flex-col justify-between">
+    <div>
+      <!-- Unified Top Header Navigation -->
+      <LandingHeader
+        :is-authenticated="isAuthenticated"
+        @open-demo="openDemoModal"
+      />
 
     <!-- Page Banner -->
     <section class="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-emerald-500/10 via-slate-50 to-slate-50 dark:from-emerald-950/20 dark:via-slate-950 dark:to-slate-950">
@@ -145,10 +146,8 @@
         </div>
       </div>
     </section>
-
-    <footer class="py-8 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
-      © 2026 Boshqar.uz — Barcha huquqlar himoyalangan.
-    </footer>
+    </div>
+    <LandingFooter />
   </div>
 </template>
 
@@ -157,6 +156,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { PhoneCall, Send, Phone, MapPin, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-vue-next';
 import LandingHeader from '../components/LandingHeader.vue';
+import LandingFooter from '../components/LandingFooter.vue';
 import { useAuthStore } from '../../../stores/auth.store';
 
 const router = useRouter();

@@ -1,43 +1,44 @@
 <template>
-  <div class="min-h-screen pt-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-    <!-- Unified Top Header Navigation -->
-    <LandingHeader
-      :is-authenticated="isAuthenticated"
-      @open-demo="openDemoModal"
-    />
+  <div class="min-h-screen pt-24 sm:pt-28 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 flex flex-col justify-between">
+    <div>
+      <!-- Unified Top Header Navigation -->
+      <LandingHeader
+        :is-authenticated="isAuthenticated"
+        @open-demo="openDemoModal"
+      />
 
-    <!-- Page Banner & Tab Switcher -->
-    <section class="py-12 bg-gradient-to-b from-emerald-500/10 via-slate-50 to-slate-50 dark:from-emerald-950/20 dark:via-slate-950 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <h1 class="text-3xl sm:text-5xl font-black">Yordam Markazi, Sharhlar va FAQ</h1>
-        <p class="text-slate-600 dark:text-slate-400 text-sm max-w-xl mx-auto">
-          Tadbirkorlar tajribasi, fikrlari va eng ko'p beriladigan savollarga javoblar bilan tanishing:
-        </p>
+      <!-- Page Banner & Segmented Tab Switcher -->
+      <section class="py-12 bg-gradient-to-b from-emerald-500/10 via-slate-50 to-slate-50 dark:from-emerald-950/20 dark:via-slate-950 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <h1 class="text-3xl sm:text-5xl font-black">Yordam Markazi, Sharhlar va FAQ</h1>
+          <p class="text-slate-600 dark:text-slate-400 text-sm max-w-xl mx-auto">
+            Tadbirkorlar tajribasi, fikrlari va eng ko'p beriladigan savollarga javoblar bilan tanishing:
+          </p>
 
-        <!-- Segmented Tab Switcher -->
-        <div class="flex justify-center items-center gap-8 pt-4 border-b border-slate-200 dark:border-slate-800 max-w-xs mx-auto">
-          <button
-            type="button"
-            @click="activeTab = 'reviews'"
-            class="pb-3 text-lg font-bold transition-all cursor-pointer relative"
-            :class="activeTab === 'reviews' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
-          >
-            <span>Sharhlar (12)</span>
-            <span v-if="activeTab === 'reviews'" class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-full transition-all"></span>
-          </button>
+          <!-- Modern Segmented Pill Control -->
+          <div class="inline-flex p-1.5 rounded-2xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/80 dark:border-slate-800 shadow-inner max-w-md mx-auto">
+            <button
+              type="button"
+              @click="activeTab = 'reviews'"
+              class="px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2"
+              :class="activeTab === 'reviews' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+            >
+              <Star class="w-4 h-4 text-amber-500" />
+              <span>Sharhlar (12)</span>
+            </button>
 
-          <button
-            type="button"
-            @click="activeTab = 'faq'"
-            class="pb-3 text-lg font-bold transition-all cursor-pointer relative"
-            :class="activeTab === 'faq' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'"
-          >
-            <span>FAQ Javoblar</span>
-            <span v-if="activeTab === 'faq'" class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 rounded-full transition-all"></span>
-          </button>
+            <button
+              type="button"
+              @click="activeTab = 'faq'"
+              class="px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer flex items-center gap-2"
+              :class="activeTab === 'faq' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+            >
+              <HelpCircle class="w-4 h-4 text-emerald-500" />
+              <span>FAQ Javoblar</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <!-- Tab 1: Sharhlar (Testimonials Grid) -->
     <section v-if="activeTab === 'reviews'" class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -82,18 +83,17 @@
         <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pl-8">{{ item.a }}</p>
       </div>
     </section>
-
-    <footer class="py-8 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
-      © 2026 Boshqar.uz — Barcha huquqlar himoyalangan.
-    </footer>
+    </div>
+    <LandingFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Star, Sparkles } from 'lucide-vue-next';
+import { Star, Sparkles, HelpCircle } from 'lucide-vue-next';
 import LandingHeader from '../components/LandingHeader.vue';
+import LandingFooter from '../components/LandingFooter.vue';
 import { useAuthStore } from '../../../stores/auth.store';
 
 const router = useRouter();
