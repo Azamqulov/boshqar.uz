@@ -22,6 +22,16 @@
           {{ item.a }}
         </p>
       </div>
+
+      <div class="pt-6 text-center">
+        <router-link
+          to="/yordam"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md transition"
+        >
+          <span>Barcha Savollar va Yordam Markazi</span>
+          <ArrowRight class="w-4 h-4" />
+        </router-link>
+      </div>
     </div>
   </section>
 </template>
@@ -29,7 +39,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
 import AOS from 'aos';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, ArrowRight } from 'lucide-vue-next';
 
 const openFaqIdx = ref<number | null>(0);
 

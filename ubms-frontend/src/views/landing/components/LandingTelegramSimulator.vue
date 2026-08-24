@@ -122,8 +122,8 @@
             </div>
           </div>
 
-          <!-- Green Telegram Connect CTA Button -->
-          <div class="pt-2">
+          <!-- Green Telegram Connect CTA Buttons -->
+          <div class="pt-2 flex flex-wrap items-center gap-3">
             <a
               href="https://t.me/Boshqar_uzbot"
               target="_blank"
@@ -133,6 +133,13 @@
               <Send class="w-4 h-4" />
               <span>Telegramdan Boshlash</span>
             </a>
+            <router-link
+              to="/telegram-bot"
+              class="inline-flex items-center gap-1.5 px-6 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-500 font-bold text-xs sm:text-sm transition"
+            >
+              <span>Telegram Bot Imkoniyatlari</span>
+              <ArrowRight class="w-3.5 h-3.5" />
+            </router-link>
           </div>
         </div>
 

@@ -69,7 +69,7 @@
                 </div>
               </div>
 
-              <!-- Action Button -->
+              <!-- Action Buttons -->
               <div class="pt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -79,6 +79,13 @@
                   <span>Ushbu Sohada Demoni Sinash</span>
                   <ArrowRight class="w-4 h-4" />
                 </button>
+                <router-link
+                  to="/sohalar"
+                  class="px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 font-bold text-xs sm:text-sm transition flex items-center gap-1.5"
+                >
+                  <span>Barcha Sohalar</span>
+                  <ArrowRight class="w-3.5 h-3.5" />
+                </router-link>
               </div>
             </div>
 

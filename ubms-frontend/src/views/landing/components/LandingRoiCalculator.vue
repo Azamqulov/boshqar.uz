@@ -182,6 +182,13 @@
               <span>Ushbu Natijani O'z Biznesingizda Ko'ring</span>
               <ArrowRight class="w-4 h-4" />
             </button>
+            <router-link
+              to="/tahlil"
+              class="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs text-center transition flex items-center justify-center gap-1.5"
+            >
+              <span>Batafsil Tahlil va Taqqoslash</span>
+              <ArrowRight class="w-3.5 h-3.5" />
+            </router-link>
             <p class="text-[11px] text-emerald-200 text-center">
               14 kunlik bepul sinov • Kredit karta talab qilinmaydi
             </p>

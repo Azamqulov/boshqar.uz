@@ -110,8 +110,15 @@
           />
         </div>
 
-        <!-- Prev / Next Action Buttons -->
+        <!-- Prev / Next & Full List Action Buttons -->
         <div class="flex items-center gap-2.5">
+          <router-link
+            to="/yordam"
+            class="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <span>Barcha Sharhlar & FAQ</span>
+            <ArrowRight class="w-3.5 h-3.5" />
+          </router-link>
           <button
             type="button"
             @click="prevSlide"
@@ -123,7 +130,7 @@
           <button
             type="button"
             @click="nextSlide"
-            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+            class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
           >
             <span>Keyingisi</span>
             <ChevronRight class="w-4 h-4" />
