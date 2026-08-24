@@ -1,37 +1,10 @@
 <template>
-  <div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-    <!-- Subpage Top Header Navigation -->
-    <header class="sticky top-0 z-50 backdrop-blur-xl bg-white/95 dark:bg-slate-950/95 border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        <router-link to="/" class="flex items-center gap-2 group">
-          <AppLogo size="lg" />
-        </router-link>
-
-        <nav class="hidden md:flex items-center gap-6 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
-          <router-link to="/" class="hover:text-emerald-500 transition">Bosh Sahifa</router-link>
-          <router-link to="/telegram-bot" class="text-emerald-600 dark:text-emerald-400 font-bold border-b-2 border-emerald-500 py-1">Telegram Bot</router-link>
-          <router-link to="/sohalar" class="hover:text-emerald-500 transition">Sohalar</router-link>
-          <router-link to="/kalkulyator" class="hover:text-emerald-500 transition">Kalkulyator</router-link>
-          <router-link to="/taqqoslash" class="hover:text-emerald-500 transition">Taqqoslash</router-link>
-          <router-link to="/tariflar" class="hover:text-emerald-500 transition">Tariflar</router-link>
-          <router-link to="/sharhlar" class="hover:text-emerald-500 transition">Sharhlar</router-link>
-          <router-link to="/faq" class="hover:text-emerald-500 transition">FAQ</router-link>
-        </nav>
-
-        <div class="flex items-center gap-3">
-          <ThemeToggle />
-          <a
-            href="https://t.me/Boshqar_uzbot"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
-          >
-            <Send class="w-4 h-4" />
-            <span>@Boshqar_uzbot</span>
-          </a>
-        </div>
-      </div>
-    </header>
+  <div class="min-h-screen pt-20 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+    <!-- Unified Top Header Navigation -->
+    <LandingHeader
+      :is-authenticated="isAuthenticated"
+      @open-demo="openDemoModal"
+    />
 
     <!-- Hero Banner -->
     <section class="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-emerald-500/10 via-slate-50 to-slate-50 dark:from-emerald-950/20 dark:via-slate-950 dark:to-slate-950">
@@ -151,7 +124,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Send, Receipt, BarChart3, AlertTriangle, ShieldCheck, Bot, Smartphone, Sparkles } from 'lucide-vue-next';
-import AppLogo from '../../../components/AppLogo.vue';
-import ThemeToggle from '../../../components/ThemeToggle.vue';
+import LandingHeader from '../components/LandingHeader.vue';
+import { useAuthStore } from '../../../stores/auth.store';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+const isAuthenticated = computed(() => {
+  return !!authStore.token && !!authStore.user;
+});
+
+const openDemoModal = () => {
+  router.push('/#demo');
+};
 </script>
