@@ -104,8 +104,11 @@
           </button>
         </div>
 
-        <!-- DEMO TAB 1: REAL POS INTERFACE (100% Matches Image 1 Exactly) -->
-        <div v-if="activeDemoTab === 'pos'" class="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/90 rounded-b-2xl grid grid-cols-1 lg:grid-cols-12 gap-3 text-left">
+        <!-- Animated Slider Wrapper -->
+        <Transition name="tab-slide" mode="out-in">
+          <div :key="activeDemoTab">
+            <!-- DEMO TAB 1: REAL POS INTERFACE (100% Matches Image 1 Exactly) -->
+            <div v-if="activeDemoTab === 'pos'" class="p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/90 rounded-b-2xl grid grid-cols-1 lg:grid-cols-12 gap-3 text-left">
           <!-- Left: Catalog & Filter Chips (8 cols) -->
           <div class="lg:col-span-8 space-y-3">
             <!-- Search Bar (POS Top Input) -->
@@ -605,8 +608,10 @@
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </Transition>
+  </div>
+</div>
+</section>
 </template>
 
 <script setup lang="ts">
@@ -882,3 +887,20 @@ const formatSum = (val: number) => {
   return new Intl.NumberFormat('uz-UZ').format(val || 0);
 };
 </script>
+
+<style scoped>
+.tab-slide-enter-active,
+.tab-slide-leave-active {
+  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-slide-enter-from {
+  opacity: 0;
+  transform: translateX(24px) scale(0.99);
+}
+
+.tab-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-24px) scale(0.99);
+}
+</style>
