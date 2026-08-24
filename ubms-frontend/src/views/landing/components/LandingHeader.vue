@@ -8,34 +8,34 @@
 
       <!-- Desktop Navigation Links with animated underlines & hover lifts -->
       <nav class="hidden lg:flex items-center gap-4 xl:gap-6 text-xs xl:text-sm font-semibold text-slate-600 dark:text-slate-300 shrink-0">
-        <a href="#telegram" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        <router-link to="/telegram-bot" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Telegram Bot</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#sectors" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/sohalar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Sohalar</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#calculator" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/kalkulyator" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Kalkulyator</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#compare" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/taqqoslash" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Taqqoslash</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#pricing" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/tariflar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Tariflar</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#reviews" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/sharhlar" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>Sharhlar</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
-        <a href="#faq" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
+        </router-link>
+        <router-link to="/faq" class="hover:text-emerald-500 dark:hover:text-emerald-400 transition-all duration-200 hover:-translate-y-0.5 relative group py-1 whitespace-nowrap">
           <span>FAQ</span>
           <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-500 rounded-full transition-all duration-300 group-hover:w-full"></span>
-        </a>
+        </router-link>
       </nav>
 
       <!-- Right Side: ThemeToggle & Auth Actions -->

@@ -28,6 +28,14 @@ const LandingView = () => import('../views/landing/LandingView.vue');
 const LegalView = () => import('../views/legal/LegalView.vue');
 const NotFoundView = () => import('../views/errors/NotFoundView.vue');
 
+const TelegramBotView = () => import('../views/landing/pages/TelegramBotView.vue');
+const SectorsView = () => import('../views/landing/pages/SectorsView.vue');
+const CalculatorView = () => import('../views/landing/pages/CalculatorView.vue');
+const ComparisonView = () => import('../views/landing/pages/ComparisonView.vue');
+const PricingView = () => import('../views/landing/pages/PricingView.vue');
+const TestimonialsView = () => import('../views/landing/pages/TestimonialsView.vue');
+const FaqView = () => import('../views/landing/pages/FaqView.vue');
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -37,6 +45,13 @@ const routes: RouteRecordRaw[] = [
     path: '/landing',
     component: LandingView,
   },
+  { path: '/telegram-bot', component: TelegramBotView },
+  { path: '/sohalar', component: SectorsView },
+  { path: '/kalkulyator', component: CalculatorView },
+  { path: '/taqqoslash', component: ComparisonView },
+  { path: '/tariflar', component: PricingView },
+  { path: '/sharhlar', component: TestimonialsView },
+  { path: '/faq', component: FaqView },
   {
     path: '/legal',
     component: LegalView,
