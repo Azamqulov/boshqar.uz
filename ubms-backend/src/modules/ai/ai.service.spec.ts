@@ -40,7 +40,22 @@ describe('AiService', () => {
     },
   };
 
+  const originalFetch = global.fetch;
+
   beforeEach(async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Bugun savdo yaxshi ketmoqda.' }],
+            },
+          },
+        ],
+      }),
+    } as any);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
@@ -56,6 +71,7 @@ describe('AiService', () => {
   });
 
   afterEach(() => {
+    global.fetch = originalFetch;
     jest.clearAllMocks();
   });
 
