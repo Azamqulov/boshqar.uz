@@ -1009,6 +1009,9 @@ export class ProductsService {
       // 9. Go'sht, Sut va Maishiy Kimyo
       { id: 'meat-1', title: 'Mol Go\'shti (Fresh Beef)', category: 'Go\'sht', url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=600&auto=format&fit=crop&q=80', keywords: ['gosht', 'go\'sht', 'meat', 'beef'] },
       { id: 'milk-1', title: 'Tabiiy Sut 3.2%', category: 'Sut', url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80', keywords: ['sut', 'milk', 'qatiq'] },
+      { id: 'colgate-1', title: 'Colgate Triple Action Tish Pastasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=600&auto=format&fit=crop&q=80', keywords: ['colgate', 'tish', 'pasta', 'tish pastasi', 'triple', 'action', 'dental', 'xojalik', 'kimyo', 'gigiyena'] },
+      { id: 'colgate-2', title: 'Oral-B / Colgate Tish Cho\'tkasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1559591937-e1032b4f57c5?w=600&auto=format&fit=crop&q=80', keywords: ['chotka', 'tish', 'oral-b', 'colgate', 'tish chotkasi', 'ogiz'] },
+      { id: 'sensodyne-1', title: 'Sensodyne / Blend-a-Med Tish Pastasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=600&auto=format&fit=crop&q=80', keywords: ['sensodyne', 'blend-a-med', 'tish', 'pasta', 'tish pastasi'] },
       { id: 'ariel-1', title: 'Ariel Avtomat Kir Yuvish Kukuni 3kg', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80', keywords: ['kukun', 'ariel', 'persil', 'poroshok', 'kimyo', 'xojalik', 'kir'] },
       { id: 'persil-1', title: 'Persil Kir Yuvish Geli (Liquid Detergent)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600&auto=format&fit=crop&q=80', keywords: ['persil', 'gel', 'kukun', 'detergent', 'yuvish'] },
       { id: 'fairy-1', title: 'Idish Yuvish Suyuqligi (Fairy)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80', keywords: ['fairy', 'idish', 'gel'] },
@@ -1045,11 +1048,11 @@ export class ProductsService {
           }
           return { item, score };
         })
-        .filter((r) => r.score >= 10)
-        .sort((a, b) => b.score - a.score)
-        .map((r) => r.item);
+        .sort((a, b) => b.score - a.score);
 
-      results = scored;
+      const maxScore = scored.length > 0 ? scored[0].score : 0;
+      const threshold = Math.max(15, maxScore * 0.45);
+      results = scored.filter((r) => r.score >= threshold).map((r) => r.item);
 
       // Smart Dynamic Visual Fallback Generator if empty or fewer results:
       // Generates query-tailored HD photos dynamically so NO search turns up empty!
@@ -1060,7 +1063,13 @@ export class ProductsService {
           'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
         ];
 
-        if (q.includes('ariel') || q.includes('kukun') || q.includes('poroshok') || q.includes('persil') || q.includes('tide') || q.includes('kir') || q.includes('kimyo') || q.includes('xojalik')) {
+        if (q.includes('colgate') || q.includes('tish') || q.includes('pasta') || q.includes('oral') || q.includes('sensodyne') || q.includes('chotka') || q.includes('dent')) {
+          themePhotos = [
+            'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1559591937-e1032b4f57c5?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=600&auto=format&fit=crop&q=80',
+          ];
+        } else if (q.includes('ariel') || q.includes('kukun') || q.includes('poroshok') || q.includes('persil') || q.includes('tide') || q.includes('kir') || q.includes('kimyo') || q.includes('xojalik')) {
           themePhotos = [
             'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80',
             'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600&auto=format&fit=crop&q=80',

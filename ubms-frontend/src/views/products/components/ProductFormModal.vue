@@ -777,6 +777,13 @@ const fetchSampleImages = async (queryStr?: string) => {
         { id: 'fb-l-2', title: 'Tovuqli Pishloqli Lavash', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&auto=format&fit=crop&q=80' },
       ];
     }
+    if (q.includes('colgate') || q.includes('tish') || q.includes('pasta') || q.includes('oral') || q.includes('sensodyne') || q.includes('chotka') || q.includes('dent')) {
+      return [
+        { id: 'fb-t-1', title: 'Colgate Triple Action Tish Pastasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-t-2', title: 'Oral-B / Colgate Tish Cho\'tkasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1559591937-e1032b4f57c5?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-t-3', title: 'Sensodyne Tish Pastasi', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
     if (q.includes('ariel') || q.includes('kukun') || q.includes('poroshok') || q.includes('persil') || q.includes('tide') || q.includes('kir') || q.includes('kimyo') || q.includes('xojalik')) {
       return [
         { id: 'fb-k-1', title: 'Kir Yuvish Kukuni (Ariel Avtomat 3kg)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80' },
