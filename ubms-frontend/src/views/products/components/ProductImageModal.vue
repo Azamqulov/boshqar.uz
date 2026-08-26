@@ -343,9 +343,9 @@ const masterProductDatabase = [
   { name: 'Tuxum 10 talik', category: 'Oziq-ovqat', keywords: ['tuxum', 'egg', 'eggs'], url: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=400' },
 
   // 5. Maishiy Kimyo
-  { name: 'Fairy Idish Yuvish', category: 'Kimyo', keywords: ['fairy', 'idish', 'gel'], url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=400' },
-  { name: 'Kir Yuvish Poroshogi', category: 'Kimyo', keywords: ['poroshok', 'ariel', 'persil', 'tide', 'kir'], url: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=400' },
-  { name: 'Shampun / Dush Geli', category: 'Kimyo', keywords: ['shampun', 'shampoo', 'sovun', 'dush'], url: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=400' },
+  { name: 'Fairy Idish Yuvish', category: 'Kimyo', keywords: ['fairy', 'idish', 'gel'], url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80' },
+  { name: 'Kir Yuvish Poroshogi (Ariel / Persil)', category: 'Kimyo', keywords: ['poroshok', 'ariel', 'persil', 'tide', 'kir', 'kukun'], url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80' },
+  { name: 'Shampun / Dush Geli', category: 'Kimyo', keywords: ['shampun', 'shampoo', 'sovun', 'dush'], url: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80' },
 ];
 
 import api from '@/services/api';

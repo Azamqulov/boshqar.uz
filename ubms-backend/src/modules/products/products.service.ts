@@ -1009,7 +1009,8 @@ export class ProductsService {
       // 9. Go'sht, Sut va Maishiy Kimyo
       { id: 'meat-1', title: 'Mol Go\'shti (Fresh Beef)', category: 'Go\'sht', url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=600&auto=format&fit=crop&q=80', keywords: ['gosht', 'go\'sht', 'meat', 'beef'] },
       { id: 'milk-1', title: 'Tabiiy Sut 3.2%', category: 'Sut', url: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=600&auto=format&fit=crop&q=80', keywords: ['sut', 'milk', 'qatiq'] },
-      { id: 'ariel-1', title: 'Kir Yuvish Kukuni (Ariel / Persil)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop&q=80', keywords: ['kukun', 'ariel', 'persil', 'poroshok', 'kimyo'] },
+      { id: 'ariel-1', title: 'Ariel Avtomat Kir Yuvish Kukuni 3kg', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80', keywords: ['kukun', 'ariel', 'persil', 'poroshok', 'kimyo', 'xojalik', 'kir'] },
+      { id: 'persil-1', title: 'Persil Kir Yuvish Geli (Liquid Detergent)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600&auto=format&fit=crop&q=80', keywords: ['persil', 'gel', 'kukun', 'detergent', 'yuvish'] },
       { id: 'fairy-1', title: 'Idish Yuvish Suyuqligi (Fairy)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80', keywords: ['fairy', 'idish', 'gel'] },
       { id: 'shampoo-1', title: 'Shampun (Head & Shoulders / Pantene)', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80', keywords: ['shampun', 'shampoo', 'pantene', 'head'] },
       { id: 'soap-1', title: 'Sovun (Dove / Duru)', category: 'Shaxsiy Parvarish', url: 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&auto=format&fit=crop&q=80', keywords: ['sovun', 'soap', 'dove', 'duru'] },
@@ -1019,30 +1020,54 @@ export class ProductsService {
     let results: Array<{ id: string; title: string; category: string; url: string }> = [];
 
     if (q) {
-      const words = q.split(/\s+/).filter(Boolean);
+      const words = q.split(/\s+/).filter((w) => w.length >= 2);
 
-      // Search matching items in database with typo-tolerance
-      results = database.filter((item) => {
-        const fullText = `${item.title} ${item.category} ${item.keywords.join(' ')}`.toLowerCase();
-        return words.some((w) => {
-          if (fullText.includes(w)) return true;
-          if (w.length >= 4 && fullText.includes(w.slice(0, -1))) return true;
-          if (w.length >= 5 && fullText.includes(w.slice(0, 4))) return true;
-          return item.keywords.some((k) => k.includes(w) || (w.length >= 4 && w.includes(k)));
-        });
-      });
+      // Score matching items in database with high accuracy
+      const scored = database
+        .map((item) => {
+          const titleLower = item.title.toLowerCase();
+          const catLower = item.category.toLowerCase();
+          let score = 0;
+
+          for (const w of words) {
+            if (item.keywords.some((k) => k === w)) {
+              score += 25;
+            } else if (item.keywords.some((k) => k.startsWith(w) || (w.length >= 4 && k.includes(w)))) {
+              score += 12;
+            }
+
+            if (titleLower.includes(w)) {
+              score += w.length >= 4 ? 15 : 6;
+            }
+            if (catLower.includes(w)) {
+              score += 5;
+            }
+          }
+          return { item, score };
+        })
+        .filter((r) => r.score >= 10)
+        .sort((a, b) => b.score - a.score)
+        .map((r) => r.item);
+
+      results = scored;
 
       // Smart Dynamic Visual Fallback Generator if empty or fewer results:
       // Generates query-tailored HD photos dynamically so NO search turns up empty!
       if (results.length === 0) {
         let themePhotos = [
-          'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
         ];
 
-        if (q.includes('burg') || q.includes('gamburg') || q.includes('cheeseburg') || q.includes('chizburg') || q.includes('fast')) {
+        if (q.includes('ariel') || q.includes('kukun') || q.includes('poroshok') || q.includes('persil') || q.includes('tide') || q.includes('kir') || q.includes('kimyo') || q.includes('xojalik')) {
+          themePhotos = [
+            'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1584813470613-5b1c1cad3d69?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=600&auto=format&fit=crop&q=80',
+          ];
+        } else if (q.includes('burg') || q.includes('gamburg') || q.includes('cheeseburg') || q.includes('chizburg') || q.includes('fast')) {
           themePhotos = [
             'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
             'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',

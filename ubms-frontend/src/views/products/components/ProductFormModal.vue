@@ -777,6 +777,13 @@ const fetchSampleImages = async (queryStr?: string) => {
         { id: 'fb-l-2', title: 'Tovuqli Pishloqli Lavash', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&auto=format&fit=crop&q=80' },
       ];
     }
+    if (q.includes('ariel') || q.includes('kukun') || q.includes('poroshok') || q.includes('persil') || q.includes('tide') || q.includes('kir') || q.includes('kimyo') || q.includes('xojalik')) {
+      return [
+        { id: 'fb-k-1', title: 'Kir Yuvish Kukuni (Ariel Avtomat 3kg)', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-k-2', title: 'Persil Kir Yuvish Geli', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-k-3', title: 'Idish Yuvish Vositalari', category: 'Maishiy Kimyo', url: 'https://images.unsplash.com/photo-1584813470613-5b1c1cad3d69?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
     if (q.includes('shashlik') || q.includes('kabob') || q.includes('gosht')) {
       return [
         { id: 'fb-s-1', title: 'Qiyma Shashlik / Kabob', category: 'Taomlar', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80' },

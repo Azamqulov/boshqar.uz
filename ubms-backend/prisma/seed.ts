@@ -170,14 +170,14 @@ async function main() {
 
   const demoUser2 = await prisma.user.upsert({
     where: { phone: '+998111111111' },
-    update: { isSuperAdmin: true, status: 'active', passwordHash: defaultPasswordHash },
+    update: { isSuperAdmin: false, status: 'active', passwordHash: defaultPasswordHash },
     create: {
-      fullName: 'Boshqar Admin 11',
-      email: 'admin11@boshqar.uz',
+      fullName: 'Kafe Xodimi (Demo)',
+      email: 'cafe@boshqar.uz',
       phone: '+998111111111',
       passwordHash: defaultPasswordHash,
       status: 'active',
-      isSuperAdmin: true,
+      isSuperAdmin: false,
     },
   });
 
@@ -251,11 +251,11 @@ async function main() {
         userId: demoUser2.id,
       },
     },
-    update: { status: 'active' },
+    update: { status: 'active', roleId: cashierRole.id },
     create: {
       businessId: business.id,
       userId: demoUser2.id,
-      roleId: ownerRole.id,
+      roleId: cashierRole.id,
       branchId: mainBranch.id,
       status: 'active',
     },
