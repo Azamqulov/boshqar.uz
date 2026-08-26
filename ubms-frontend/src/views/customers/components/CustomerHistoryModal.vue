@@ -36,6 +36,22 @@
             </div>
           </div>
 
+          <!-- Telegram Debt Reminder Button if has debt -->
+          <div v-if="(activeCustomer?.debt || 0) > 0" class="flex items-center justify-between p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40">
+            <div class="text-xs text-blue-800 dark:text-blue-200">
+              <span class="font-bold block">Nasiya eslatmasi</span>
+              <span class="text-[11px] text-blue-600 dark:text-blue-400">Telegram orqali to'lov tafsilotlarini yuboring</span>
+            </div>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+              @click="sendTelegramReminder"
+            >
+              <Send class="w-3.5 h-3.5" />
+              Telegramga Yuborish
+            </button>
+          </div>
+
           <!-- Notes / Debt Journal Log -->
           <div v-if="activeCustomer?.notes" class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1.5">
             <span class="font-bold text-amber-700 dark:text-amber-400 block uppercase text-[10px] tracking-wider">
@@ -91,11 +107,11 @@
 </template>
 
 <script setup lang="ts">
-import { History, X, RefreshCw } from 'lucide-vue-next';
+import { History, X, RefreshCw, Send } from 'lucide-vue-next';
 import AppButton from '../../../components/AppButton.vue';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean;
   activeCustomer: any;
   orders: any[];
@@ -107,4 +123,18 @@ defineEmits<{
 }>();
 
 const { formatCurrency, formatDate } = useFormat();
+
+const sendTelegramReminder = () => {
+  if (!props.activeCustomer) return;
+  const phone = props.activeCustomer.phone ? props.activeCustomer.phone.replace(/\D/g, '') : '';
+  const text = encodeURIComponent(
+    `Hurmatli ${props.activeCustomer.fullName || props.activeCustomer.name}! Boshqar.uz do'konimizdan joriy nasiya qoldig'ingiz: ${formatCurrency(props.activeCustomer.debt || 0)} tashkil etadi. Iltimos, hisob-kitobni amalga oshirishni unutmang!`
+  );
+
+  if (phone) {
+    window.open(`https://t.me/+${phone}?text=${text}`, '_blank');
+  } else {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent('https://boshqar.uz')}&text=${text}`, '_blank');
+  }
+};
 </script>

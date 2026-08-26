@@ -48,6 +48,15 @@
           </div>
         </button>
 
+        <button
+          type="button"
+          @click="isBarcodePrintOpen = true"
+          class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
+        >
+          <Tag class="w-4 h-4 text-blue-500" />
+          <span>Narx Yorliqlari</span>
+        </button>
+
         <router-link
           to="/categories"
           class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
@@ -173,6 +182,14 @@
       @close="isExcelImportOpen = false"
       @imported="dataStore.fetchProducts(true)"
     />
+
+    <!-- Barcode & Price Label Studio Modal -->
+    <BarcodePrintModal
+      :is-open="isBarcodePrintOpen"
+      :products="filteredProducts"
+      :store-name="authStore.activeBusiness?.name"
+      @close="isBarcodePrintOpen = false"
+    />
   </div>
 </template>
 
@@ -180,7 +197,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api, { getErrorMessage } from '../../services/api';
-import { Plus, FolderTree, FileSpreadsheet, Sparkles, Lock } from 'lucide-vue-next';
+import { Plus, FolderTree, FileSpreadsheet, Sparkles, Lock, Tag } from 'lucide-vue-next';
 
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
 import { SelectOption } from '../../components/AppSelect.vue';
@@ -188,6 +205,7 @@ import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
 import ProUpgradeModal from '../../components/ProUpgradeModal.vue';
 import ExcelImportModal from './components/ExcelImportModal.vue';
+import BarcodePrintModal from '../../components/BarcodePrintModal.vue';
 import { useToast } from '../../composables/useToast';
 import { useDataStore } from '../../stores/data.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -216,6 +234,7 @@ const proModalTitle = ref('');
 const proModalSubtitle = ref('');
 const proModalFeature = ref('');
 const isExcelImportOpen = ref(false);
+const isBarcodePrintOpen = ref(false);
 
 const handleAiImportClick = () => {
   if (isFeatureDisabled('ai_import') && isFeatureDisabled('ai_assistant')) {
