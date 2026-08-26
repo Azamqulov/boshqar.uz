@@ -153,7 +153,7 @@ async function main() {
     });
   }
 
-  // 5. Default SuperAdmin User (Credentials fully in PostgreSQL database)
+  // 5. Default SuperAdmin Users (Credentials fully in PostgreSQL database)
   const defaultPasswordHash = await bcrypt.hash('1111', 10);
   const demoUser = await prisma.user.upsert({
     where: { phone: '+998770404624' },
@@ -162,6 +162,19 @@ async function main() {
       fullName: 'Boshqaruvchi Admin',
       email: 'admin@boshqar.uz',
       phone: '+998770404624',
+      passwordHash: defaultPasswordHash,
+      status: 'active',
+      isSuperAdmin: true,
+    },
+  });
+
+  const demoUser2 = await prisma.user.upsert({
+    where: { phone: '+998111111111' },
+    update: { isSuperAdmin: true, status: 'active', passwordHash: defaultPasswordHash },
+    create: {
+      fullName: 'Boshqar Admin 11',
+      email: 'admin11@boshqar.uz',
+      phone: '+998111111111',
       passwordHash: defaultPasswordHash,
       status: 'active',
       isSuperAdmin: true,
@@ -225,6 +238,23 @@ async function main() {
     create: {
       businessId: business.id,
       userId: demoUser.id,
+      roleId: ownerRole.id,
+      branchId: mainBranch.id,
+      status: 'active',
+    },
+  });
+
+  await prisma.businessUser.upsert({
+    where: {
+      businessId_userId: {
+        businessId: business.id,
+        userId: demoUser2.id,
+      },
+    },
+    update: { status: 'active' },
+    create: {
+      businessId: business.id,
+      userId: demoUser2.id,
       roleId: ownerRole.id,
       branchId: mainBranch.id,
       status: 'active',
