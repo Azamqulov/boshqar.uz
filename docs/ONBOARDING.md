@@ -31,8 +31,8 @@ cp .env.example .env
 ```env
 PORT=4000
 NODE_ENV=development
-DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/boshqar_db?schema=public"
-DIRECT_URL="postgresql://postgres:postgres123@localhost:5432/boshqar_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/boshqar_uz?schema=public"
+DIRECT_URL="postgresql://postgres:postgres123@localhost:5432/boshqar_uz?schema=public"
 JWT_SECRET="boshqar_uz_development_jwt_secret_key_minimum_32_characters_long"
 REDIS_URL="redis://localhost:6379"
 ```

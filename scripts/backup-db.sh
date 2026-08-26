@@ -21,7 +21,7 @@ if [ -z "${DATABASE_URL}" ]; then
   DB_HOST="${DB_HOST:-localhost}"
   DB_PORT="${DB_PORT:-5432}"
   DB_USER="${DB_USER:-postgres}"
-  DB_NAME="${DB_NAME:-boshqar_db}"
+  DB_NAME="${DB_NAME:-boshqar_uz}"
   
   PGPASSWORD="${DB_PASSWORD:-postgres123}" pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" -F c -b -v | gzip > "${BACKUP_FILE}"
 else

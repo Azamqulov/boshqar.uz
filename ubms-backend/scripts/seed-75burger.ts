@@ -81,6 +81,30 @@ async function main() {
     });
   }
 
+  // Ensure user is linked to business as Owner
+  const ownerRole = await prisma.role.findFirst({
+    where: { name: 'Owner' },
+  });
+
+  if (ownerRole) {
+    await prisma.businessUser.upsert({
+      where: {
+        businessId_userId: {
+          businessId: business.id,
+          userId: business.ownerId,
+        },
+      },
+      update: { status: 'active' },
+      create: {
+        businessId: business.id,
+        userId: business.ownerId,
+        roleId: ownerRole.id,
+        branchId: branch.id,
+        status: 'active',
+      },
+    });
+  }
+
   // Ensure units exist
   let donaUnit = business.units.find((u) => u.shortName?.toLowerCase() === 'dona' || u.name.toLowerCase() === 'dona');
   if (!donaUnit) {

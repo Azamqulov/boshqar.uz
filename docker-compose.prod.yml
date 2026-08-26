@@ -7,13 +7,13 @@ services:
     container_name: boshqar-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: boshqar_db
+      POSTGRES_DB: boshqar_uz
       POSTGRES_USER: boshqar_user
       POSTGRES_PASSWORD: ${DB_PASSWORD:-BoshqarSecureDB2026!}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U boshqar_user -d boshqar_db"]
+      test: ["CMD-SHELL", "pg_isready -U boshqar_user -d boshqar_uz"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,7 +50,7 @@ services:
     environment:
       PORT: 4000
       NODE_ENV: production
-      DATABASE_URL: postgresql://boshqar_user:${DB_PASSWORD:-BoshqarSecureDB2026!}@postgres:5432/boshqar_db?schema=public
+      DATABASE_URL: postgresql://boshqar_user:${DB_PASSWORD:-BoshqarSecureDB2026!}@postgres:5432/boshqar_uz?schema=public
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-boshqar_super_secure_jwt_secret_key_2026_default}
       CORS_ORIGINS: "*"
