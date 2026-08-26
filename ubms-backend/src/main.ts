@@ -9,6 +9,7 @@ import * as compression from 'compression';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { validateEnv } from './config/env.validation';
+import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
 
 async function bootstrap() {
   validateEnv();
@@ -97,6 +98,9 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   );
+
+  // 5. Global Performance Interceptor (Response Time & Slow Query Alerts)
+  app.useGlobalInterceptors(new PerformanceInterceptor());
 
   // 5. Swagger Documentation (Only enabled in development / staging)
   if (process.env.NODE_ENV !== 'production') {

@@ -169,6 +169,15 @@
                 <span>Chegirma:</span>
                 <span>-{{ formatCurrency(order.discountAmount) }}</span>
               </div>
+              <div v-if="order.serviceFeeAmount > 0" class="flex justify-between text-blue-600 dark:text-blue-400 text-[11px] font-bold">
+                <span>Xizmat haqi ({{ order.serviceFeePercent || 10 }}% Stolda):</span>
+                <span>+{{ formatCurrency(order.serviceFeeAmount) }}</span>
+              </div>
+              <div v-else-if="order.orderServiceType === 'takeaway'" class="flex justify-between text-amber-600 dark:text-amber-400 text-[10px]">
+                <span>Buyurtma turi:</span>
+                <span>Olib ketish (С собой - 0% Xizmat haqi)</span>
+              </div>
+
               <div class="flex justify-between text-xs font-black text-slate-900 dark:text-white pt-1 border-t border-slate-200/80 dark:border-slate-700/60">
                 <span class="font-sans">Jami summa:</span>
                 <span class="text-slate-900 dark:text-white">{{ formatCurrency(order.total) }}</span>
@@ -255,10 +264,19 @@
             <span>Chegirma:</span>
             <span>-{{ formatCurrencyNumber(order.discountAmount) }} so'm</span>
           </div>
+          <div v-if="order.serviceFeeAmount > 0" class="row" style="font-weight: bold;">
+            <span>Xizmat haqi ({{ order.serviceFeePercent || 10 }}% Stolda):</span>
+            <span>+{{ formatCurrencyNumber(order.serviceFeeAmount) }} so'm</span>
+          </div>
+          <div v-else-if="order.orderServiceType === 'takeaway'" class="row">
+            <span>Buyurtma turi:</span>
+            <span>Olib ketish (0% Xizmat)</span>
+          </div>
           <div class="row grand-total">
             <span>JAMI SUMMA:</span>
             <span>{{ formatCurrencyNumber(order.total) }} SO'M</span>
           </div>
+
           <div class="divider">--------------------------------</div>
           <!-- Payments -->
           <div v-for="p in order.payments" :key="p.id" class="row">

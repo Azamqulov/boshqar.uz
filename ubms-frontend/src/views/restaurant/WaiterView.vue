@@ -138,7 +138,9 @@
       @send-to-kitchen="sendToKitchen"
       @open-pre-bill="openPreBillModal"
       @open-pay-modal="openTablePayModal"
+      @clear-table-order="clearTableOrder"
     />
+
 
     <!-- PRE-BILL MODAL COMPONENT -->
     <WaiterPreBillModal
@@ -334,6 +336,7 @@ const editingTableId = ref<string | null>(null);
 const tableForm = ref({
   name: '',
   capacity: 4,
+  zoneName: 'Asosiy Zal',
 });
 
 const confirmModal = ref<{
@@ -368,13 +371,18 @@ const filteredTables = computed(() => {
     if (statusFilter.value === 'available' && t.status === 'occupied') return false;
     if (statusFilter.value === 'occupied' && t.status !== 'occupied') return false;
 
-    // Search filter
+    // Search filter (name or zone)
     if (tableSearch.value) {
-      return t.name.toLowerCase().includes(tableSearch.value.toLowerCase());
+      const q = tableSearch.value.toLowerCase();
+      return (
+        t.name?.toLowerCase().includes(q) ||
+        t.zoneName?.toLowerCase().includes(q)
+      );
     }
     return true;
   });
 });
+
 
 const loadTables = async (force = false) => {
   if (dataStore.tables.length === 0) {
@@ -415,15 +423,18 @@ const openCreateTableModal = () => {
   tableForm.value = {
     name: `Stol #${tables.value.length + 1}`,
     capacity: 4,
+    zoneName: 'Asosiy Zal',
   };
   isTableModalOpen.value = true;
 };
+
 
 const openEditTableModal = (table: any) => {
   editingTableId.value = table.id;
   tableForm.value = {
     name: table.name,
     capacity: table.capacity || 4,
+    zoneName: table.zoneName || 'Asosiy Zal',
   };
   isTableModalOpen.value = true;
 };
@@ -445,25 +456,58 @@ const saveTable = async () => {
       await api.patch(`/restaurant/tables/${editingTableId.value}`, {
         name: tableForm.value.name,
         capacity: Number(tableForm.value.capacity) || 4,
+        zoneName: tableForm.value.zoneName || 'Asosiy Zal',
       });
       toast.success(`"${tableForm.value.name}" muvaffaqiyatli yangilandi!`, 'Stollar');
     } else {
       await api.post('/restaurant/tables', {
         name: tableForm.value.name,
         capacity: Number(tableForm.value.capacity) || 4,
+        zoneName: tableForm.value.zoneName || 'Asosiy Zal',
       });
       toast.success(`Yangi "${tableForm.value.name}" muvaffaqiyatli qo'shildi!`, 'Stollar');
     }
 
-    isTableModalOpen.value = false;
-    dataStore.invalidate('tables');
-    await loadTables(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Stolni saqlashda xatolik', 'Xatolik');
   } finally {
     savingTable.value = false;
   }
 };
+
+const clearTableOrder = () => {
+
+  if (!selectedTable.value) return;
+
+  if (newItems.value.length > 0 && existingItems.value.length === 0) {
+    newItems.value = [];
+    toast.info('Yangi tanlangan taomlar tozalandi', selectedTable.value.name);
+    return;
+  }
+
+  confirmModal.value = {
+    open: true,
+    title: 'Stolni Bo\'shatish / Tozalash',
+    message: `Haqiqatan ham "${selectedTable.value.name}" stolini va uning buyurtmasini tozalab bo'shatmoqchimisiz?`,
+    onConfirm: async () => {
+      try {
+        await api.patch(`/restaurant/tables/${selectedTable.value.id}/status`, { status: 'available' }).catch(() => {});
+        newItems.value = [];
+        existingItems.value = [];
+        selectedTable.value.status = 'available';
+        selectedTable.value = null;
+        dataStore.invalidate('tables');
+        await loadTables(true);
+        confirmModal.value.open = false;
+        toast.success('Stol muvaffaqiyatli tozalandi va bo\'shatildi!', 'Stol Bo\'shatildi');
+      } catch (err: any) {
+        toast.error(err.message || 'Stolni tozalashda xatolik', 'Xatolik');
+      }
+    },
+  };
+};
+
+
 
 const confirmDeleteTable = (table: any) => {
   confirmModal.value = {

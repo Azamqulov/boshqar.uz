@@ -35,12 +35,19 @@
         <!-- Theme Toggle -->
         <ThemeToggle />
 
+        <!-- Quick Screen Lock for workers -->
+        <button @click="lockScreen" title="Ekranni qulflash (Ctrl+L)"
+          class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition btn-interactive">
+          <Lock class="w-4 h-4" />
+        </button>
+
         <!-- Quick Guide button for workers -->
         <router-link to="/guide"
           class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
           title="Qo'llanma & AI">
           <BookOpen class="w-4 h-4" />
         </router-link>
+
 
         <div class="hidden sm:block text-right text-xs">
           <p class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]">{{ authStore.user?.fullName }}
@@ -172,11 +179,18 @@
           </div>
         </main>
       </div>
-      <!-- Floating Curved Mobile Bottom Dock Navigation Bar Component -->
-      <AppMobileBottomDock @openMobileSidebar="isMobileSidebarOpen = true" />
     </div>
+
+    <!-- Floating Curved Mobile Bottom Dock Navigation Bar Component -->
+    <AppMobileBottomDock @openMobileSidebar="isMobileSidebarOpen = true" />
   </div>
+
+  <!-- Windows 11 Style Full-Screen Lock Overlay Component -->
+  <LockScreen />
 </template>
+
+
+
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
@@ -189,14 +203,17 @@ import AppLogo from '../components/AppLogo.vue';
 import AppHeader from '../components/AppHeader.vue';
 import AppSidebar from '../components/AppSidebar.vue';
 import AppLockOverlay from '../components/AppLockOverlay.vue';
+import LockScreen from '../components/LockScreen.vue';
 import AppMobileBottomDock from '../components/AppMobileBottomDock.vue';
 import { useLanguage } from '../composables/useLanguage';
 import { usePosSettings } from '../composables/usePosSettings';
+import { useScreenLock } from '../composables/useScreenLock';
 import api from '../services/api';
 
 const langStore = useLanguage();
 const currencyStore = useCurrencyStore();
 const { posSettings } = usePosSettings();
+const { lockScreen } = useScreenLock();
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -214,7 +231,9 @@ import {
   Settings,
   ShieldCheck,
   LogOut,
+  Lock,
   Menu,
+
   Store,
   Building2,
   Zap,
@@ -230,8 +249,8 @@ import {
   AlertTriangle,
   AlertCircle,
   ArrowRight,
-  Lock,
 } from 'lucide-vue-next';
+
 
 import { usePlanFeatures } from '@/composables/usePlanFeatures';
 
@@ -458,6 +477,7 @@ onUnmounted(() => {
 interface NavSubItem {
   name: string;
   label: string;
+  translationKey?: string;
   to: string;
   icon: any;
   tab?: string;
@@ -466,6 +486,7 @@ interface NavSubItem {
 interface NavItem {
   name: string;
   label: string;
+  translationKey?: string;
   to: string;
   icon: any;
   types: string[];
@@ -476,6 +497,7 @@ interface NavItem {
 interface NavGroup {
   id: string;
   title?: string;
+  titleKey?: string;
   items: NavItem[];
 }
 
@@ -483,61 +505,68 @@ const allNavGroups: NavGroup[] = [
   {
     id: 'main',
     items: [
-      { name: 'dashboard', label: 'Boshqaruv Paneli', to: '/dashboard', icon: LayoutDashboard, types: ['all'] },
-      { name: 'pos', label: 'Kassa (POS)', to: '/pos', icon: ShoppingCart, types: ['all'] },
+      { name: 'dashboard', label: 'Boshqaruv Paneli', translationKey: 'sidebar.dashboard', to: '/dashboard', icon: LayoutDashboard, types: ['all'] },
+      { name: 'pos', label: 'Kassa (POS)', translationKey: 'sidebar.pos', to: '/pos', icon: ShoppingCart, types: ['all'] },
     ],
   },
   {
     id: 'ombor',
     title: 'OMBOR',
+    titleKey: 'sidebar.group_ombor',
     items: [
-      { name: 'products', label: 'Mahsulotlar', to: '/products', icon: Package, types: ['all'] },
-      { name: 'categories', label: 'Kategoriyalar', to: '/categories', icon: FolderTree, types: ['all'] },
-      { name: 'inventory', label: 'Omborxona', to: '/inventory', icon: Boxes, types: ['all'] },
-      { name: 'suppliers', label: 'Ta\'minotchilar', to: '/suppliers', icon: Truck, types: ['all'] },
+      { name: 'products', label: 'Mahsulotlar', translationKey: 'sidebar.products', to: '/products', icon: Package, types: ['all'] },
+      { name: 'categories', label: 'Kategoriyalar', translationKey: 'sidebar.categories', to: '/categories', icon: FolderTree, types: ['all'] },
+      { name: 'inventory', label: 'Omborxona', translationKey: 'sidebar.inventory', to: '/inventory', icon: Boxes, types: ['all'] },
+      { name: 'suppliers', label: 'Ta\'minotchilar', translationKey: 'sidebar.suppliers', to: '/suppliers', icon: Truck, types: ['all'] },
     ],
   },
   {
     id: 'restaurant',
     title: 'RESTORAN',
+    titleKey: 'sidebar.group_restaurant',
     items: [
-      { name: 'tables', label: 'Stollar xaritasi', to: '/restaurant/tables', icon: UtensilsCrossed, types: ['restaurant', 'cafe'] },
-      { name: 'kds', label: 'Oshxona (KDS)', to: '/restaurant/kds', icon: Flame, types: ['restaurant', 'cafe'] },
+      { name: 'tables', label: 'Stollar xaritasi', translationKey: 'sidebar.tables', to: '/restaurant/tables', icon: UtensilsCrossed, types: ['restaurant', 'cafe'] },
+      { name: 'kds', label: 'Oshxona (KDS)', translationKey: 'sidebar.kds', to: '/restaurant/kds', icon: Flame, types: ['restaurant', 'cafe'] },
     ],
   },
   {
     id: 'service',
     title: 'XIZMATLAR',
+    titleKey: 'sidebar.group_service',
     items: [
-      { name: 'appointments', label: 'Bandlovlar', to: '/appointments', icon: Calendar, types: ['barbershop', 'service'] },
-      { name: 'services', label: 'Xizmatlar', to: '/appointments/services', icon: Scissors, types: ['barbershop', 'service'] },
+      { name: 'appointments', label: 'Bandlovlar', translationKey: 'sidebar.appointments', to: '/appointments', icon: Calendar, types: ['barbershop', 'service'] },
+      { name: 'services', label: 'Xizmatlar', translationKey: 'sidebar.services', to: '/appointments/services', icon: Scissors, types: ['barbershop', 'service'] },
     ],
   },
   {
     id: 'crm',
     title: 'MIJOZLAR',
+    titleKey: 'sidebar.group_crm',
     items: [
-      { name: 'customers', label: 'Mijozlar (CRM)', to: '/customers', icon: Users, types: ['all'] },
+      { name: 'customers', label: 'Mijozlar (CRM)', translationKey: 'sidebar.customers', to: '/customers', icon: Users, types: ['all'] },
     ],
   },
   {
     id: 'hisob',
     title: 'HISOB',
+    titleKey: 'sidebar.group_hisob',
     items: [
-      { name: 'finance', label: 'Moliya & Hisobot', to: '/finance', icon: DollarSign, types: ['all'] },
+      { name: 'finance', label: 'Moliya & Hisobot', translationKey: 'sidebar.finance', to: '/finance', icon: DollarSign, types: ['all'] },
     ],
   },
   {
     id: 'sozlamalar',
     title: 'SOZLAMALAR',
+    titleKey: 'sidebar.group_sozlamalar',
     items: [
-      { name: 'billing', label: 'Obuna & Tariflar', to: '/billing', icon: CreditCard, types: ['all'] },
-      { name: 'guide', label: 'Qo\'llanma & AI', to: '/guide', icon: BookOpen, types: ['all'], badge: 'AI' },
-      { name: 'settings', label: 'Sozlamalar', to: '/settings', icon: Settings, types: ['all'] },
-      { name: 'superadmin', label: 'SuperAdmin', to: '/superadmin', icon: ShieldCheck, types: ['superadmin'] },
+      { name: 'billing', label: 'Obuna & Tariflar', translationKey: 'sidebar.billing', to: '/billing', icon: CreditCard, types: ['all'] },
+      { name: 'guide', label: 'Qo\'llanma & AI', translationKey: 'sidebar.guide', to: '/guide', icon: BookOpen, types: ['all'], badge: 'AI' },
+      { name: 'settings', label: 'Sozlamalar', translationKey: 'sidebar.settings', to: '/settings', icon: Settings, types: ['all'] },
+      { name: 'superadmin', label: 'SuperAdmin', translationKey: 'sidebar.superadmin', to: '/superadmin', icon: ShieldCheck, types: ['superadmin'] },
     ],
   },
 ];
+
 
 const visibleNavGroups = computed(() => {
   const currentType = businessType.value;
@@ -646,9 +675,10 @@ onMounted(async () => {
     return;
   }
   await authStore.fetchBusinesses();
-  // Background prefetching for 0ms instant navigation
-  dataStore.prefetchAll(businessType.value || 'shop');
+  // Background prefetching for 0ms instant navigation (force=true to avoid stale memory cache)
+  dataStore.prefetchAll(true);
 });
+
 </script>
 
 <style>

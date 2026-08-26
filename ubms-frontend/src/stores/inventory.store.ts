@@ -72,6 +72,16 @@ export const useInventoryStore = defineStore('ubms_inventory', () => {
     return p;
   };
 
+  const resetStore = () => {
+    inventory.value = [];
+    inventoryTotal.value = 0;
+    inventoryMeta.value = { page: 1, limit: 100, total: 0, totalPages: 1 };
+    lastFetched.value = {};
+    for (const key in inFlightPromises) {
+      delete inFlightPromises[key];
+    }
+  };
+
   const updateInventoryLocally = (productId: string, newQty: number) => {
     const idx = inventory.value.findIndex((item) => item.productId === productId);
     if (idx !== -1) {
@@ -88,5 +98,7 @@ export const useInventoryStore = defineStore('ubms_inventory', () => {
     isLoading,
     fetchInventory,
     updateInventoryLocally,
+    resetStore,
   };
 });
+

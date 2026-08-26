@@ -7,7 +7,30 @@ export function validateEnv() {
       `.env faylni tekshiring (.env.example asosida).`
     );
   }
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+
+  const jwtSecret = process.env.JWT_SECRET || '';
+  if (jwtSecret.length < 32) {
     throw new Error("JWT_SECRET kamida 32 belgidan iborat bo'lishi kerak.");
   }
+
+  const insecureKeywords = [
+    'boshqar-super-secret',
+    'boshqar_uz_jwt_secure',
+    'default_secret',
+    'secret123456',
+    'jwt_secret',
+    '12345678901234567890123456789012',
+    'change_this_to_a_secure_jwt_key',
+  ];
+
+  if (process.env.NODE_ENV === 'production') {
+    const isWeak = insecureKeywords.some((kw) => jwtSecret.toLowerCase().includes(kw));
+    if (isWeak) {
+      throw new Error(
+        "XAVFSIZLIK XATOSI: Production muhitda ma'lum default yoki zaif JWT_SECRET ishlatilishi taqiqlangan! " +
+        "Iltimos, kriptografik mustahkam, unikal JWT_SECRET o'rnating."
+      );
+    }
+  }
 }
+

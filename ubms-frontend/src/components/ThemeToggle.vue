@@ -1,9 +1,12 @@
 <template>
   <button
     type="button"
+    role="switch"
+    :aria-checked="themeStore.isDark"
+    :aria-label="themeStore.isDark ? 'Yorug\' rejimga o\'tish' : 'Tungi rejimga o\'tish'"
     @click="themeStore.toggleTheme"
     :title="themeStore.isDark ? 'Yorug\' rejimga o\'tish (Light mode)' : 'Tungi rejimga o\'tish (Dark mode)'"
-    class="relative p-2 rounded-xl border transition-all duration-200 flex items-center justify-center group focus:outline-none btn-interactive"
+    class="relative p-2 rounded-xl border transition-all duration-200 flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 btn-interactive"
     :class="[
       themeStore.isDark
         ? 'bg-slate-800/80 hover:bg-slate-700/80 text-amber-400 border-slate-700 hover:border-amber-400/50 shadow-sm'

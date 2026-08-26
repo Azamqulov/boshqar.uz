@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { CreditCard, Plus, CheckCircle2, ShieldCheck, Cpu, RefreshCw } from 'lucide-vue-next';
+import AppSelect from '../../../components/AppSelect.vue';
+
+const providerOptions = [
+  { value: 'uzcard', label: 'Uzcard' },
+  { value: 'humo', label: 'Humo' },
+  { value: 'multipay', label: 'Multipay (Uzcard + Humo)' },
+];
 
 interface Terminal {
   id: string;
@@ -168,11 +175,12 @@ function handleAddTerminal() {
           </div>
           <div>
             <label class="block font-semibold mb-1">Tizim (Provider)</label>
-            <select v-model="newTerminal.provider" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent">
-              <option value="uzcard">Uzcard</option>
-              <option value="humo">Humo</option>
-              <option value="multipay">Multipay (Uzcard+Humo)</option>
-            </select>
+            <AppSelect
+              v-model="newTerminal.provider"
+              :options="providerOptions"
+              placeholder="Providerni tanlang..."
+              size="md"
+            />
           </div>
           <div>
             <label class="block font-semibold mb-1">Terminal ID</label>

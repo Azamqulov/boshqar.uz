@@ -1,42 +1,62 @@
 <template>
   <div class="flex-1 flex flex-col space-y-4 overflow-hidden">
-    <!-- Filter Tabs & Search Bar -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+    <!-- Filter Tabs (Status & Zones) & Search Bar -->
+    <div class="flex flex-col space-y-2.5 shrink-0">
+      <!-- Zone Tabs Bar (Barcha Zallar, Asosiy Zal, 2-Qavat, VIP Zonalar) -->
       <div class="flex items-center space-x-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs font-semibold overflow-x-auto scrollbar-none">
         <button
-          @click="$emit('update:statusFilter', 'all')"
-          class="px-3 py-1.5 rounded-lg transition whitespace-nowrap"
-          :class="statusFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+          v-for="z in zoneTabs"
+          :key="z"
+          type="button"
+          @click="selectedZoneTab = z"
+          class="px-3 py-1.5 rounded-lg transition whitespace-nowrap flex items-center gap-1 cursor-pointer"
+          :class="selectedZoneTab === z
+            ? 'bg-emerald-500 text-white shadow-xs font-bold'
+            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
         >
-          Barchasi ({{ tables.length }})
-        </button>
-        <button
-          @click="$emit('update:statusFilter', 'available')"
-          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
-          :class="statusFilter === 'available' ? 'bg-emerald-500 text-white shadow-xs font-bold' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'"
-        >
-          <span class="w-2 h-2 rounded-full" :class="statusFilter === 'available' ? 'bg-white' : 'bg-emerald-500'"></span>
-          <span>Bo'sh ({{ freeTablesCount }})</span>
-        </button>
-        <button
-          @click="$emit('update:statusFilter', 'occupied')"
-          class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
-          :class="statusFilter === 'occupied' ? 'bg-rose-500 text-white shadow-xs font-bold' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
-        >
-          <span class="w-2 h-2 rounded-full" :class="statusFilter === 'occupied' ? 'bg-white' : 'bg-rose-500'"></span>
-          <span>Band ({{ occupiedTablesCount }})</span>
+          <span>{{ z }}</span>
         </button>
       </div>
 
-      <div class="w-full sm:w-72">
-        <AppInput
-          :model-value="tableSearch"
-          @update:model-value="$emit('update:tableSearch', $event)"
-          placeholder="Stol nomi bo'yicha qidirish..."
-          :icon="Search"
-        />
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Status Filter Buttons (All, Free, Occupied) -->
+        <div class="flex items-center space-x-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs font-semibold overflow-x-auto scrollbar-none">
+          <button
+            @click="$emit('update:statusFilter', 'all')"
+            class="px-3 py-1.5 rounded-lg transition whitespace-nowrap"
+            :class="statusFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+          >
+            Barchasi ({{ tables.length }})
+          </button>
+          <button
+            @click="$emit('update:statusFilter', 'available')"
+            class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
+            :class="statusFilter === 'available' ? 'bg-emerald-500 text-white shadow-xs font-bold' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'"
+          >
+            <span class="w-2 h-2 rounded-full" :class="statusFilter === 'available' ? 'bg-white' : 'bg-emerald-500'"></span>
+            <span>Bo'sh ({{ freeTablesCount }})</span>
+          </button>
+          <button
+            @click="$emit('update:statusFilter', 'occupied')"
+            class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap"
+            :class="statusFilter === 'occupied' ? 'bg-rose-500 text-white shadow-xs font-bold' : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'"
+          >
+            <span class="w-2 h-2 rounded-full" :class="statusFilter === 'occupied' ? 'bg-white' : 'bg-rose-500'"></span>
+            <span>Band ({{ occupiedTablesCount }})</span>
+          </button>
+        </div>
+
+        <div class="w-full sm:w-72">
+          <AppInput
+            :model-value="tableSearch"
+            @update:model-value="$emit('update:tableSearch', $event)"
+            placeholder="Stol yoki zona bo'yicha qidirish..."
+            :icon="Search"
+          />
+        </div>
       </div>
     </div>
+
 
     <!-- Tables Grid -->
     <div class="flex-1 overflow-y-auto pr-1">
@@ -73,8 +93,14 @@
           <div class="flex items-start justify-between gap-1">
             <div>
               <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Sig'im: {{ table.capacity }} kishi</span>
-              <h3 class="text-base font-black text-slate-900 dark:text-white group-hover:text-amber-500 dark:group-hover:text-amber-400 transition mt-0.5">{{ table.name }}</h3>
+              <h3 class="text-base font-black text-slate-900 dark:text-white group-hover:text-amber-500 dark:group-hover:text-amber-400 transition mt-0.5 flex items-center gap-1.5">
+                <span>{{ table.name }}</span>
+                <span v-if="table.zoneName" class="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {{ table.zoneName }}
+                </span>
+              </h3>
             </div>
+
 
             <!-- Status Badge & Action Menu -->
             <div class="flex items-center gap-1">
@@ -136,12 +162,14 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
+
 import { Search, Plus, UtensilsCrossed, Edit2, Trash2, ArrowRight } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppInput from '../../../components/AppInput.vue';
 import { useFormat } from '../../../composables/useFormat';
 
-defineProps<{
+const props = defineProps<{
   statusFilter: string;
   tableSearch: string;
   tables: any[];
@@ -161,4 +189,16 @@ defineEmits<{
 }>();
 
 const { formatCurrency } = useFormat();
+
+const selectedZoneTab = ref('Barcha Zallar');
+
+const zoneTabs = computed(() => {
+  const set = new Set<string>();
+  set.add('Barcha Zallar');
+  (props.tables || []).forEach((t) => {
+    if (t.zoneName) set.add(t.zoneName);
+  });
+  return Array.from(set);
+});
+
 </script>

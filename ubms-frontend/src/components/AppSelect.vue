@@ -8,9 +8,13 @@
     <!-- Trigger Button -->
     <button
       type="button"
+      role="combobox"
+      :aria-expanded="isOpen"
+      aria-haspopup="listbox"
+      :aria-label="ariaLabel || placeholder || 'Tanlang'"
       @click="toggleDropdown"
       :disabled="disabled"
-      class="w-full min-w-0 max-w-full flex items-center justify-between transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
+      class="w-full min-w-0 max-w-full flex items-center justify-between transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 border"
       :class="[
         sizeClasses.trigger,
         isOpen
@@ -21,12 +25,16 @@
     >
       <div class="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1">
         <slot name="selected" :option="selectedOption">
+          <!-- Flag icon if flagCode is present -->
+          <FlagIcon v-if="selectedOption?.flagCode" :code="selectedOption.flagCode" size="sm" class="mr-1 shrink-0" />
+
           <!-- Color dot if present -->
           <span
             v-if="selectedOption?.color"
             class="w-2 h-2 rounded-full shrink-0"
             :style="{ backgroundColor: selectedOption.color }"
           ></span>
+
 
           <!-- Icon if present -->
           <component
@@ -42,6 +50,7 @@
           >
             {{ selectedOption ? selectedOption.label : (placeholder || 'Tanlang...') }}
           </span>
+
 
           <!-- Badge if present -->
           <span
@@ -129,12 +138,16 @@
                 ]"
               >
                 <div class="flex items-center gap-1.5 truncate flex-1">
+                  <!-- Flag icon -->
+                  <FlagIcon v-if="opt.flagCode" :code="opt.flagCode" size="sm" class="mr-1 shrink-0" />
+
                   <!-- Color dot -->
                   <span
                     v-if="opt.color"
                     class="w-2 h-2 rounded-full shrink-0"
                     :style="{ backgroundColor: opt.color }"
                   ></span>
+
 
                   <!-- Icon -->
                   <component
@@ -146,6 +159,7 @@
 
                   <span class="truncate">{{ opt.label }}</span>
                 </div>
+
 
                 <!-- Badge / Checkmark -->
                 <div class="flex items-center gap-1 shrink-0 ml-1.5">
@@ -179,9 +193,13 @@
     <!-- Trigger Button -->
     <button
       type="button"
+      role="combobox"
+      :aria-expanded="isOpen2"
+      aria-haspopup="listbox"
+      :aria-label="ariaLabel || placeholder || 'Tanlang'"
       @click="toggleDropdown2"
       :disabled="disabled"
-      class="w-full flex items-center justify-between transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none border"
+      class="w-full flex items-center justify-between transition-all duration-150 text-left disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 border"
       :class="[
         sizeClasses.trigger,
         isOpen2
@@ -192,6 +210,7 @@
     >
       <div class="flex items-center gap-1.5 truncate flex-1 pr-1">
         <slot name="selected" :option="selectedOption">
+          <FlagIcon v-if="selectedOption?.flagCode" :code="selectedOption.flagCode" size="sm" class="mr-1 shrink-0" />
           <span
             v-if="selectedOption?.color"
             class="w-2 h-2 rounded-full shrink-0"
@@ -256,6 +275,7 @@
             ]"
           >
             <div class="flex items-center gap-1.5 truncate flex-1">
+              <FlagIcon v-if="opt.flagCode" :code="opt.flagCode" size="sm" class="mr-1 shrink-0" />
               <span
                 v-if="opt.color"
                 class="w-2 h-2 rounded-full shrink-0"
@@ -280,6 +300,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { ChevronDown, Search, Check } from 'lucide-vue-next';
+import FlagIcon from './FlagIcon.vue';
 
 export interface SelectOption {
   value: any;
@@ -287,9 +308,12 @@ export interface SelectOption {
   disabled?: boolean;
   group?: string;
   icon?: any;
+  flagCode?: string;
   badge?: string;
   color?: string;
 }
+
+
 
 const props = withDefaults(
   defineProps<{
@@ -301,6 +325,7 @@ const props = withDefaults(
     searchable?: boolean;
     size?: 'sm' | 'md' | 'lg';
     customClass?: string;
+    ariaLabel?: string;
   }>(),
   {
     options: () => [],

@@ -30,6 +30,18 @@
               </div>
             </div>
 
+            <!-- Table Zone Selection -->
+            <div>
+              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Zona / Zal Nomi *</label>
+              <AppSelect
+                :model-value="tableForm.zoneName || 'Asosiy Zal'"
+                @update:model-value="tableForm.zoneName = $event"
+                :options="zoneOptions"
+                placeholder="Zonani tanlang..."
+                size="md"
+              />
+            </div>
+
             <!-- Table Name -->
             <div>
               <AppInput
@@ -40,6 +52,7 @@
                 :required="true"
               />
             </div>
+
 
             <!-- Capacity (Number of Seats) -->
             <div>
@@ -87,11 +100,21 @@
 import { UtensilsCrossed, X } from 'lucide-vue-next';
 import AppInput from '../../../components/AppInput.vue';
 import AppButton from '../../../components/AppButton.vue';
+import AppSelect from '../../../components/AppSelect.vue';
+
+const zoneOptions = [
+  { value: 'Asosiy Zal', label: 'Asosiy Zal' },
+  { value: '2-Qavat', label: '2-Qavat' },
+  { value: 'VIP Zonalar', label: 'VIP Zonalar' },
+  { value: 'Yozgi Terrasa', label: 'Yozgi Terrasa' },
+  { value: 'Xontaxta Zali', label: 'Xontaxta Zali' },
+  { value: 'Kabinalar', label: 'Kabinalar' },
+];
 
 defineProps<{
   isOpen: boolean;
   editingTableId: string | null;
-  tableForm: { name: string; capacity: number };
+  tableForm: { name: string; capacity: number; zoneName?: string };
   savingTable: boolean;
 }>();
 

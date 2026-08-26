@@ -40,14 +40,15 @@
             <span>{{ authStore.activeBusiness?.name || 'Biznes' }}</span>
           </span>
 
-          <!-- Til (Yozuv) Tanlash -->
-          <div class="w-44" data-no-transliterate>
+          <!-- Til Tanlash Dropdown (4 ta Til) -->
+          <div class="w-48">
             <AppSelect
-              :model-value="langStore.scriptMode"
-              @update:model-value="langStore.setScript($event)"
-              :options="scriptOptions"
+              :model-value="langStore.currentLanguage"
+              @update:model-value="langStore.setLanguage($event as any)"
+              :options="languageOptions"
             />
           </div>
+
 
           <div class="w-44">
             <AppSelect
@@ -120,9 +121,60 @@
                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
               />
             </div>
+
+            <!-- Quick Screen Lock PIN & Auto-Lock Settings (Perfect Horizontal Alignment) -->
+            <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block font-black text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
+                  <Lock class="w-4 h-4 text-emerald-500" />
+                  <span>Tezkor Qulflash PIN Kobi (Quick Lock)</span>
+                </label>
+                <span class="text-[10px] text-slate-400 font-mono">Win+L / Ctrl+L</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-end">
+                <div>
+                  <label class="block font-semibold text-slate-500 dark:text-slate-400 text-[11px] mb-1.5">4-Xonali Lock PIN Kod</label>
+                  <div class="relative flex items-center">
+                    <input
+                      :type="showPin ? 'text' : 'password'"
+                      maxlength="6"
+                      inputmode="numeric"
+                      :value="pinCode"
+                      @input="handlePinChange(($event.target as HTMLInputElement).value)"
+                      placeholder="1234"
+                      class="w-full h-[40px] pl-3.5 pr-10 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs"
+                    />
+                    <button
+                      type="button"
+                      @click="showPin = !showPin"
+                      class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 transition cursor-pointer"
+                      :title="showPin ? 'PIN-kodni yashirish' : 'PIN-kodni ko\'rsatish'"
+                    >
+                      <EyeOff v-if="showPin" class="w-4 h-4 text-emerald-500" />
+                      <Eye v-else class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+
+                <div>
+                  <label class="block font-semibold text-slate-500 dark:text-slate-400 text-[11px] mb-1.5">Avto-qulflash Taymeri</label>
+                  <AppSelect
+                    :model-value="autoLockMinutes"
+                    @update:model-value="setAutoLockMinutes(Number($event))"
+                    :options="autoLockOptions"
+                    size="md"
+                  />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+
+
 
       <!-- 3. Biznes Ma'lumotlari (Embedded) -->
       <div class="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
@@ -307,7 +359,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { ref, reactive } from 'vue';
 import {
   CheckCircle2,
   Phone,
@@ -321,22 +373,50 @@ import {
   RefreshCw,
   Globe,
   Sliders,
+  Lock,
+  Clock,
+  Eye,
+  EyeOff,
 } from 'lucide-vue-next';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useCurrencyStore } from '../../../stores/currency.store';
 import AppSelect from '../../../components/AppSelect.vue';
 import PhoneInput from '../../../components/PhoneInput.vue';
 import { useLanguage } from '../../../composables/useLanguage';
+import { useScreenLock } from '../../../composables/useScreenLock';
+
+const showPin = ref(false);
+
 
 // reactive() bilan o'rashimiz kerak — aks holda langStore.scriptMode template da
 // Ref object sifatida uzatiladi va AppSelect 'Tanlang...' ko'rsatadi
 const langStore = reactive(useLanguage());
 const currencyStore = useCurrencyStore();
+const { pinCode, autoLockMinutes, setPinCode, setAutoLockMinutes } = useScreenLock();
 
-const scriptOptions = [
-  { value: 'latin', label: "O'zbek Lotin (Aa)", icon: Languages },
-  { value: 'cyrillic', label: "O'zbek Kirill (Аа)", icon: Languages },
+const handlePinChange = (val: string) => {
+  setPinCode(val);
+};
+
+const autoLockOptions = [
+  { value: 0, label: "O'chirilgan (Faqat Ctrl+L / Tugma)", icon: Lock },
+  { value: 5, label: "5 daqiqa harakatsizlikdan so'ng", icon: Clock },
+  { value: 10, label: "10 daqiqa harakatsizlikdan so'ng", icon: Clock },
+  { value: 15, label: "15 daqiqa harakatsizlikdan so'ng", icon: Clock },
+  { value: 30, label: "30 daqiqa harakatsizlikdan so'ng", icon: Clock },
 ];
+
+
+
+const languageOptions = [
+  { value: 'uz_latn', label: "O'zbekcha (Lotin)", flagCode: 'uz_latn' },
+  { value: 'uz_cyrl', label: "Ўзбекча (Кирилл)", flagCode: 'uz_cyrl' },
+  { value: 'ru', label: "Русский", flagCode: 'ru' },
+  { value: 'en', label: "English", flagCode: 'en' },
+];
+
+
+
 
 const props = defineProps<{
   profileForm: {

@@ -107,17 +107,12 @@
 
           <div class="space-y-1">
             <label class="font-bold text-slate-700 dark:text-slate-300">Biznesingiz Sohasi:</label>
-            <select
+            <AppSelect
               v-model="form.sector"
-              class="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
-            >
-              <option value="retail">Do'kon / Supermarket</option>
-              <option value="restaurant">Restoran / Kafe</option>
-              <option value="pharmacy">Dorixona</option>
-              <option value="barbershop">Sartaroshxona / Salon</option>
-              <option value="service">Avtoservis / Ustaxona</option>
-              <option value="other">Boshqa soha</option>
-            </select>
+              :options="sectorOptions"
+              placeholder="Biznes sohasini tanlang..."
+              size="lg"
+            />
           </div>
 
           <div class="space-y-1">
@@ -157,7 +152,17 @@ import { useRouter } from 'vue-router';
 import { PhoneCall, Send, Phone, MapPin, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-vue-next';
 import LandingHeader from '../components/LandingHeader.vue';
 import LandingFooter from '../components/LandingFooter.vue';
+import AppSelect from '../../../components/AppSelect.vue';
 import { useAuthStore } from '../../../stores/auth.store';
+
+const sectorOptions = [
+  { value: 'retail', label: "Do'kon / Supermarket" },
+  { value: 'restaurant', label: 'Restoran / Kafe' },
+  { value: 'pharmacy', label: 'Dorixona' },
+  { value: 'barbershop', label: 'Sartaroshxona / Salon' },
+  { value: 'service', label: 'Avtoservis / Ustaxona' },
+  { value: 'other', label: 'Boshqa soha' },
+];
 
 const router = useRouter();
 const authStore = useAuthStore();

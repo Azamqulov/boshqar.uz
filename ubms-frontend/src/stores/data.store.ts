@@ -124,18 +124,21 @@ export const useDataStore = defineStore('ubms_data', () => {
         localStorage.removeItem(`ubms_cache_${k}`);
       } catch (e) {}
     });
-    productStore.products = [];
-    productStore.categories = [];
-    inventoryStore.inventory = [];
-    customerStore.customers = [];
-    customerStore.suppliers = [];
-    financeStore.dashboardSummary = null;
-    financeStore.dashboardCharts = null;
-    financeStore.financeSummary = null;
-    financeStore.financeExpenses = [];
+
+    // Reset RAM memory state in all sub-stores
+    productStore.resetStore();
+    customerStore.resetStore();
+    inventoryStore.resetStore();
+    financeStore.resetStore();
+
     tables.value = [];
     appointments.value = [];
+    lastFetched.value = {};
+    for (const key in inFlightPromises) {
+      delete inFlightPromises[key];
+    }
   };
+
 
   const loadDemoData = (type = 'shop') => {
     // Populate rich initial data for demonstration mode

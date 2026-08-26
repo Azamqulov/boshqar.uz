@@ -30,6 +30,15 @@ export const useProductStore = defineStore('ubms_product', () => {
     return Date.now() - timestamp < ttlMs;
   };
 
+  const resetStore = () => {
+    products.value = [];
+    categories.value = [];
+    lastFetched.value = {};
+    for (const key in inFlightPromises) {
+      delete inFlightPromises[key];
+    }
+  };
+
   const fetchProducts = async (force = false) => {
     if (!force && products.value.length > 0 && isCacheValid('products', 60000)) {
       return products.value;
@@ -120,5 +129,7 @@ export const useProductStore = defineStore('ubms_product', () => {
     addProductLocally,
     updateProductLocally,
     deleteProductLocally,
+    resetStore,
   };
 });
+

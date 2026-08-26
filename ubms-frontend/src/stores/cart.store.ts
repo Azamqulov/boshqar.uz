@@ -29,7 +29,11 @@ export const useCartStore = defineStore('cart', {
     discountValue: 0, // foizda (masalan, 10) yoki summada (masalan, 15000)
     taxRate: 0, // %
     orderType: 'pos' as 'pos' | 'restaurant' | 'service',
+    orderServiceType: 'dine_in' as 'dine_in' | 'takeaway' | 'delivery',
+    enableServiceFee: false,
+    serviceFeePercent: 10,
   }),
+
   getters: {
     itemCount: (state) => state.items.length,
     totalQuantity: (state) => state.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -75,11 +79,21 @@ export const useCartStore = defineStore('cart', {
       return (discountedSubtotal * state.taxRate) / 100;
     },
 
+    // Restoran / Kafe Xizmat haqi (FAQAT GINA Dine-in / Stolda tanlanganda va enableServiceFee === true bo'lsa!)
+    // Olib ketish (takeaway / С собой) da Har doim 0 UZS bo'ladi.
+    serviceFeeAmount(state): number {
+      if (state.orderServiceType !== 'dine_in') return 0;
+      if (!state.enableServiceFee || state.serviceFeePercent <= 0) return 0;
+      const discountedSubtotal = Math.max(0, this.subtotal - this.generalDiscount);
+      return Math.round((discountedSubtotal * state.serviceFeePercent) / 100);
+    },
+
     grandTotal(): number {
       const discounted = Math.max(0, this.subtotal - this.generalDiscount);
-      return Math.round(discounted + this.taxAmount);
+      return Math.round(discounted + this.taxAmount + this.serviceFeeAmount);
     },
   },
+
   actions: {
     addItem(productOrService: any, isService = false, initialQty?: number) {
       const id = productOrService.id;

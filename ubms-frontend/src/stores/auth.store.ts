@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import api from '../services/api';
+import { useDataStore } from './data.store';
 
 export interface UserProfile {
   id: string;
@@ -97,6 +98,12 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     setAuthData(data: any) {
+      // Clear previous user data cache from RAM memory and storage
+      try {
+        const dataStore = useDataStore();
+        dataStore.clearLocalCache();
+      } catch (e) {}
+
       this.user = data.user;
       this.token = data.accessToken;
       this.businesses = data.businesses || [];
@@ -128,6 +135,11 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('ubms_active_branch_id', branchId);
     },
     logout() {
+      try {
+        const dataStore = useDataStore();
+        dataStore.clearLocalCache();
+      } catch (e) {}
+
       this.user = null;
       this.token = null;
       this.activeBusiness = null;
@@ -138,6 +150,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.clear();
       sessionStorage.clear();
     },
+
     async updateProfile(profileData: { fullName?: string; phone?: string; email?: string }) {
       const { data } = await api.post('/auth/profile/me', profileData);
       this.user = { ...this.user, ...data };

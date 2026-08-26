@@ -54,6 +54,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    include: ['src/**/*.spec.ts'],
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     pool: 'forks',
     poolOptions: {
       forks: {

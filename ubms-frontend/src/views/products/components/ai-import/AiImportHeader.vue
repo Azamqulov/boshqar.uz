@@ -36,11 +36,22 @@
       <button
         type="button"
         @click="$emit('open-excel')"
-        class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive"
+        class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive cursor-pointer"
       >
         <FileSpreadsheet class="w-4 h-4 text-emerald-500" />
         <span>Excel / 1C Import</span>
       </button>
+
+      <button
+        type="button"
+        @click="$emit('open-excel')"
+        class="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition btn-interactive cursor-pointer"
+        title="Qog'oz faktura rasmidan 1 sekundda 100 ta mahsulotni avto-kirim qilish"
+      >
+        <Camera class="w-4 h-4" />
+        <span>Faktura OCR Skanner</span>
+      </button>
+
 
       <router-link
         to="/categories"
@@ -63,7 +74,8 @@
 </template>
 
 <script setup lang="ts">
-import { Home, Package, FileSpreadsheet, FolderTree, Plus } from 'lucide-vue-next';
+import { Home, Package, FileSpreadsheet, FolderTree, Plus, Camera } from 'lucide-vue-next';
+
 
 defineProps<{
   categoriesCount: number;

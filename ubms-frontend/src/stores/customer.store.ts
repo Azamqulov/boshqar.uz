@@ -80,6 +80,15 @@ export const useCustomerStore = defineStore('ubms_customer', () => {
     return p;
   };
 
+  const resetStore = () => {
+    customers.value = [];
+    suppliers.value = [];
+    lastFetched.value = {};
+    for (const key in inFlightPromises) {
+      delete inFlightPromises[key];
+    }
+  };
+
   const addCustomerLocally = (newCustomer: any) => {
     customers.value = [newCustomer, ...customers.value];
     saveToStorage('customers', customers.value);
@@ -108,5 +117,7 @@ export const useCustomerStore = defineStore('ubms_customer', () => {
     addCustomerLocally,
     updateCustomerLocally,
     deleteCustomerLocally,
+    resetStore,
   };
 });
+

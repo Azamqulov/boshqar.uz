@@ -70,10 +70,10 @@ const authStore = useAuthStore();
 onMounted(() => {
   try {
     const consent = localStorage.getItem(STORAGE_KEY);
-    // If already accepted/dismissed or already logged in to CRM, don't show
-    if (!consent && !authStore.isAuthenticated) {
+    // If already accepted/dismissed or user is in dashboard, never show banner
+    if (!consent && !authStore.token && !authStore.user) {
       setTimeout(() => {
-        if (!localStorage.getItem(STORAGE_KEY)) {
+        if (!localStorage.getItem(STORAGE_KEY) && !authStore.token) {
           isVisible.value = true;
         }
       }, 1500);
@@ -97,3 +97,4 @@ const dismissCookies = () => {
   isVisible.value = false;
 };
 </script>
+

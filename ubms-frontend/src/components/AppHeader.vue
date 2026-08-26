@@ -81,6 +81,8 @@
         <!-- Theme Toggle Switcher -->
         <ThemeToggle />
 
+
+
         <!-- Guide & AI Center shortcut -->
         <router-link to="/guide"
           class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition"
@@ -88,6 +90,16 @@
           title="Qo'llanma & Boshqar AI">
           <BookOpen class="w-5 h-5" />
         </router-link>
+
+        <!-- Lock Screen Button -->
+        <button
+          type="button"
+          @click="lockScreen"
+          class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition btn-interactive"
+          title="Ekranni qulflash (Ctrl+L)"
+        >
+          <Lock class="w-5 h-5" />
+        </button>
 
         <router-link to="/settings"
           class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -108,8 +120,25 @@ import {
   BookOpen,
   Settings,
   Sparkles,
+  Lock,
 } from 'lucide-vue-next';
 import ThemeToggle from './ThemeToggle.vue';
+import AppSelect from './AppSelect.vue';
+import { useScreenLock } from '../composables/useScreenLock';
+import { useLanguage } from '../composables/useLanguage';
+import { reactive } from 'vue';
+
+const { lockScreen } = useScreenLock();
+const langStore = reactive(useLanguage());
+
+const languageOptions = [
+  { value: 'uz_latn', label: "O'zbekcha", flag: '🇺🇿' },
+  { value: 'uz_cyrl', label: "Ўзбекча", flag: '🇺🇿' },
+  { value: 'ru', label: "Русский", flag: '🇷🇺' },
+  { value: 'en', label: "English", flag: '🇬🇧' },
+];
+
+
 
 defineProps<{
   isSidebarCollapsed: boolean;

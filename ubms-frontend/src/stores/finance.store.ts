@@ -141,6 +141,17 @@ export const useFinanceStore = defineStore('ubms_finance', () => {
     return p;
   };
 
+  const resetStore = () => {
+    financeSummary.value = null;
+    financeExpenses.value = [];
+    dashboardSummary.value = null;
+    dashboardCharts.value = null;
+    lastFetched.value = {};
+    for (const key in inFlightPromises) {
+      delete inFlightPromises[key];
+    }
+  };
+
   const deleteExpenseLocally = (id: string) => {
     if (Array.isArray(financeExpenses.value)) {
       financeExpenses.value = financeExpenses.value.filter((e: any) => e.id !== id);
@@ -159,5 +170,7 @@ export const useFinanceStore = defineStore('ubms_finance', () => {
     fetchDashboardSummary,
     fetchDashboardCharts,
     deleteExpenseLocally,
+    resetStore,
   };
 });
+

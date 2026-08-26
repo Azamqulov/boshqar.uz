@@ -103,14 +103,26 @@
           <span class="text-xs font-bold text-amber-500 uppercase tracking-wider">Tanlangan Stol:</span>
           <h2 class="text-lg font-black text-slate-900 dark:text-white">{{ selectedTable.name }}</h2>
         </div>
-        <span
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
-          :class="selectedTable.status === 'occupied' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'"
-        >
-          <span class="w-1.5 h-1.5 rounded-full" :class="selectedTable.status === 'occupied' ? 'bg-rose-500' : 'bg-emerald-500'"></span>
-          <span>{{ selectedTable.status === 'occupied' ? 'Band' : 'Bo\'sh' }}</span>
-        </span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            @click="$emit('clearTableOrder')"
+            class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+            title="Stolni bo'shatish yoki savatni tozalash"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Tozalash</span>
+          </button>
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+            :class="selectedTable.status === 'occupied' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :class="selectedTable.status === 'occupied' ? 'bg-rose-500' : 'bg-emerald-500'"></span>
+            <span>{{ selectedTable.status === 'occupied' ? 'Band' : 'Bo\'sh' }}</span>
+          </span>
+        </div>
       </div>
+
 
       <!-- Ordered Items list -->
       <div class="flex-1 overflow-y-auto py-3 space-y-3">
@@ -178,27 +190,39 @@
           <span class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(orderTotalSum) }}</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
-          <!-- Send to Kitchen (KDS) -->
+        <div class="grid grid-cols-3 gap-1.5">
+          <!-- 1. Clear / Reset Table -->
+          <button
+            type="button"
+            @click="$emit('clearTableOrder')"
+            class="py-2.5 px-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs border border-rose-500/20 shadow-xs flex items-center justify-center gap-1 transition btn-interactive cursor-pointer"
+            title="Stolni bo'shatish yoki savatni tozalash"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            <span>Tozalash</span>
+          </button>
+
+          <!-- 2. Send to Kitchen (KDS) -->
           <button
             @click="$emit('sendToKitchen')"
             :disabled="newItems.length === 0 || sending"
-            class="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition btn-interactive"
+            class="py-2.5 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1 transition btn-interactive"
           >
-            <Flame class="w-4 h-4 fill-slate-950" />
-            <span>{{ sending ? 'Yuborilmoqda...' : 'Oshxonaga Yuborish' }}</span>
+            <Flame class="w-3.5 h-3.5 fill-slate-950" />
+            <span>{{ sending ? 'Yuborilmoqda...' : 'Oshxonaga' }}</span>
           </button>
 
-          <!-- Pre-Bill / Print Check -->
+          <!-- 3. Pre-Bill / Print Check -->
           <button
             @click="$emit('openPreBill')"
             :disabled="existingItems.length === 0 && newItems.length === 0"
-            class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition btn-interactive"
+            class="py-2.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1 transition btn-interactive"
           >
-            <Receipt class="w-4 h-4" />
-            <span>Pre-Chek (Hisob)</span>
+            <Receipt class="w-3.5 h-3.5" />
+            <span>Pre-Chek</span>
           </button>
         </div>
+
 
         <!-- Direct Table Payment & Close Bill Button -->
         <button
@@ -217,7 +241,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Search, Flame, Receipt, CheckCircle2, UtensilsCrossed } from 'lucide-vue-next';
+
+import { Search, Flame, Receipt, CheckCircle2, UtensilsCrossed, Trash2 } from 'lucide-vue-next';
 import AppInput from '../../../components/AppInput.vue';
 import { useFormat } from '../../../composables/useFormat';
 
@@ -245,7 +270,9 @@ defineEmits<{
   (e: 'sendToKitchen'): void;
   (e: 'openPreBill'): void;
   (e: 'openPayModal'): void;
+  (e: 'clearTableOrder'): void;
 }>();
+
 
 const { formatCurrency } = useFormat();
 </script>

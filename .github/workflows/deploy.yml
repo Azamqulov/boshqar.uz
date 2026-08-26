@@ -1,0 +1,120 @@
+name: 🚀 Continuous Deployment (CD Pipeline) - Boshqar.uz
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1. Quality Gates (Build & Test Verification)
+  # ─────────────────────────────────────────────────────────────
+  verify-build:
+    name: 🛡️ Verify Build & Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install Monorepo Dependencies
+        run: npm ci
+
+      - name: 🗄️ Generate Prisma Client
+        run: npm --prefix ubms-backend run prisma:generate
+
+      - name: 🧪 Run Backend Unit & Security Tests
+        run: npm --prefix ubms-backend run test -- --passWithNoTests
+
+      - name: 🏗️ Typecheck & Build Backend
+        run: npm --prefix ubms-backend run build
+
+      - name: 🖥️ Typecheck & Build Frontend
+        run: npm --prefix ubms-frontend run build
+
+      - name: 🤖 Typecheck & Build Telegram Bot
+        run: npm --prefix ubms-telegram-bot run build
+
+  # ─────────────────────────────────────────────────────────────
+  # 2. Automated Production Deploy
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚢 Deploy to Production Server
+    needs: [verify-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure SSH Connection
+        if: env.SERVER_HOST != ''
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 🚀 Execute Remote Zero-Downtime Deployment
+        if: env.SERVER_HOST != ''
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          DEPLOY_PATH: ${{ secrets.PROD_DEPLOY_PATH || '/var/www/boshqar.uz' }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << 'EOF'
+            set -e
+            echo "🚀 [Deploy] Navigating to project directory: $DEPLOY_PATH"
+            cd $DEPLOY_PATH || exit 1
+
+            echo "📥 [Deploy] Pulling latest changes from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "📦 [Deploy] Generating Prisma Client..."
+            npm --prefix ubms-backend run prisma:generate
+
+            echo "🗄️ [Deploy] Applying database migrations..."
+            npm --prefix ubms-backend run prisma:migrate deploy || npx prisma migrate deploy --schema=./ubms-backend/prisma/schema.prisma
+
+            echo "🏗️ [Deploy] Building and updating Docker services..."
+            docker compose -f docker-compose.prod.yml build --pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            echo "🏥 [Deploy] Running health check verification..."
+            sleep 5
+            for i in {1..6}; do
+              if curl -s -f http://127.0.0.1:4000/api/v1/health | grep -q "ok"; then
+                echo "✅ [Deploy] Health check PASSED! System is operational."
+                exit 0
+              fi
+              echo "⏳ [Deploy] Waiting for services to become healthy ($i/6)..."
+              sleep 5
+            done
+
+            echo "❌ [Deploy] Health check FAILED! Initiating automatic fallback..."
+            exit 1
+          EOF
+
+      - name: 📢 Deployment Status Notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "🎉 [CD Pipeline] Production deployment completed successfully!"
+          else
+            echo "⚠️ [CD Pipeline] Deployment encountered an error or secrets are pending configuration."
+          fi

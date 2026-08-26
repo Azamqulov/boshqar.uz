@@ -196,6 +196,8 @@
       @close="completedOrder = null"
     />
 
+
+
     <!-- Shift Modal (Open / Close / Z-Report) -->
     <ShiftModal
       :is-open="shiftModal.open"
@@ -259,6 +261,8 @@ import {
   Sun,
   Lock,
   ArrowRight,
+  UtensilsCrossed,
+  ShoppingBag,
 } from 'lucide-vue-next';
 
 import POSShiftBar from './components/POSShiftBar.vue';
@@ -273,6 +277,8 @@ import { useOfflinePOS } from '../../composables/useOfflinePOS';
 import { usePlanFeatures } from '../../composables/usePlanFeatures';
 
 const mobileViewTab = ref<'catalog' | 'cart'>('catalog');
+
+
 const cartStore = useCartStore();
 const dataStore = useDataStore();
 const shiftStore = useShiftStore();
@@ -915,6 +921,8 @@ onMounted(() => {
     document.getElementById('pos-search-input')?.focus();
   }, 300);
 });
+
+
 
 onUnmounted(() => {
   if (cleanupOfflineListeners) {

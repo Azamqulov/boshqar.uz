@@ -6,6 +6,7 @@ interface Props {
   disabled?: boolean;
   icon?: any;
   type?: 'button' | 'submit' | 'reset';
+  ariaLabel?: string;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -23,7 +24,10 @@ defineEmits<{ (e: 'click', event: MouseEvent): void }>();
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="inline-flex items-center justify-center gap-2 rounded-xl font-bold transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none"
+    :aria-disabled="disabled || loading"
+    :aria-busy="loading"
+    :aria-label="ariaLabel"
+    class="inline-flex items-center justify-center gap-2 rounded-xl font-bold transition btn-interactive disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
     :class="[
       // Variants
       variant === 'primary' && 'bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-lg shadow-emerald-500/25',
@@ -40,11 +44,13 @@ defineEmits<{ (e: 'click', event: MouseEvent): void }>();
     ]"
     @click="(e) => { if (disabled || loading) { e.preventDefault(); e.stopPropagation(); return; } $emit('click', e); }"
   >
-    <component :is="icon" v-if="icon && !loading" class="w-4 h-4 flex-shrink-0" />
+    <component :is="icon" v-if="icon && !loading" class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
     <span
       v-if="loading"
       class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin flex-shrink-0"
+      aria-hidden="true"
     />
+    <span v-if="loading" class="sr-only">Yuklanmoqda...</span>
     <slot />
   </button>
 </template>

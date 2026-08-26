@@ -52,7 +52,7 @@
             v-if="group.title && (!isSidebarCollapsed || isMobileSidebarOpen)"
             class="px-3.5 pt-2.5 pb-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider select-none"
           >
-            {{ group.title }}
+            {{ t(group.titleKey || group.title, group.title) }}
           </div>
           <div
             v-else-if="group.title && isSidebarCollapsed && !isMobileSidebarOpen"
@@ -71,7 +71,7 @@
                   ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 border border-emerald-500/30 shadow-xs font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               ]"
-              :title="isSidebarCollapsed && !isMobileSidebarOpen ? item.label : ''"
+              :title="isSidebarCollapsed && !isMobileSidebarOpen ? t(item.translationKey || item.label, item.label) : ''"
             >
               <div class="relative shrink-0 flex items-center">
                 <component
@@ -110,8 +110,9 @@
               </div>
 
               <span v-if="!isSidebarCollapsed || isMobileSidebarOpen" class="truncate text-xs font-semibold" :class="{ 'text-slate-400 dark:text-slate-500': isItemLocked(item) }">
-                {{ item.label }}
+                {{ t(item.translationKey || item.label, item.label) }}
               </span>
+
 
               <!-- 0. Locked Badge when Subscription Expired -->
               <span
@@ -197,6 +198,10 @@ import {
   LogOut,
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
+import { useLanguage } from '../composables/useLanguage';
+
+const { t } = useLanguage();
+
 
 defineProps<{
   isSidebarCollapsed: boolean;

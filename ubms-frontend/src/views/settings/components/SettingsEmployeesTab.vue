@@ -79,6 +79,7 @@
                 <th class="py-3 px-4">Xodim</th>
                 <th class="py-3 px-4">Telefon</th>
                 <th class="py-3 px-4">Lavozim</th>
+                <th class="py-3 px-4">Lock PIN</th>
                 <th class="py-3 px-4">Ruxsat Berilgan Bo'limlar</th>
                 <th class="py-3 px-4">Holat</th>
                 <th class="py-3 px-4 text-right">Amallar</th>
@@ -86,7 +87,7 @@
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
               <tr v-if="!loading && filteredEmployees.length === 0">
-                <td colspan="6" class="py-6 px-4">
+                <td colspan="7" class="py-6 px-4">
                   <AppEmptyState
                     variant="employees"
                     title="Xodimlar topilmadi"
@@ -112,6 +113,20 @@
                     {{ emp.position || 'Xodim' }}
                   </span>
                 </td>
+                <td class="py-3 px-4">
+                  <div class="flex items-center space-x-1">
+                    <input
+                      type="text"
+                      maxlength="6"
+                      inputmode="numeric"
+                      :value="getEmployeePin(emp.id || emp.phone)"
+                      @input="setEmployeePin(emp.id || emp.phone, ($event.target as HTMLInputElement).value)"
+                      placeholder="----"
+                      class="w-16 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-mono text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </td>
+
                 <td class="py-3 px-4">
                   <div class="flex flex-wrap gap-1">
                     <span
@@ -266,6 +281,10 @@ import AppSelect from '../../../components/AppSelect.vue';
 import AppViewToggle from '../../../components/AppViewToggle.vue';
 import { usePagination } from '../../../composables/usePagination';
 import { usePersistentViewMode } from '../../../composables/usePersistentViewMode';
+import { useScreenLock } from '../../../composables/useScreenLock';
+
+const { getEmployeePin, setEmployeePin } = useScreenLock();
+
 
 const props = defineProps<{
   employees: any[];

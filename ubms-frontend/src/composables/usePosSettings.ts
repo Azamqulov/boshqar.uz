@@ -32,6 +32,9 @@ export interface PosSettings {
     RUB: number;
     EUR: number;
   };
+  // Service Fee (Restoran / Kafe Xizmat haqi %)
+  enableServiceFee: boolean;
+  serviceFeePercent: number;
 }
 
 export const defaultPosSettings: PosSettings = {
@@ -45,7 +48,11 @@ export const defaultPosSettings: PosSettings = {
   allowZeroStockSale: true,
   enableHotkeys: true,
   maxDebtLimit: 0, // 0 = cheksiz
+  // Service Fee default
+  enableServiceFee: true,
+  serviceFeePercent: 10,
   // Receipt & Printer defaults
+
   enableReceiptPrinting: true,
   autoPrintReceipt: false,
   receiptWidth: '58mm',
@@ -167,8 +174,10 @@ export const usePosSettings = () => {
   return {
     posSettings,
     saveSettings,
+    updatePosSettings: saveSettings,
     resetToDefaults,
     reloadSettings,
     fetchSettingsFromApi,
   };
 };
+

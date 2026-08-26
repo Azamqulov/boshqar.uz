@@ -74,28 +74,48 @@
         </button>
       </div>
 
-      <!-- Dine-in Table Selector Pills -->
-      <div v-if="orderType === 'dine_in'" class="pt-1.5 border-t border-slate-200 dark:border-slate-700/80 space-y-1.5">
+      <!-- Dine-in Table Selector Pills with Zones Tabs -->
+      <div v-if="orderType === 'dine_in'" class="pt-1.5 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
         <div class="flex items-center justify-between text-[11px]">
-          <span class="font-bold text-slate-700 dark:text-slate-300">Stol:</span>
+          <span class="font-bold text-slate-700 dark:text-slate-300">Stollar va Zonalar:</span>
           <span v-if="!currentTableDisplayName" class="text-rose-500 font-extrabold animate-pulse">
             Iltimos stolni tanlang!
           </span>
         </div>
-        <div class="flex items-center gap-1 overflow-x-auto scrollbar-none pb-0.5">
+
+        <!-- Zone Tabs Bar (Barchasi, Asosiy Zal, 2-qavat, VIP Zonalar) -->
+        <div class="flex items-center gap-1 overflow-x-auto scrollbar-none pb-0.5 text-[10px]">
           <button
-            v-for="tbl in availableTables"
+            v-for="z in zoneTabs"
+            :key="z"
+            type="button"
+            @click="activeZoneTab = z"
+            class="px-2 py-0.5 rounded-md font-extrabold transition shrink-0 border"
+            :class="activeZoneTab === z
+              ? 'bg-emerald-500 text-white border-emerald-400 shadow-xs'
+              : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'"
+          >
+            {{ z }}
+          </button>
+        </div>
+
+        <!-- Tables List -->
+        <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+          <button
+            v-for="tbl in zoneFilteredTables"
             :key="tbl.id || tbl.name"
             type="button"
             @click="$emit('selectTable', tbl.name)"
-            class="px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 flex items-center gap-1"
             :class="selectedTableNumber === tbl.name ? 'bg-emerald-500 text-white shadow-xs' : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-600'"
           >
-            {{ tbl.name }}
+            <span>{{ tbl.name }}</span>
+            <span v-if="tbl.zoneName" class="text-[9px] opacity-75 font-medium font-sans">({{ tbl.zoneName }})</span>
           </button>
         </div>
       </div>
     </div>
+
 
     <!-- Hold & Recall Orders Bar -->
     <div class="flex items-center justify-between gap-1.5 my-2 shrink-0">
@@ -304,8 +324,10 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import {
   ShoppingCart,
+
   ShoppingBag,
   Trash2,
   CreditCard,
@@ -382,4 +404,23 @@ const sanitizeQty = (item: any) => {
   }
   item.quantity = Math.round(val * 1000) / 1000;
 };
+
+// Zone Tabs Filtering Logic
+const activeZoneTab = ref('Barchasi');
+
+const zoneTabs = computed(() => {
+  const zones = new Set<string>();
+  zones.add('Barchasi');
+  (props.availableTables || []).forEach((t: any) => {
+    if (t.zoneName) zones.add(t.zoneName);
+  });
+  return Array.from(zones);
+});
+
+const zoneFilteredTables = computed(() => {
+  const list = props.availableTables || [];
+  if (activeZoneTab.value === 'Barchasi') return list;
+  return list.filter((t: any) => t.zoneName === activeZoneTab.value);
+});
 </script>
+

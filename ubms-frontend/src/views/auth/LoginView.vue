@@ -99,6 +99,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth.store';
+import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
 import { cleanUzbekPhone } from '../../composables/usePhoneMask';
 import api, { getErrorMessage } from '../../services/api';
@@ -108,6 +109,7 @@ import { ShieldAlert, AlertTriangle, Clock, Sparkles } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const dataStore = useDataStore();
 const toast = useToast();
 
 const phone = ref('');
@@ -194,6 +196,9 @@ const handleLogin = async () => {
     toast.success(`Xush kelibsiz, ${data.user?.fullName || 'Foydalanuvchi'}!`, 'Muvaffaqiyatli');
     localStorage.removeItem('ubms_login_lockout');
 
+    // Force refresh all app data for clean session state
+    dataStore.prefetchAll(true).catch(() => {});
+
     if (!data.activeBusiness) {
       router.push('/onboarding');
     } else {
@@ -239,6 +244,7 @@ const handleDemoLogin = async () => {
       businessType: 'shop',
     });
     authStore.setAuthData(data);
+    dataStore.loadDemoData('shop');
     toast.success(`Xush kelibsiz, ${data.user?.fullName || 'Demo Foydalanuvchi'}!`, 'Demo Rejim');
     localStorage.removeItem('ubms_login_lockout');
     router.push('/dashboard');
@@ -250,6 +256,7 @@ const handleDemoLogin = async () => {
     isLoading.value = false;
   }
 };
+
 
 onMounted(() => {
   checkExistingLockout();

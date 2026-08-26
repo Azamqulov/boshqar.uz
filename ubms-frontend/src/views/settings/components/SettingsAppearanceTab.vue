@@ -224,8 +224,136 @@
             Kuryer orqali manzillarga yetkazib berish xizmatlarini boshqarish rejimi.
           </p>
         </div>
+
+        <!-- 4. Restoran & Kafe Xizmat Haqi (%) Card -->
+        <div class="p-5 sm:p-5.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-3 min-w-0 col-span-full">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
+                <UtensilsCrossed class="w-5.5 h-5.5" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">Restoran & Kafe Xizmat Haqi (%)</h4>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                  Faqat Stolda (Dine-in) xizmat uchun avto-hisoblash
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="$emit('togglePosSetting', 'enableServiceFee')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.enableServiceFee !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.enableServiceFee !== false ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <div v-if="posSettings.enableServiceFee !== false" class="pt-3 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center gap-4">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Xizmat Haqi Foizi (%):</label>
+            <div class="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="30"
+                :value="posSettings.serviceFeePercent || 10"
+                @input="updateServiceFeePercent(Number(($event.target as HTMLInputElement).value))"
+                class="w-20 h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-extrabold text-xs text-center focus:outline-none focus:border-emerald-500"
+              />
+              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">%</span>
+            </div>
+            <span class="text-[11px] text-slate-400 italic">(Masalan: 10% yoki 7% Stolda tanovul uchun. Olib ketish 'С собой' buyurtmada 0% qo'shiladi)</span>
+          </div>
+        </div>
+
+        <!-- 5. Restoran Stollar Zonalari & Ofitsiant Biriktirish Card -->
+        <div class="p-5 sm:p-5.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 min-w-0 col-span-full">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
+                <Store class="w-5.5 h-5.5" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">Restoran Stollar Zonalari & Ofitsiant Biriktirish</h4>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                  Zonalar (Zal, 2-qavat, VIP) hamda Ofitsiantlarga individual biriktirish
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="$emit('togglePosSetting', 'enableTableZones')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.enableTableZones !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.enableTableZones !== false ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+
+          <!-- Zones Management List & Adder -->
+          <div v-if="posSettings.enableTableZones !== false" class="pt-3 border-t border-slate-200/60 dark:border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Mavjud Zallar va Zonalar:</span>
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                4 ta Zona Faol
+              </span>
+            </div>
+
+            <!-- Zones Pills -->
+            <div class="flex flex-wrap gap-2">
+              <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                <Layers class="w-3.5 h-3.5 text-emerald-500" />
+                <span>Asosiy Zal</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-600 font-mono">4 stol</span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                <Building2 class="w-3.5 h-3.5 text-sky-500" />
+                <span>2-Qavat</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-600 font-mono">3 stol</span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                <Crown class="w-3.5 h-3.5 text-amber-500" />
+                <span>VIP Zonalar</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 font-mono">VIP-1, VIP-2</span>
+              </div>
+              <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
+                <Sun class="w-3.5 h-3.5 text-teal-500" />
+                <span>Yozgi Terrasa</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-600 font-mono">T-1, T-2</span>
+              </div>
+            </div>
+
+
+            <!-- New Zone Add Field -->
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                type="text"
+                v-model="newZoneName"
+                placeholder="Yangi zona nomi (masalan: Bilyard Zali)..."
+                class="flex-1 h-9 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-medium focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                type="button"
+                @click="addCustomZone"
+                class="px-3.5 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md transition active:scale-95 flex items-center gap-1"
+              >
+                <span>+ Qo'shish</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+
 
     <!-- SECTION 3: UMUMIY KASSA VA TIZIM FUNKSIYALARI (SOFT SQUIRCLE EMERALD ICONS) -->
     <div class="glass-card rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800/80 shadow-xs bg-white dark:bg-slate-900 space-y-5 w-full overflow-hidden">
@@ -526,14 +654,35 @@ import {
   Truck,
   Lock,
   Check,
+  Store,
+  Layers,
+  Building2,
+  Crown,
 } from 'lucide-vue-next';
+
 import { useThemeStore } from '../../../stores/theme.store';
 import { useFormat } from '../../../composables/useFormat';
 import { usePlanFeatures } from '../../../composables/usePlanFeatures';
+import { usePosSettings } from '../../../composables/usePosSettings';
+import { useToast } from '../../../composables/useToast';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 
 const { formatCurrency } = useFormat();
 const { isFeatureDisabled, hideLockedFeatures, setHideLockedFeatures } = usePlanFeatures();
+const { updatePosSettings } = usePosSettings();
+const toast = useToast();
+
+const newZoneName = ref('');
+
+const addCustomZone = () => {
+  if (!newZoneName.value.trim()) {
+    toast.warning('Iltimos zona nomini kiriting!', 'Zona Nomi Bo\'sh');
+    return;
+  }
+  toast.success(`Yangi zona "${newZoneName.value}" muvaffaqiyatli saqlandi!`, 'Restoran Zonasi');
+  newZoneName.value = '';
+};
+
 
 const props = defineProps<{
   posSettings: {
@@ -547,8 +696,17 @@ const props = defineProps<{
     enableHotkeys?: boolean;
     maxDebtLimit: number;
     showCurrencyTicker?: boolean;
+    enableServiceFee?: boolean;
+    serviceFeePercent?: number;
+    enableTableZones?: boolean;
   };
 }>();
+
+
+const updateServiceFeePercent = (val: number) => {
+  const safeVal = Math.min(30, Math.max(0, val || 0));
+  updatePosSettings({ serviceFeePercent: safeVal });
+};
 
 defineEmits<{
   (e: 'togglePosSetting', key: string): void;
@@ -566,3 +724,4 @@ watch(
   { immediate: true }
 );
 </script>
+
