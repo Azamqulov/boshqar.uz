@@ -8,7 +8,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 export class TelegramPollingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramPollingService.name);
   private readonly botToken =
-    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '8984252481:AAHGyWSoSQPFMqW3mQd2mH-mJ-5MmyxZcb8';
+    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
   private isPolling = false;
   private offset = 0;
 

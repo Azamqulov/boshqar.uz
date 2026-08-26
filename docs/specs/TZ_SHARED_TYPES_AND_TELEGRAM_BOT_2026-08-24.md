@@ -92,4 +92,4 @@ export interface ApiResponse<T> { success: boolean; data?: T; message?: string; 
 
 ## 8. Taxminlar va Ochiq Savollar (Assumptions & Open Questions)
 
-- `[ASSUMPTION]` Bot uchun `TELEGRAM_BOT_TOKEN` (`8984252481:AAHGyWSoSQPFMqW3mQd2mH-mJ-5MmyxZcb8`) va `@Boshqar_uzbot` rasmiy botidan foydalaniladi.
+- `[ASSUMPTION]` Bot uchun `TELEGRAM_BOT_TOKEN` (`.env` dan olinadi) va `@Boshqar_uzbot` rasmiy botidan foydalaniladi.

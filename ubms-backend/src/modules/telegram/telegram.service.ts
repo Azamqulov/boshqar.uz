@@ -18,7 +18,7 @@ export { TelegramAccount, TelegramSettings };
 export class TelegramService implements OnModuleInit {
   private readonly logger = new Logger(TelegramService.name);
   private readonly botToken =
-    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '8984252481:AAHGyWSoSQPFMqW3mQd2mH-mJ-5MmyxZcb8';
+    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
   private botUsername = process.env.TELEGRAM_BOT_USERNAME || 'Boshqar_uzbot';
 
   constructor(

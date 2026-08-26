@@ -16,7 +16,7 @@ import {
 export class TelegramNotificationService {
   private readonly logger = new Logger(TelegramNotificationService.name);
   private readonly botToken =
-    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '8984252481:AAHGyWSoSQPFMqW3mQd2mH-mJ-5MmyxZcb8';
+    process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN || '';
   private readonly httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 50 });
 
   constructor(
