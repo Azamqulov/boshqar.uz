@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrderType, OrderStatus, Prisma } from '@prisma/client';
+import { resolveTrackInventory } from '../../common/utils/inventory-tracking.util';
 
 export interface CreateOrderDto {
   orderType: OrderType;
@@ -198,7 +199,10 @@ export class OrdersService {
         productIds.length > 0
           ? this.prisma.product.findMany({
               where: { id: { in: productIds }, businessId },
-              include: { unit: { select: { shortName: true } } },
+              include: {
+                unit: { select: { shortName: true } },
+                category: { select: { defaultTrackInventory: true } },
+              },
             })
           : [],
         serviceIds.length > 0
@@ -371,18 +375,16 @@ export class OrdersService {
             const product = productMap.get(item.productId);
             if (!product) continue;
 
-            const isMadeToOrder =
-              product.brand === 'dish' ||
-              product.brand === 'kitchen' ||
-              product.brand === 'service' ||
-              product.unit?.shortName === 'por' ||
-              product.unitId === '00000000-0000-0000-0000-000000000024';
+            // Buyurtma tushgandagina tayyorlanadigan mahsulot (masalan taom) —
+            // qoldiq umuman hisoblanmaydi: na tekshiriladi, na kamaytiriladi.
+            const trackInventory = resolveTrackInventory(product);
+            if (!trackInventory) continue;
 
             const inv = invMap.get(item.productId);
             const currentQty = inv ? Number(inv.quantity) : 0;
             const buyQty = Number(item.quantity);
 
-            if (!isMadeToOrder && inv && currentQty < buyQty) {
+            if (inv && currentQty < buyQty) {
               throw new ConflictException({
                 code: 'INSUFFICIENT_STOCK',
                 message: `"${product.name}" mahsulotidan yetarli qoldiq yo'q (Mavjud: ${currentQty}, So'ralgan: ${buyQty})`,

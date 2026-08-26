@@ -195,12 +195,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/tahlil"
+        label="To'liq interaktiv tahlil va kalkulyator sahifasi"
+      />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import {
   Calculator,
   ShoppingBag,
@@ -213,6 +221,12 @@ import {
   Zap,
   ArrowRight,
 } from 'lucide-vue-next';
+
+withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 defineEmits<{
   (e: 'openDemo'): void;

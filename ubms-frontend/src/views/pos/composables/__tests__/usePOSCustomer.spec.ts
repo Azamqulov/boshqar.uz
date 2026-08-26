@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { usePOSCustomer } from '../usePOSCustomer';
 import { useDataStore } from '../../../../stores/data.store';
@@ -6,6 +6,13 @@ import { useDataStore } from '../../../../stores/data.store';
 describe('usePOSCustomer Composable', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('boshlangich holatda mijoz tanlanmagan bolishi kerak', () => {

@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { PrismaService } from '../../prisma/prisma.service';
+import { resolveTrackInventory } from '../../common/utils/inventory-tracking.util';
 
 @Injectable()
 export class DashboardService {
@@ -69,7 +70,14 @@ export class DashboardService {
           },
           select: {
             quantity: true,
-            product: { select: { purchasePrice: true, minStock: true } },
+            product: {
+              select: {
+                purchasePrice: true,
+                minStock: true,
+                trackInventory: true,
+                category: { select: { defaultTrackInventory: true } },
+              },
+            },
           },
         }),
         this.prisma.customer.findMany({
@@ -101,7 +109,7 @@ export class DashboardService {
     for (const inv of inventoryItems) {
       const qty = Number(inv.quantity);
       totalInventoryValue += qty * Number(inv.product.purchasePrice);
-      if (qty <= Number(inv.product.minStock)) {
+      if (resolveTrackInventory(inv.product) && qty <= Number(inv.product.minStock)) {
         lowStockCount++;
       }
     }

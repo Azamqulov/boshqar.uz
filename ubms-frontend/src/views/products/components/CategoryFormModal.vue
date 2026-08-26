@@ -118,6 +118,29 @@
               </div>
             </div>
 
+            <!-- Ombor Qoldig'i Standarti (defaultTrackInventory) -->
+            <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
+              <div class="space-y-0.5">
+                <label class="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                  Standart Ombor Qoldig'i
+                </label>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400">
+                  {{ catForm.defaultTrackInventory !== false ? "Ushbu turkum tovarlari uchun qoldiq hisoblanadi" : "Buyurtma asosida tayyorlanadi (qoldiq hisoblanmaydi)" }}
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="catForm.defaultTrackInventory = catForm.defaultTrackInventory === false ? true : false"
+                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="catForm.defaultTrackInventory !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+              >
+                <span
+                  class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="catForm.defaultTrackInventory !== false ? 'translate-x-4' : 'translate-x-0'"
+                />
+              </button>
+            </div>
+
             <!-- 4. Kategoriya Prevyusi (Jonli Ko'rinishi) -->
             <div class="p-2.5 rounded-xl border flex items-center justify-between transition" :style="{ backgroundColor: (catForm.color || '#10b981') + '10', borderColor: (catForm.color || '#10b981') + '30' }">
               <div class="flex items-center gap-2">
@@ -179,6 +202,7 @@ defineProps<{
     icon: string;
     color: string;
     description?: string;
+    defaultTrackInventory?: boolean;
   };
   saving: boolean;
   availableCategoryIcons: any[];

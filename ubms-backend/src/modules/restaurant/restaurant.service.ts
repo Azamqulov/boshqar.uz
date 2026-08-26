@@ -6,10 +6,128 @@ import { TableStatus, KitchenOrderStatus } from '@prisma/client';
 export class RestaurantService {
   constructor(private prisma: PrismaService) {}
 
-  async getTables(branchId: string) {
-    return this.prisma.table.findMany({
-      where: { branchId },
+  // =================== ZONALAR (ZONES) ===================
+
+  async getZones(businessId: string, branchId: string) {
+    return this.prisma.restaurantZone.findMany({
+      where: { businessId, branchId },
       include: {
+        tables: {
+          orderBy: { name: 'asc' },
+        },
+        _count: {
+          select: { tables: true },
+        },
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+  }
+
+  async createZone(businessId: string, branchId: string, data: { name: string; color?: string; sortOrder?: number }) {
+    if (!data.name?.trim()) throw new BadRequestException('Zona nomi kiritilishi shart');
+    return this.prisma.restaurantZone.create({
+      data: {
+        businessId,
+        branchId,
+        name: data.name.trim(),
+        color: data.color || '#10b981',
+        sortOrder: data.sortOrder || 0,
+      },
+    });
+  }
+
+  async updateZone(businessId: string, zoneId: string, data: { name?: string; color?: string; sortOrder?: number }) {
+    const existing = await this.prisma.restaurantZone.findFirst({ where: { id: zoneId, businessId } });
+    if (!existing) throw new NotFoundException('Zona topilmadi');
+
+    return this.prisma.restaurantZone.update({
+      where: { id: zoneId },
+      data: {
+        ...(data.name && { name: data.name.trim() }),
+        ...(data.color !== undefined && { color: data.color }),
+        ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) }),
+      },
+    });
+  }
+
+  async deleteZone(businessId: string, zoneId: string) {
+    const existing = await this.prisma.restaurantZone.findFirst({ where: { id: zoneId, businessId } });
+    if (!existing) throw new NotFoundException('Zona topilmadi');
+
+    return this.prisma.restaurantZone.delete({
+      where: { id: zoneId },
+    });
+  }
+
+  // =================== OFITSIANT BIRIKTIRISH (ASSIGNMENTS) ===================
+
+  async getEmployeeAssignments(employeeId: string) {
+    const assignments = await this.prisma.employeeTableAssignment.findMany({
+      where: { employeeId },
+      include: { zone: true, table: true },
+    });
+    const zoneIds = assignments.filter((a) => a.zoneId).map((a) => a.zoneId as string);
+    const tableIds = assignments.filter((a) => a.tableId).map((a) => a.tableId as string);
+    return { employeeId, zoneIds: Array.from(new Set(zoneIds)), tableIds: Array.from(new Set(tableIds)), assignments };
+  }
+
+  async setEmployeeAssignments(employeeId: string, data: { zoneIds?: string[]; tableIds?: string[] }) {
+    const employee = await this.prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!employee) throw new NotFoundException('Xodim topilmadi');
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.employeeTableAssignment.deleteMany({ where: { employeeId } });
+
+      const records: { employeeId: string; zoneId?: string; tableId?: string }[] = [];
+      if (data.zoneIds && data.zoneIds.length > 0) {
+        for (const zoneId of data.zoneIds) {
+          records.push({ employeeId, zoneId });
+        }
+      }
+      if (data.tableIds && data.tableIds.length > 0) {
+        for (const tableId of data.tableIds) {
+          records.push({ employeeId, tableId });
+        }
+      }
+
+      if (records.length > 0) {
+        await tx.employeeTableAssignment.createMany({
+          data: records,
+          skipDuplicates: true,
+        });
+      }
+
+      return { success: true, count: records.length };
+    });
+  }
+
+  // =================== STOLLAR (TABLES) ===================
+
+  async getTables(branchId: string, waiterEmployeeId?: string) {
+    let whereClause: any = { branchId };
+
+    if (waiterEmployeeId) {
+      const assignments = await this.prisma.employeeTableAssignment.findMany({
+        where: { employeeId: waiterEmployeeId },
+      });
+      const assignedZoneIds = assignments.filter((a) => a.zoneId).map((a) => a.zoneId);
+      const assignedTableIds = assignments.filter((a) => a.tableId).map((a) => a.tableId);
+
+      if (assignedZoneIds.length > 0 || assignedTableIds.length > 0) {
+        whereClause = {
+          branchId,
+          OR: [
+            ...(assignedZoneIds.length > 0 ? [{ zoneId: { in: assignedZoneIds } }] : []),
+            ...(assignedTableIds.length > 0 ? [{ id: { in: assignedTableIds } }] : []),
+          ],
+        };
+      }
+    }
+
+    return this.prisma.table.findMany({
+      where: whereClause,
+      include: {
+        zone: true,
         orders: {
           where: { status: { in: ['draft', 'open'] } },
           include: {
@@ -29,24 +147,28 @@ export class RestaurantService {
     });
   }
 
-  async createTable(branchId: string, data: { name: string; capacity?: number }) {
+  async createTable(branchId: string, data: { name: string; capacity?: number; zoneId?: string }) {
     return this.prisma.table.create({
       data: {
         branchId,
+        zoneId: data.zoneId || null,
         name: data.name,
         capacity: data.capacity || 4,
         status: 'available',
       },
+      include: { zone: true },
     });
   }
 
-  async updateTable(tableId: string, data: { name?: string; capacity?: number }) {
+  async updateTable(tableId: string, data: { name?: string; capacity?: number; zoneId?: string | null }) {
     return this.prisma.table.update({
       where: { id: tableId },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.capacity !== undefined && { capacity: Number(data.capacity) }),
+        ...(data.zoneId !== undefined && { zoneId: data.zoneId || null }),
       },
+      include: { zone: true },
     });
   }
 
@@ -60,6 +182,7 @@ export class RestaurantService {
     return this.prisma.table.update({
       where: { id: tableId },
       data: { status },
+      include: { zone: true },
     });
   }
 

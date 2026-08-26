@@ -100,10 +100,10 @@
             <div v-if="order.tableNumber || (order.orderType && ['takeaway', 'delivery', 'dine_in', 'saboy', 'dostavka'].includes(String(order.orderType).toLowerCase()))" class="flex justify-between items-center text-slate-600 dark:text-slate-300 border-t border-slate-200/60 dark:border-slate-700/40 pt-1.5">
               <span class="text-slate-400 dark:text-slate-400 text-[11px] font-medium">Xizmat turi / Stol:</span>
               <span class="font-bold text-slate-900 dark:text-white text-[11px]">
-                <template v-if="order.tableNumber">🍽️ {{ order.tableNumber }}</template>
-                <template v-else-if="order.orderType === 'takeaway' || order.orderType === 'saboy'">🥡 Saboy (Olib ketish)</template>
-                <template v-else-if="order.orderType === 'delivery' || order.orderType === 'dostavka'">🛵 Yetkazib berish</template>
-                <template v-else-if="order.orderType === 'dine_in'">🍽️ Zalda</template>
+                <template v-if="order.tableNumber">Stol: {{ order.tableNumber }}</template>
+                <template v-else-if="order.orderType === 'takeaway' || order.orderType === 'saboy'">Saboy (Olib ketish)</template>
+                <template v-else-if="order.orderType === 'delivery' || order.orderType === 'dostavka'">Yetkazib berish</template>
+                <template v-else-if="order.orderType === 'dine_in'">Zalda</template>
               </span>
             </div>
 

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProductStatus } from '@prisma/client';
+import { resolveTrackInventory } from '../../common/utils/inventory-tracking.util';
 
 export interface FindProductsQueryDto {
   search?: string;
@@ -28,6 +29,8 @@ export interface CreateProductDto {
   brand?: string;
   productType?: 'goods' | 'dish' | 'service';
   isKitchenItem?: boolean;
+  // null/undefined = kategoriya default'ini meros qiladi. true/false = aniq override.
+  trackInventory?: boolean | null;
 }
 
 export interface UpdateProductDto extends Partial<CreateProductDto> {}
@@ -39,6 +42,8 @@ export interface CreateCategoryDto {
   color?: string;
   description?: string;
   sortOrder?: number;
+  // Ushbu turkumdagi yangi mahsulotlar uchun standart qoldiq kuzatuvi (default: true)
+  defaultTrackInventory?: boolean;
 }
 
 export interface UpdateCategoryDto extends Partial<CreateCategoryDto> {}
@@ -87,9 +92,10 @@ export class ProductsService {
         salePrice: true,
         taxRate: true,
         minStock: true,
+        trackInventory: true,
         imageUrl: true,
         status: true,
-        category: { select: { id: true, name: true, color: true } },
+        category: { select: { id: true, name: true, color: true, defaultTrackInventory: true } },
         unit: { select: { id: true, name: true, shortName: true } },
         inventory: {
           select: {
@@ -104,12 +110,7 @@ export class ProductsService {
     });
 
     return items.map((prod) => {
-      const isMadeToOrder =
-        prod.brand === 'dish' ||
-        prod.brand === 'kitchen' ||
-        prod.brand === 'service' ||
-        prod.unit?.shortName === 'por' ||
-        prod.unitId === '00000000-0000-0000-0000-000000000024';
+      const isMadeToOrder = !resolveTrackInventory(prod);
 
       const branchInventories = branchId ? prod.inventory.filter((inv) => inv.branchId === branchId) : prod.inventory;
       const targetInventories = branchInventories.length > 0 ? branchInventories : prod.inventory;
@@ -136,6 +137,7 @@ export class ProductsService {
         salePrice: Number(prod.salePrice),
         taxRate: Number(prod.taxRate),
         minStock: Number(prod.minStock),
+        trackInventory: prod.trackInventory, // null = kategoriyadan meros
         imageUrl: prod.imageUrl,
         status: prod.status,
         isMadeToOrder,
@@ -186,12 +188,7 @@ export class ProductsService {
     ]);
 
     const formattedItems = items.map((prod) => {
-      const isMadeToOrder =
-        prod.brand === 'dish' ||
-        prod.brand === 'kitchen' ||
-        prod.brand === 'service' ||
-        prod.unit?.shortName === 'por' ||
-        prod.unitId === '00000000-0000-0000-0000-000000000024';
+      const isMadeToOrder = !resolveTrackInventory(prod);
 
       const branchInventories = branchId ? prod.inventory.filter((inv) => inv.branchId === branchId) : prod.inventory;
       const targetInventories = branchInventories.length > 0 ? branchInventories : prod.inventory;
@@ -199,7 +196,8 @@ export class ProductsService {
       const stockQty = targetInventories.reduce((acc, curr) => acc + Number(curr.quantity), 0);
       const reservedQty = targetInventories.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
 
-      // For made-to-order items (food/dishes/services), stock is virtually unlimited unless marked inactive (stop-list)
+      // Buyurtma asosida tayyorlanadigan mahsulot (trackInventory=false) uchun
+      // qoldiq cheksiz deb hisoblanadi, faqat stop-list (status=inactive) qilinsa yopiladi
       const effectiveStockQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : stockQty;
       const effectiveAvailableQty = isMadeToOrder ? (prod.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
 
@@ -291,6 +289,15 @@ export class ProductsService {
     const effectiveBrand = data.productType || data.brand || (data.isKitchenItem ? 'dish' : 'goods');
     const effectiveImage = data.imageUrl || data.image || null;
     const targetBranchId = data.branchId || branchId || defaultBranch?.id;
+    // Eski isKitchenItem/productType='dish' bilan yaratilgan mahsulotlar uchun ham
+    // yangi trackInventory maydonini to'g'ridan-to'g'ri false qilib qo'yamiz —
+    // shunda kelajakda kategoriyani o'zgartirsalar ham override saqlanib qoladi.
+    const explicitTrackInventory =
+      data.trackInventory !== undefined
+        ? data.trackInventory
+        : data.isKitchenItem || data.productType === 'dish'
+          ? false
+          : null;
 
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -306,6 +313,7 @@ export class ProductsService {
           purchasePrice: data.purchasePrice || 0,
           salePrice: data.salePrice,
           minStock: data.minStockLevel || 0,
+          trackInventory: explicitTrackInventory,
           imageUrl: effectiveImage,
           description: data.description || null,
           status: data.status || 'active',
@@ -351,12 +359,7 @@ export class ProductsService {
         });
       }
 
-      const isMadeToOrder =
-        product.brand === 'dish' ||
-        product.brand === 'kitchen' ||
-        product.brand === 'service' ||
-        product.unit?.shortName === 'por' ||
-        product.unitId === '00000000-0000-0000-0000-000000000024';
+      const isMadeToOrder = !resolveTrackInventory(product);
 
       const effectiveStockQty = isMadeToOrder ? (product.status === 'active' ? 9999 : 0) : initialQty;
 
@@ -376,6 +379,9 @@ export class ProductsService {
     const product = await this.findOne(businessId, id);
     const effectiveBrand = data.productType || data.brand || product.brand;
     const effectiveImage = data.imageUrl !== undefined ? data.imageUrl : data.image !== undefined ? data.image : product.imageUrl;
+    // trackInventory: agar so'rovda aniq kelmasa — eski qiymat saqlanadi (o'zgarmaydi)
+    const effectiveTrackInventory =
+      data.trackInventory !== undefined ? data.trackInventory : (product as any).trackInventory;
 
     let targetBranchId = data.branchId || branchId;
     if (!targetBranchId) {
@@ -398,6 +404,7 @@ export class ProductsService {
           purchasePrice: data.purchasePrice,
           salePrice: data.salePrice,
           minStock: data.minStockLevel,
+          trackInventory: effectiveTrackInventory,
           imageUrl: effectiveImage,
           description: data.description,
           status: data.status,
@@ -458,12 +465,7 @@ export class ProductsService {
       const stockQty = currentInventories.reduce((acc, curr) => acc + Number(curr.quantity), 0);
       const reservedQty = currentInventories.reduce((acc, curr) => acc + Number(curr.reservedQty), 0);
 
-      const isMadeToOrder =
-        updatedProduct.brand === 'dish' ||
-        updatedProduct.brand === 'kitchen' ||
-        updatedProduct.brand === 'service' ||
-        updatedProduct.unit?.shortName === 'por' ||
-        updatedProduct.unitId === '00000000-0000-0000-0000-000000000024';
+      const isMadeToOrder = !resolveTrackInventory(updatedProduct);
 
       const effectiveStockQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : stockQty;
       const effectiveAvailableQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
@@ -646,7 +648,7 @@ export class ProductsService {
     return rootCategories.map((rc) => categoryMap.get(rc.id));
   }
 
-  async createCategory(businessId: string, data: { name: string; parentId?: string; icon?: string; color?: string; sortOrder?: number }) {
+  async createCategory(businessId: string, data: { name: string; parentId?: string; icon?: string; color?: string; sortOrder?: number; defaultTrackInventory?: boolean }) {
     return this.prisma.category.create({
       data: {
         businessId,
@@ -655,11 +657,12 @@ export class ProductsService {
         icon: data.icon || null,
         color: data.color || null,
         sortOrder: data.sortOrder || 0,
+        defaultTrackInventory: data.defaultTrackInventory !== undefined ? data.defaultTrackInventory : true,
       },
     });
   }
 
-  async updateCategory(businessId: string, id: string, data: { name?: string; parentId?: string; icon?: string; color?: string; sortOrder?: number }) {
+  async updateCategory(businessId: string, id: string, data: { name?: string; parentId?: string; icon?: string; color?: string; sortOrder?: number; defaultTrackInventory?: boolean }) {
     const existing = await this.prisma.category.findFirst({
       where: { id, businessId },
     });
@@ -675,6 +678,8 @@ export class ProductsService {
         icon: data.icon !== undefined ? data.icon : existing.icon,
         color: data.color !== undefined ? data.color : existing.color,
         sortOrder: data.sortOrder !== undefined ? data.sortOrder : existing.sortOrder,
+        defaultTrackInventory:
+          data.defaultTrackInventory !== undefined ? data.defaultTrackInventory : existing.defaultTrackInventory,
       },
     });
   }
@@ -900,9 +905,53 @@ export class ProductsService {
     };
   }
 
+  // In-memory cache for external image search results (TTL 24 hours)
+  private imageSearchCache = new Map<string, { timestamp: number; data: any }>();
+
   // Google / Unsplash Product Image Search Gallery
-  async searchProductImages(query: string = '') {
-    const q = (query || '').toLowerCase().trim();
+  async searchProductImages(query: string = '', categoryName?: string) {
+    const rawQuery = `${query || ''} ${categoryName || ''}`.trim();
+    const q = rawQuery.toLowerCase();
+    const cacheKey = `img_search_${q}`;
+
+    // 1. Check in-memory cache
+    const cached = this.imageSearchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+      return cached.data;
+    }
+
+    // 2. Attempt Google Custom Search JSON API if credentials are provided
+    const googleApiKey = process.env.GOOGLE_SEARCH_API_KEY;
+    const googleCx = process.env.GOOGLE_SEARCH_ENGINE_ID;
+
+    if (googleApiKey && googleCx && q.length >= 2) {
+      try {
+        const googleUrl = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(googleApiKey)}&cx=${encodeURIComponent(googleCx)}&q=${encodeURIComponent(rawQuery)}&searchType=image&num=10&safe=active`;
+        const response = await fetch(googleUrl);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data.items) && data.items.length > 0) {
+            const googleResults = data.items.map((item: any, idx: number) => ({
+              id: `google-${idx + 1}-${Date.now()}`,
+              title: item.title || rawQuery,
+              category: 'Google Qidiruv',
+              url: item.link,
+            }));
+
+            const resultObj = {
+              query: rawQuery,
+              source: 'google',
+              count: googleResults.length,
+              images: googleResults,
+            };
+            this.imageSearchCache.set(cacheKey, { timestamp: Date.now(), data: resultObj });
+            return resultObj;
+          }
+        }
+      } catch (googleErr) {
+        console.warn('Google Custom Search API fallback to static db:', googleErr);
+      }
+    }
 
     // Comprehensive Categorized Real Product Database for Shops & Supermarkets
     const database: Array<{ id: string; title: string; category: string; url: string; keywords: string[] }> = [

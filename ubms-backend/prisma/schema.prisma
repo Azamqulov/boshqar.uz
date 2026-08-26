@@ -346,6 +346,7 @@ model Business {
   employees       Employee[]
   posShifts       PosShift[]
   inventories     Inventory[]
+  restaurantZones RestaurantZone[]
 
   @@map("businesses")
 }
@@ -375,6 +376,7 @@ model Branch {
   tables          Table[]
   appointments    Appointment[]
   posShifts       PosShift[]
+  restaurantZones RestaurantZone[]
 
   @@map("branches")
 }
@@ -455,6 +457,7 @@ model Employee {
   cashierOrders Order[]      @relation("OrderCashier")
   waiterOrders  Order[]      @relation("OrderWaiter")
   appointments  Appointment[]
+  tableAssignments EmployeeTableAssignment[]
 
   @@map("employees")
 }
@@ -471,6 +474,10 @@ model Category {
   icon       String?  @db.VarChar(50)
   color      String?  @db.VarChar(20)
   sortOrder  Int      @default(0) @map("sort_order")
+  // Ushbu turkumdagi mahsulotlar uchun standart qoldiq kuzatuvi: true = ombordan
+  // hisoblansin (masalan ichimliklar), false = buyurtma tushganda tayyorlanadi va
+  // qoldiq hisoblanmaydi (masalan taomlar). Har bir mahsulot buni override qila oladi.
+  defaultTrackInventory Boolean  @default(true) @map("default_track_inventory")
   createdAt  DateTime @default(now()) @map("created_at")
 
   business Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -508,6 +515,9 @@ model Product {
   salePrice     Decimal       @map("sale_price") @db.Decimal(14, 2)
   taxRate       Decimal       @default(0) @map("tax_rate") @db.Decimal(5, 2)
   minStock      Decimal       @default(0) @map("min_stock") @db.Decimal(14, 3)
+  // null = kategoriyaning defaultTrackInventory qiymatini meros qilib oladi (inherit).
+  // true/false berilsa — kategoriya default'ini bosib o'tadi (explicit override).
+  trackInventory Boolean?     @map("track_inventory")
   imageUrl      String?       @map("image_url") @db.Text
   description   String?       @db.Text
   status        ProductStatus @default(active)
@@ -819,18 +829,53 @@ model Expense {
 // 6. RESTAURANT & KDS
 // -------------------------------------------------------------
 
+model RestaurantZone {
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  branchId   String   @map("branch_id") @db.Uuid
+  name       String   @db.VarChar(100)
+  color      String?  @default("#10b981") @db.VarChar(30)
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business            Business                    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch              Branch                      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  tables              Table[]
+  employeeAssignments EmployeeTableAssignment[]
+
+  @@map("restaurant_zones")
+}
+
 model Table {
   id        String      @id @default(uuid()) @db.Uuid
   branchId  String      @map("branch_id") @db.Uuid
+  zoneId    String?     @map("zone_id") @db.Uuid
   name      String      @db.VarChar(50)
   capacity  Int         @default(4)
   status    TableStatus @default(available)
   createdAt DateTime    @default(now()) @map("created_at")
 
-  branch Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  orders Order[]
+  branch              Branch                      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  zone                RestaurantZone?             @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  orders              Order[]
+  employeeAssignments EmployeeTableAssignment[]
 
   @@map("tables")
+}
+
+model EmployeeTableAssignment {
+  id         String   @id @default(uuid()) @db.Uuid
+  employeeId String   @map("employee_id") @db.Uuid
+  zoneId     String?  @map("zone_id") @db.Uuid
+  tableId    String?  @map("table_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  employee Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  zone     RestaurantZone? @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  table    Table?          @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, zoneId, tableId])
+  @@map("employee_table_assignments")
 }
 
 model PosShift {

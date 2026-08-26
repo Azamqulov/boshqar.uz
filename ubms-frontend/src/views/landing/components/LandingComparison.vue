@@ -35,7 +35,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs sm:text-sm">
-            <tr v-for="(row, idx) in comparisonRows" :key="idx" class="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition-colors">
+            <tr v-for="(row, idx) in displayedRows" :key="idx" class="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition-colors">
               <!-- Feature Name & Description -->
               <td class="py-4 px-4 font-semibold text-slate-900 dark:text-white">
                 <div>{{ row.title }}</div>
@@ -60,17 +60,24 @@
                 </div>
               </td>
 
-              <!-- Boshqar.uz Column -->
-              <td class="py-4 px-6 text-center font-bold text-slate-900 dark:text-white bg-emerald-500/10 border-x-2 border-emerald-500" :class="idx === comparisonRows.length - 1 ? 'border-b-2 rounded-b-2xl' : ''">
-                <div class="inline-flex items-center justify-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 class="w-5 h-5 shrink-0" />
-                  <span class="text-xs sm:text-sm font-black">{{ row.boshqar }}</span>
+              <!-- Boshqar.uz -->
+              <td class="py-4 px-6 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-x-2 border-emerald-500">
+                <div class="inline-flex items-center justify-center gap-1.5">
+                  <CheckCircle2 class="w-5 h-5 text-emerald-500 shrink-0" />
+                  <span>{{ row.boshqar }}</span>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/solishtirish"
+        label="To'liq taqqoslash jadvalini ko'rish (7 ta mezon)"
+      />
 
       <!-- Quick Summary Banner -->
       <div data-aos="fade-up" data-aos-delay="200" class="mt-12 p-6 rounded-3xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -109,7 +116,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import { Scale, CheckCircle2, XCircle, Sparkles } from 'lucide-vue-next';
+
+const props = withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 defineEmits<{
   (e: 'openDemo'): void;
@@ -166,4 +181,11 @@ const comparisonRows = [
     boshqar: "100% Xavfsiz Audit",
   },
 ];
+
+const displayedRows = computed(() => {
+  if (props.variant === 'teaser') {
+    return comparisonRows.slice(0, 3);
+  }
+  return comparisonRows;
+});
 </script>

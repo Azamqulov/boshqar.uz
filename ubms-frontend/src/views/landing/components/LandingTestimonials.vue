@@ -95,30 +95,21 @@
           Sahifa <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ currentSlide + 1 }}</span> / {{ totalSlides }} (Jami 12 ta sharh)
         </div>
 
-        <!-- Pagination Indicators (Dots / Pills) -->
-        <div class="flex items-center gap-2">
+        <!-- Pagination -->
+        <div class="flex items-center justify-center gap-2">
           <button
-            v-for="(_, sIdx) in totalSlides"
-            :key="sIdx"
+            v-for="(_, dIdx) in slideGroups"
+            :key="dIdx"
             type="button"
-            @click="currentSlide = sIdx"
-            :class="[
-              'h-2.5 rounded-full transition-all duration-300 cursor-pointer',
-              currentSlide === sIdx ? 'w-8 bg-emerald-500 shadow-xs' : 'w-2.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
-            ]"
-            :aria-label="`Slayd ${sIdx + 1}`"
+            @click="currentSlide = dIdx"
+            class="w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer"
+            :class="currentSlide === dIdx ? 'bg-emerald-500 w-6' : 'bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'"
+            :title="`${dIdx + 1}-slayd`"
           />
         </div>
 
-        <!-- Prev / Next & Full List Action Buttons -->
-        <div class="flex items-center gap-2.5">
-          <router-link
-            to="/yordam"
-            class="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white text-xs font-bold transition flex items-center gap-1.5"
-          >
-            <span>Barcha Sharhlar & FAQ</span>
-            <ArrowRight class="w-3.5 h-3.5" />
-          </router-link>
+        <!-- Prev / Next -->
+        <div v-if="variant === 'full'" class="flex items-center gap-2.5">
           <button
             type="button"
             @click="prevSlide"
@@ -137,13 +128,27 @@
           </button>
         </div>
       </div>
+
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/yordam"
+        label="Barcha 12+ mijozlar sharhlarini o'qish"
+      />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+
+withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 const currentSlide = ref(0);
 let autoPlayTimer: any = null;

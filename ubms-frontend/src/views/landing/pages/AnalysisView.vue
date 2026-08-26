@@ -137,46 +137,76 @@
               <tr class="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold">
                 <th class="p-4 sm:p-6">Imkoniyatlar va Mezonlar</th>
                 <th class="p-4 sm:p-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-center">Boshqar.uz 🟢</th>
-                <th class="p-4 sm:p-6 text-center text-slate-500">Qog'oz Daftar / Excel 📓</th>
-                <th class="p-4 sm:p-6 text-center text-slate-500">Chet el ERP (Poster/Jowi) 🌍</th>
+                <th class="p-4 sm:p-6 text-center text-slate-500">Qog'oz Daftar / Excel</th>
+                <th class="p-4 sm:p-6 text-center text-slate-500">Chet el ERP tizimlari</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
               <tr>
                 <td class="p-4 sm:p-6 font-bold">Soliq OFD Fiskallashtirish (QR Chek)</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">✅ Bepul ulanadi</td>
-                <td class="p-4 text-center text-rose-500">❌ Umuman yo'q</td>
-                <td class="p-4 text-center text-amber-500">⚠️ Qo'shimcha to'lov</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> Bepul ulanadi</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Umuman yo'q</div>
+                </td>
+                <td class="p-4 text-center text-amber-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><AlertCircle class="w-4 h-4 text-amber-500" /> Qo'shimcha to'lov</div>
+                </td>
               </tr>
               <tr>
                 <td class="p-4 sm:p-6 font-bold">Telegram Bot & Mini-App (TMA) POS</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">✅ Barcha hisobotlar Telegramda</td>
-                <td class="p-4 text-center text-rose-500">❌ Yo'q</td>
-                <td class="p-4 text-center text-rose-500">❌ Yo'q</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> Barcha hisobotlar Telegramda</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Yo'q</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Yo'q</div>
+                </td>
               </tr>
               <tr>
                 <td class="p-4 sm:p-6 font-bold">Termal Chek Chop Etish (ESC/POS)</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">✅ 1-click printer print</td>
-                <td class="p-4 text-center text-rose-500">❌ Qo'lda yoziladi</td>
-                <td class="p-4 text-center text-emerald-600">✅ Mavjud</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> 1-click printer print</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Qo'lda yoziladi</div>
+                </td>
+                <td class="p-4 text-center text-emerald-600">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> Mavjud</div>
+                </td>
               </tr>
               <tr>
                 <td class="p-4 sm:p-6 font-bold">Oylik Obuna Narxi</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">💰 190,000 so'mdan</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">190 000 so'mdan</td>
                 <td class="p-4 text-center text-slate-500">0 so'm (lekin zarar ko'p)</td>
-                <td class="p-4 text-center text-rose-500">💸 $40 - $120 / oy</td>
+                <td class="p-4 text-center text-rose-500">$40 - $120 / oy</td>
               </tr>
               <tr>
                 <td class="p-4 sm:p-6 font-bold">Nasiya (Qarz) Daftari & Ogohlantirish</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">✅ Avtomatik SMS & Telegram</td>
-                <td class="p-4 text-center text-amber-500">⚠️ Daftarda adashish ko'p</td>
-                <td class="p-4 text-center text-amber-500">⚠️ Murakkab va noqulay</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> Avtomatik SMS & Telegram</div>
+                </td>
+                <td class="p-4 text-center text-amber-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><AlertCircle class="w-4 h-4 text-amber-500" /> Daftarda adashish ko'p</div>
+                </td>
+                <td class="p-4 text-center text-amber-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><AlertCircle class="w-4 h-4 text-amber-500" /> Murakkab va noqulay</div>
+                </td>
               </tr>
               <tr>
                 <td class="p-4 sm:p-6 font-bold">24/7 O'zbek Tilida Qo'llab-quvvatlash</td>
-                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">✅ 100% O'zbek tilida</td>
-                <td class="p-4 text-center text-rose-500">❌ Yo'q</td>
-                <td class="p-4 text-center text-rose-500">❌ Faqat Rus/Ingliz</td>
+                <td class="p-4 text-center bg-emerald-500/5 text-emerald-600 font-bold">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><CheckCircle2 class="w-4 h-4 text-emerald-500" /> 100% O'zbek tilida</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Yo'q</div>
+                </td>
+                <td class="p-4 text-center text-rose-500">
+                  <div class="inline-flex items-center gap-1.5 justify-center"><XCircle class="w-4 h-4 text-rose-500" /> Faqat Rus/Ingliz</div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -191,7 +221,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { ArrowRight, Sparkles, Calculator, ArrowLeftRight } from 'lucide-vue-next';
+import { ArrowRight, Sparkles, Calculator, ArrowLeftRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-vue-next';
 import LandingHeader from '../components/LandingHeader.vue';
 import LandingFooter from '../components/LandingFooter.vue';
 import { useAuthStore } from '../../../stores/auth.store';

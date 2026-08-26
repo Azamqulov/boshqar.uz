@@ -1,0 +1,177 @@
+# 📋 Texnik Topshiriq (TZ): Ombor Zaxirasi Logikasi, Stol-Zona-Ofitsiant, Haqiqiy Rasm Qidiruvi, Landing Teaser va Emoji→Icon Tozalash
+
+> **Sana:** 26-Avgust, 2026-yil
+> **Kim uchun:** Keyingi ishlaydigan AI dev agent (Claude/Antigravity va h.k.)
+> **Muhim:** Bu hujjat Xo'jayin (loyiha egasi) tomonidan chatda og'zaki tushuntirilgan 5 ta talabni birlashtirgan holda tayyorlangan. Har bir bo'lim mustaqil bajarilishi mumkin, lekin **2- va 5-bo'limlar avval ham TZ qilingan, lekin OXIRIGACHA bajarilmagan** — shuning uchun "allaqachon qilingan" deb o'tkazib yubormang, pastdagi "Hozirgi holat" qismini albatta tekshiring.
+
+---
+
+## 0. Umumiy kontekst — nega bu hujjat kerak
+
+Xo'jayin bilan suhbatda 5 ta muammo aniqlandi:
+
+1. Taom kabi "buyurtma tushgandagina tayyorlanadigan" mahsulotlar uchun ombor qoldig'i ("Joriy qoldiq", "soni") umuman kerak emas — lekin tizim buni mo'rt `product.brand === 'dish'` degan hiyla orqali "taxmin qilardi".
+2. Restoran/kafe uchun stollarni zonalarga bo'lib, har bir zonani muayyan ofitsiantga biriktirish kerak — bu **avval TZ qilingan** (`TZ_RESTORAN_STOL_ZONALARI_VA_OFITSIANT_ASSIGNMENT.md`), lekin **DB sxemasida hali yo'q** (tekshirildi: `Table` modelida `zoneId`/`assignedWaiterId` maydonlari yo'q).
+3. Mahsulot qo'shishda "Google'dan rasm qidirish" aslida ~50 ta qo'lda yozilgan statik Unsplash-link ro'yxati, haqiqiy tashqi qidiruv emas.
+4. Landing sahifalar (`/telegram-bot`, `/aloqa` va h.k.) allaqachon yaratilgan, lekin **home sahifada baribir hammasi to'liq holicha qolgan** — bu ham avval TZ qilingan (`TZ_LANDING_PAGE_BOSHQAR_UZ.md`, "ixcham teaser + Batafsil" talabi bilan), lekin bajarilmagan.
+5. Loyihada hali ham 9 ta faylda ~62 ta emoji bor — bu ham xuddi shu eski TZ'da "0% emoji / 100% Lucide ikonkalar" deb yozilgan, lekin bajarilmagan.
+
+---
+
+## 1-BO'LIM: Buyurtma Asosida Tayyorlanadigan Mahsulotlar — `trackInventory`
+
+### Maqsad
+Taom kabi mahsulotlar uchun ombor qoldig'ini butunlay o'chirish imkonini berish — **kategoriya darajasida standart qiymat + har bir mahsulotda alohida override** ko'rinishida (Xo'jayin shu variantni tanladi).
+
+### ✅ Hozirgi holat (26-avgust, shu sessiyada qilingan — QISMAN TAYYOR)
+Backend qismi **allaqachon yozilgan**, quyidagi fayllarda `git diff` orqali tekshiring:
+- `ubms-backend/prisma/schema.prisma` — `Category.defaultTrackInventory` va `Product.trackInventory` maydonlari qo'shilgan.
+- `ubms-backend/src/common/utils/inventory-tracking.util.ts` — **yangi fayl**, markazlashgan `resolveTrackInventory()` funksiyasi (ustuvorlik: Product override → Category default → eski `brand==='dish'` orqaga moslik → standart `true`).
+- `ubms-backend/src/modules/products/products.service.ts` — `CreateProductDto`/`CreateCategoryDto`ga `trackInventory`/`defaultTrackInventory` qo'shilgan, `create`/`update`/`findAll`/`findAllLite`/`createCategory`/`updateCategory` yangilangan.
+- `ubms-backend/src/modules/orders/orders.service.ts` — `trackInventory=false` mahsulot uchun buyurtmada qoldiq **umuman** tekshirilmaydi/kamaytirilmaydi (avval `isMadeToOrder` hiylasi faqat xatoni o'tkazib yuborardi, lekin qoldiqni baribir kamaytirar edi — bu xato ham tuzatildi).
+- `ubms-backend/src/modules/inventory/inventory.service.ts` va `modules/dashboard/dashboard.service.ts` — kam-qoldiq hisoblovchilar `trackInventory=false` mahsulotlarni endi chetlab o'tadi.
+
+### ❌ Qolgan ish (HALI BOSHLANMAGAN)
+1. **Prisma migratsiyasi** — schema o'zgardi, lekin `prisma migrate dev` ishga tushirilmagan (sandbox tarmoq cheklovi tufayli ishlab chiqilmadi). Buni development DB'da ishga tushirish kerak.
+2. **`products.controller.ts`** — yangi `trackInventory` DTO maydoni controller validatsiyasida to'sib qolmayotganini tekshirish.
+3. **Frontend — `ProductFormModal.vue`:**
+   - Forma'da "Qoldiq hisoblansinmi?" tumbler/select qo'shish, 3 holat: *"Kategoriya bo'yicha (avtomatik)"* / *"Ha, hisoblansin"* / *"Yo'q, buyurtma asosida tayyorlanadi"*.
+   - Agar effektiv qiymat `false` bo'lsa — "Joriy qoldiq" (`initialStock`) va min-stock maydonlarini formadan **yashirish** (shart emas, o'chirish emas — chunki keyin `true`ga qaytarilishi mumkin).
+   - `gallerySearchQuery` kabi joyларда effektiv qiymatni frontendda hisoblash uchun backend javobidagi `trackInventory` (raw, null bo'lishi mumkin) va `category.defaultTrackInventory`ni birga ishlatish.
+4. **Frontend — `CategoryFormModal.vue` / `CategoryManageModal.vue`:**
+   - Kategoriya formasiga "Bu turkumdagi mahsulotlar uchun standart: qoldiq hisoblansinmi?" tumbler qo'shish (`defaultTrackInventory`).
+   - Tezkor preset kategoriyalar (`fastCategoryPresets`) ro'yxatida "Taomlar"/"Ichimliklar" kabi preset'larga mos default qiymat berish (masalan "Taomlar" preset → `defaultTrackInventory: false`).
+5. **KDS (Kitchen Display System) bilan tekshirish** — `views/restaurant/KDSView.vue` oqimi `trackInventory` flagiga bog'liq emas (u alohida `KitchenOrder` modeli orqali ishlaydi), lekin integratsion test qilib ko'rish kerak: `trackInventory=false` mahsulot buyurtma qilinganda KDS'da baribir to'g'ri ko'rinishini tasdiqlash.
+
+### Qabul qilish mezonlari
+- [ ] "Taomlar" kategoriyasida `defaultTrackInventory=false` qilib qo'yilsa, shu kategoriyadagi yangi mahsulot qo'shilganda "Joriy qoldiq" maydoni formadan yashiriladi.
+- [ ] Shu mahsulotdan POS orqali 100 dona sotilsa ham, xech qanday "yetarli emas" xatosi chiqmaydi va Inventory jadvalida yozuv yaratilmaydi.
+- [ ] Bitta mahsulot "Taomlar" kategoriyasida bo'lsa-da, qo'lda `trackInventory=true` qilib qo'yilsa (masalan shishada sotiladigan ichimlik "Taomlar" ichida bo'lsa) — shu mahsulot uchun qoldiq odatdagidek ishlaydi.
+
+---
+
+## 2-BO'LIM: Stollarni Zonalarga Bo'lish va Ofitsiantlarga Biriktirish
+
+### ⚠️ MUHIM: bu avval TZ qilingan, lekin bajarilmagan
+To'liq eski hujjat: `docs/tz/TZ_RESTORAN_STOL_ZONALARI_VA_OFITSIANT_ASSIGNMENT.md`. O'sha hujjatdagi DB sxema, API endpoint va ekran ro'yxati **hali ham to'g'ri va amal qiladi** — quyida faqat tasdiqlangan qaror va tekshirish ro'yxati beriladi, sxemani qaytadan yozmang, o'sha faylni oching.
+
+### Tasdiqlangan qaror
+Xo'jayin **"Seksiya asosida"** variantni tanladi (oddiy 1-stol-1-ofitsiant emas) — ya'ni eski TZ'dagi `restaurant_zones` + `employee_table_assignments` yondashuvi to'g'ri, davom ettiring.
+
+### Tekshirish/bajarish ro'yxati (eski TZ asosida, amalga oshirilmagan qismlar)
+1. `restaurant_zones` jadvali Prisma schema'da yo'q — yaratish kerak.
+2. `Table` modeliga `zoneId` (FK → `restaurant_zones`) qo'shish. (Eski TZ'dagi `zone_name` ustunini alohida qo'shmang — `zoneId` orqali relation orqali `zone.name` olinadi, xuddi ustun dublikat bo'lmasin uchun.)
+3. `employee_table_assignments` jadvali yaratish (yoki soddaroq: `Employee`ga `assignedZoneIds: String[]` — lekin ko'p-ko'pga bog'liqlik uchun alohida jadval afzal, eski TZ'dagi kabi).
+4. Backend: `GET /restaurant/zones`, `POST /restaurant/zones`, `PATCH /employees/:id/tables` (yoki `/zones`) endpointlarini yaratish.
+5. Order yaratishda: agar stol tanlansa va shu stol zonasi login qilgan ofitsiantga biriktirilgan bo'lsa — `Order.waiterId` avtomatik shu foydalanuvchidan to'ldiriladi (hozircha qo'lda tanlanadi, tekshirish kerak).
+6. Frontend: Stollar xaritasida zona bo'yicha tab-filtr, Xodimlar sozlamasida "Biriktirilgan zonalar" checkbox blok, ofitsiant kirganda faqat o'z zonasidagi stollarni ko'rishi.
+
+### Qabul qilish mezonlari (eski TZ'dan ko'chirilgan, hali tasdiqlanmagan)
+- [ ] Admin "VIP Zonasi" yaratib, 5- va 6-stollarni shu zonaga o'tkaza oladi.
+- [ ] Ofitsiant "Eshmat"ga faqat VIP zona biriktirilsa, u kirganda faqat VIP stollar ko'rinadi, boshqalari qulflangan/ko'rinmaydi.
+- [ ] Admin/Owner har doim barcha zonalarni cheklovsiz ko'radi.
+
+---
+
+## 3-BO'LIM: Haqiqiy Rasm Qidiruv — Google Custom Search API
+
+### Maqsad
+Hozirgi statik ~50 ta qo'lda yozilgan rasm ro'yxati o'rniga, mahsulot nomi + tanlangan kategoriya asosida **haqiqiy Google qidiruvidan** rasmlar ko'rsatish.
+
+### Hozirgi holat (o'zgartirilmagan)
+- `ubms-backend/src/modules/products/products.service.ts` ichida `searchProductImages()` — statik massiv, `products.controller.ts`da `GET /products/search-images?query=` orqali chaqiriladi.
+- Frontend: `ProductFormModal.vue`, `fetchSampleImages()` — `gallerySearchQuery` faqat mahsulot nomidan to'ladi, kategoriya qo'shilmaydi, va faqat 3-bosqichga o'tganda chaqiriladi (real-time emas).
+
+### Texnik yechim
+1. **API tanlovi:** Google Custom Search JSON API (`customsearch.googleapis.com/customsearch/v1`, `searchType=image`). Kerak: Google Cloud'da API key + Programmable Search Engine (CSE) ID (`cx`).
+   - Muhit o'zgaruvchilari: `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_ENGINE_ID` (`.env.example`ga qo'shish).
+   - Bepul kvota: kuniga 100 so'rov. Agar kvota tez tugasa — keshlash (Redis, 24 soat TTL, kalit: `image-search:{normalizedQuery}`) majburiy, chunki bir xil mahsulot nomlari ko'p marta qidiriladi.
+2. **`searchProductImages(query, categoryName?)`** metodini qayta yozish:
+   - So'rov satrini `${query} ${categoryName || ''} taom`.trim() kabi birlashtirish (agar kategoriya "Taomlar"/"Ichimliklar" kabi oziq-ovqat bo'lsa, "taom"/"mahsulot" so'zini avtomatik qo'shish — aks holda umumiy natija chiqishi mumkin).
+   - Statik ro'yxatni **to'liq fallback** sifatida qoldirish: agar Google API xato qaytarsa yoki kvota tugasa, eski statik ro'yxat orqali kalit so'z bo'yicha moslashtirib ko'rsatish (foydalanuvchi hech qachon bo'sh ekranni ko'rmasligi kerak).
+3. **Frontend:**
+   - `watch` orqali `form.name` VA `form.categoryId` ikkalasi ham to'lganda, debounce (600ms) bilan avtomatik `fetchSampleImages()` chaqirilishi (hozirgi kabi faqat 3-bosqichda emas).
+   - So'rov backendga `query` + `categoryId` (yoki kategoriya nomi) ikkalasini yuborishi kerak.
+
+### Qabul qilish mezonlari
+- [ ] "Osh" nomi + "Milliy Taom" kategoriyasi kiritilganda, natijalar haqiqatan o'zbek oshiga oid rasmlar bo'lishi kerak (statik ro'yxatdagi kabi emas).
+- [ ] API kaliti sozlanmagan yoki xato qaytarsa, forma buzilmasligi, aksincha eski statik ro'yxatga muammosiz o'tishi kerak.
+- [ ] Bir xil so'rov qayta-qayta yuborilmasligi uchun keshlash ishlashi kerak.
+
+### ⚠️ Ochiq savol (Xo'jayindan tasdiq kerak)
+Google Cloud API key va Custom Search Engine ID — buni Xo'jayin o'zi Google Cloud Console'dan olib, `.env` ga qo'shishi kerak bo'ladi. Bu ish kodlash bilan hal qilinmaydi, alohida eslatib qo'yish kerak.
+
+---
+
+## 4-BO'LIM: Landing Page — Home'ni Qisqartirish (Teaser + Batafsil)
+
+### ⚠️ MUHIM: bu ham avval TZ qilingan, lekin bajarilmagan
+To'liq eski hujjat: `docs/tz/TZ_LANDING_PAGE_BOSHQAR_UZ.md`. Sub-sahifalar (`/telegram-bot`, `/sohalar`, `/tahlil`, `/tariflar`, `/yordam`, `/aloqa` — `views/landing/pages/` papkasida) **allaqachon yaratilgan va ishlaydi**. Muammo faqat home sahifada (`views/landing/LandingView.vue`) — u hali ham har bir bo'limning **to'liq versiyasini** ko'rsatadi, teaser emas.
+
+### Aniq bajarilishi kerak bo'lgan o'zgarish
+`ubms-frontend/src/views/landing/LandingView.vue` da quyidagi komponentlar **teaser** (qisqa) versiyaga almashtiriladi, har birida "Batafsil →" tugmasi mos sub-sahifaga (`router-link`) olib boradi:
+
+| Komponent | Hozirgi holat | Teaser'da nima qolishi kerak | Batafsil → qayerga |
+|---|---|---|---|
+| `LandingSectorsShowcase` | To'liq interaktiv showcase | 3-4 ta soha kartasi, qisqa tavsif | `/sohalar` |
+| `LandingTelegramSimulator` | To'liq simulyatsiya animatsiyasi | 1 ta statik skrinshot/mock + 2 gap | `/telegram-bot` |
+| `LandingRoiCalculator` | To'liq ishlaydigan kalkulyator | Sarlavha + "necha % tejaysiz" statik misol | `/tahlil` (yoki mos hisoblagich sahifasi) |
+| `LandingComparison` | To'liq taqqoslash jadvali | 3 qatorli qisqa taqqoslash | `/solishtirish` (`ComparisonView.vue`) |
+| `LandingTestimonials` | Barcha sharhlar | Faqat 3 ta karta (carousel emas) | `/yordam` yoki `/fikrlar` (`TestimonialsView.vue`) |
+| `LandingFAQ` | Barcha savol-javoblar | Faqat eng ko'p so'raladigan 3-4 savol | `/faq` (`FaqView.vue`) |
+
+**O'zgarmasdan qoladi:** `LandingHero`, `LandingFeatures`, `LandingAbout`, `LandingPricing`, `LandingFooter` — bular asosiy konversiya elementlari, to'liq holicha qoladi.
+
+### Bajarish tartibi
+1. Har bir teaser uchun yangi kichik komponent yaratish emas — mavjud komponentga `variant="teaser" | "full"` prop qo'shish afzal (kod dublikatsiyasini oldini olish uchun), `LandingView.vue`da `variant="teaser"`, tegishli sub-sahifada `variant="full"` beriladi.
+2. Har bir teaser blokining pastida bitta umumiy `<LandingSeeMoreButton :to="...' />` komponenti (yangi, kichik) ishlatilsin — barcha "Batafsil" tugmalari bir xil ko'rinishda bo'lishi uchun.
+
+### Qabul qilish mezonlari
+- [ ] Home sahifa balandligi (scroll uzunligi) kamida 40% qisqarishi kerak (hozirgi holatga solishtirganda).
+- [ ] Har bir teaser blokidagi "Batafsil" tugmasi to'g'ri sub-sahifaga olib borishi kerak, sahifa yangilanmasdan (SPA routing).
+- [ ] Sub-sahifalarning o'zi o'zgarishsiz, to'liq versiyada qolishi kerak.
+
+---
+
+## 5-BO'LIM: Emoji → Icon Tozalash
+
+### ⚠️ MUHIM: bu ham avval TZ qilingan ("0% emoji / 100% Lucide ikonkalar"), lekin bajarilmagan
+Loyiha allaqachon `lucide-vue-next` kutubxonasidan foydalanadi (`CategoryManageModal.vue`da tasdiqlangan) — demak yangi kutubxona qo'shish shart emas, faqat qolgan joylarni tozalash kerak.
+
+### Aniq topilgan joylar (26-avgust holatiga, tekshirib chiqilgan — boshqa joy chiqishi ham mumkin, to'liq audit kerak)
+
+| Fayl | Emoji | Nima qilish kerak |
+|---|---|---|
+| `components/ReceiptModal.vue` | 🍽 🥡 🛵 | Lucide: `UtensilsCrossed`, `Package`, `Bike` |
+| `views/landing/pages/AnalysisView.vue` | 🟢 📓 🌍 ✅ ❌ | Lucide: `Circle` (yashil rangda), `Notebook`, `Globe`, `Check`, `X` |
+| `views/landing/pages/ComparisonView.vue` | 🟢 📓 🌍 ✅ ❌ | Xuddi yuqoridagidek |
+| `views/restaurant/KDSView.vue` | ✓ | Lucide: `Check` |
+| `views/products/components/CategoryManageModal.vue` | 📦 (placeholder) | Bu joy **kategoriya ikon-tanlagich** — bu yerda emoji funksional ma'lumot (foydalanuvchi tanlagan ikon), dekorativ emas. Buni ham Lucide icon-picker'ga o'tkazish tavsiya etiladi (`quickEmojis` massivini Lucide icon nomlariga almashtirish, `CategoryIcon.vue` allaqachon icon-nom asosida render qiladi — shuning uchun bu o'zgarish arzon).
+| `views/finance/components/FinanceShiftsTab.vue`, `views/pos/POSView.vue` | ➔ | Lucide: `ArrowRight` |
+| `views/landing/components/LandingTelegramSimulator.vue` | ✓✓ (WhatsApp/Telegram "read receipt" belgisi) | Bu funksional UI andozasi (chat status) — SVG/Lucide `CheckCheck` ikoni bilan almashtirish mumkin, lekin past ustuvorlik. |
+| `components/AppHeader.vue` | 🇺🇿 🇷🇺 🇬🇧 (til bayroqlari) | **Alohida holat — pastga qarang.** |
+
+### Til bayroqlari (`AppHeader.vue`) bo'yicha qaror kerak
+Bu dekorativ emoji emas, funksional til-tanlash belgisi. Ikkita variant bor, Xo'jayindan tanlov so'rash kerak (agar hali so'ralmagan bo'lsa):
+- **A:** Bayroq emoji o'rniga matnli `UZ` / `RU` / `EN` qisqartma (Lucide'da bayroq iconlari yo'q).
+- **B:** `Globe` Lucide iconi + tanlangan til matni ko'rsatiladigan dropdown.
+- Tavsiya: **B** — chunki ko'p SaaS mahsulotlarda shu andoza ishlatiladi va "0% emoji" qoidasiga to'liq mos keladi.
+
+### Bajarish tartibi
+1. Yuqoridagi jadvaldagi har bir faylda emoji satrini tegishli Lucide komponent bilan almashtirish (`import { IconName } from 'lucide-vue-next'`).
+2. **To'liq audit:** faqat shu ro'yxat bilan cheklanmasdan, `grep -rP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" ubms-frontend/src` (yoki Python unicode-range skripti) orqali qayta tekshirish — chunki loyiha tez rivojlanmoqda, yangi joylarda emoji paydo bo'lgan bo'lishi mumkin.
+3. `CONTRIBUTING.md` yoki `docs/CONTRIBUTING.md`ga "Emoji ishlatish taqiqlanadi, faqat Lucide icon" qoidasini rasman yozib qo'yish — shunda yangi PR'larda bu qoida takrorlanmasligi kerak bo'ladi (lint-qoidasi sifatida ham qo'shsa bo'ladi: ESLint custom rule bilan emoji-unicode-range'ni `.vue`/`.ts` fayllarda taqiqlash).
+
+### Qabul qilish mezonlari
+- [ ] Yuqoridagi audit skripti loyiha bo'yicha **0 ta** natija qaytarishi kerak (til-tanlash blokidan tashqari, agar variant A tanlansa u ham 0 bo'ladi).
+- [ ] Kategoriya icon-picker Lucide asosiga o'tkazilgan bo'lsa, mavjud kategoriyalarning eski emoji-icon qiymatlari buzilmasligi kerak (migratsiya skripti: eski emoji → eng yaqin Lucide nom mapping).
+
+---
+
+## Umumiy ustuvorlik tartibi (tavsiya)
+
+1. **1-bo'lim (trackInventory)** — backend tayyor, faqat frontend + migratsiya qoldi. Eng tez tugaydigan.
+2. **5-bo'lim (emoji)** — kichik, lekin ko'p marta so'ralgan, tezkor psixologik yutuq beradi.
+3. **4-bo'lim (landing teaser)** — o'rtacha hajm, alohida frontend-only ish.
+4. **2-bo'lim (stol-zona)** — eng katta hajm (yangi DB jadvallar, ruxsatlar matritsasi).
+5. **3-bo'lim (Google rasm API)** — Xo'jayindan API key kutilgani uchun oxiriga qoldirilsa ham bo'ladi, yoki key kelguncha kod tayyorlab qo'yilsin (fallback statik ro'yxat bilan ishlaydigan qilib).

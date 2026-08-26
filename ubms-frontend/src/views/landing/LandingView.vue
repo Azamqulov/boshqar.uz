@@ -23,6 +23,7 @@
 
     <!-- 4. SECTOR-SPECIFIC SHOWCASE (6 SECTORS) -->
     <LandingSectorsShowcase
+      variant="teaser"
       @open-demo="openDemoModal"
     />
 
@@ -30,15 +31,17 @@
     <LandingFeatures />
 
     <!-- 6. REAL INTERACTIVE TELEGRAM BOT SIMULATOR -->
-    <LandingTelegramSimulator />
+    <LandingTelegramSimulator variant="teaser" />
 
     <!-- 7. ROI / BUSINESS SAVINGS CALCULATOR -->
     <LandingRoiCalculator
+      variant="teaser"
       @open-demo="openDemoModal"
     />
 
     <!-- 8. CLEAR COMPARISON MATRIX (EXCEL vs LEGACY vs BOSHQAR.UZ) -->
     <LandingComparison
+      variant="teaser"
       @open-demo="openDemoModal"
     />
 
@@ -51,10 +54,10 @@
     />
 
     <!-- 11. REVIEWS & TESTIMONIALS (SOCIAL PROOF) -->
-    <LandingTestimonials />
+    <LandingTestimonials variant="teaser" />
 
     <!-- 12. FAQ SECTION -->
-    <LandingFAQ />
+    <LandingFAQ variant="teaser" />
 
     <!-- 13. FOOTER -->
     <LandingFooter />

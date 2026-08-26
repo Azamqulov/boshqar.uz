@@ -120,12 +120,20 @@
           </div>
         </div>
       </Transition>
+
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/sohalar"
+        label="Barcha 6 ta soha imkoniyatlarini ko'rish"
+      />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import {
   Layers,
   ShoppingBag,
@@ -138,6 +146,12 @@ import {
   ArrowRight,
   Zap,
 } from 'lucide-vue-next';
+
+withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 defineEmits<{
   (e: 'openDemo'): void;

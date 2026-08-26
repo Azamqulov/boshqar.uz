@@ -50,7 +50,7 @@ describe('RestaurantController', () => {
 
       const result = await controller.getTables('branch-1');
       expect(result).toBe(tables);
-      expect(mockRestaurantService.getTables).toHaveBeenCalledWith('branch-1');
+      expect(mockRestaurantService.getTables).toHaveBeenCalledWith('branch-1', undefined);
     });
   });
 

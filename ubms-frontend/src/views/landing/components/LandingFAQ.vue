@@ -7,7 +7,7 @@
 
     <div class="space-y-4">
       <div
-        v-for="(item, idx) in faqList"
+        v-for="(item, idx) in displayedFaqList"
         :key="idx"
         data-aos="fade-up"
         :data-aos-delay="idx * 80"
@@ -23,7 +23,13 @@
         </p>
       </div>
 
-      <div class="pt-6 text-center">
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/yordam"
+        label="Barcha savollar va to'liq yordam markazi"
+      />
+      <div v-else class="pt-6 text-center">
         <router-link
           to="/yordam"
           class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md transition"
@@ -37,9 +43,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import AOS from 'aos';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import { ChevronDown, ArrowRight } from 'lucide-vue-next';
+
+const props = withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 const openFaqIdx = ref<number | null>(0);
 
@@ -67,4 +80,11 @@ const faqList = [
     a: "Yo'q, kiritgan tovarlaringiz, narxlar va savdo tarixingiz to'liq saqlanib qoladi. Sinov davri tugagach o'zingizga qulay tarifni tanlab davom ettirishingiz mumkin.",
   },
 ];
+
+const displayedFaqList = computed(() => {
+  if (props.variant === 'teaser') {
+    return faqList.slice(0, 3);
+  }
+  return faqList;
+});
 </script>

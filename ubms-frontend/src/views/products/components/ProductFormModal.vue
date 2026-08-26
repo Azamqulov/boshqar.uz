@@ -138,6 +138,49 @@
                   </div>
                 </div>
 
+                <!-- Ombor Qoldig'i Kuzatuvi (trackInventory) -->
+                <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="font-bold text-slate-700 dark:text-slate-300 text-[11px] flex items-center gap-1.5">
+                      <Boxes class="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Ombor Qoldig'i Kuzatuvi</span>
+                    </label>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md" :class="effectiveTrackInventory ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'">
+                      {{ effectiveTrackInventory ? 'Qoldiq hisoblanadi' : 'Buyurtma asosida' }}
+                    </span>
+                  </div>
+                  <div class="grid grid-cols-3 gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      @click="form.trackInventory = null"
+                      class="py-1.5 px-2 rounded-xl border text-[10px] font-bold transition flex items-center justify-center gap-1 text-center btn-interactive"
+                      :class="form.trackInventory === null || form.trackInventory === undefined ? 'bg-emerald-500 text-white border-emerald-500 shadow-xs' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
+                    >
+                      <span>Avtomatik</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="form.trackInventory = true"
+                      class="py-1.5 px-2 rounded-xl border text-[10px] font-bold transition flex items-center justify-center gap-1 text-center btn-interactive"
+                      :class="form.trackInventory === true ? 'bg-emerald-500 text-white border-emerald-500 shadow-xs' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
+                    >
+                      <span>Ha (Ombor)</span>
+                    </button>
+                    <button
+                      type="button"
+                      @click="form.trackInventory = false"
+                      class="py-1.5 px-2 rounded-xl border text-[10px] font-bold transition flex items-center justify-center gap-1 text-center btn-interactive"
+                      :class="form.trackInventory === false ? 'bg-amber-500 text-white border-amber-500 shadow-xs' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'"
+                    >
+                      <span>Yo'q (Taom)</span>
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-slate-400 dark:text-slate-500 pt-0.5">
+                    <span v-if="effectiveTrackInventory">Tovar uchun sotilganda ombor qoldig'i kamaytirib boriladi.</span>
+                    <span v-else class="text-amber-600 dark:text-amber-400 font-medium">Buyurtma asosida tayyorlanadi — qoldiq cheksiz deb hisoblanadi.</span>
+                  </p>
+                </div>
+
                 <!-- Shtrix-kod -->
                 <div>
                   <AppInput
@@ -200,8 +243,8 @@
                   </div>
                 </div>
 
-                <!-- Ombor Qoldiqlari (faqat Tovar uchun) -->
-                <div v-if="form.productType === 'goods'" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-3">
+                <!-- Ombor Qoldiqlari (faqat qoldiq hisoblanadigan mahsulotlar uchun) -->
+                <div v-if="effectiveTrackInventory" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 space-y-3">
                   <span class="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                     <Boxes class="w-4 h-4 text-emerald-500" />
                     <span>Ombor Qoldiqlari</span>
@@ -249,17 +292,15 @@
 
                   <div v-if="isDecimalUnit" class="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-medium">
                     <Scale class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>Tarozi / Kasrli tovar:</strong> Kassada <code>0.250 {{ selectedUnitShortName }}</code> kabi sotish mumkin.</span>
+                    <span>O'lchov birligi kasrli bo'lgani uchun qoldiqni 3 xonali aniqlikda (masalan: 1.250 {{ selectedUnitShortName }}) kiritish mumkin.</span>
                   </div>
                 </div>
 
-                <!-- Taom / Xizmat bo'lsa -->
-                <div v-else class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2.5">
-                  <UtensilsCrossed v-if="form.productType === 'dish'" class="w-5 h-5 text-amber-600 shrink-0" />
-                  <Wrench v-else class="w-5 h-5 text-sky-600 shrink-0" />
+                <div v-else class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2.5 font-medium">
+                  <UtensilsCrossed class="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
-                    <strong class="block">{{ form.productType === 'dish' ? 'Taom / Oshxona' : 'Xizmat turi' }}</strong>
-                    <span class="text-[11px] opacity-90">Qoldiq hisobi yuritilmaydi. Buyurtma tushganda avtomatik oshxona (KDS) yoki xizmatga yo'naltiriladi.</span>
+                    <span class="font-bold block">Buyurtma asosida tayyorlanadi</span>
+                    <span class="text-[11px] text-amber-700/80 dark:text-amber-400/80">Ushbu mahsulot uchun ombor qoldig'i hisoblanmaydi (qoldiq cheksiz). POS kassada sotilganda xatolik bermaydi.</span>
                   </div>
                 </div>
               </div>
@@ -588,6 +629,34 @@ watch(() => props.form.name, (newName) => {
     gallerySearchQuery.value = newName;
   }
 }, { immediate: true });
+
+const selectedCategory = computed(() => {
+  return props.categoryOptions?.find((c: any) => c.value === props.form.categoryId || c.id === props.form.categoryId);
+});
+
+const effectiveTrackInventory = computed(() => {
+  if (props.form.trackInventory !== null && props.form.trackInventory !== undefined) {
+    return Boolean(props.form.trackInventory);
+  }
+  if (selectedCategory.value && (selectedCategory.value as any).defaultTrackInventory !== undefined && (selectedCategory.value as any).defaultTrackInventory !== null) {
+    return Boolean((selectedCategory.value as any).defaultTrackInventory);
+  }
+  if (props.form.productType === 'dish' || props.form.productType === 'service') {
+    return false;
+  }
+  return true;
+});
+
+let searchDebounceTimer: any = null;
+watch([() => props.form.name, () => props.form.categoryId], ([name]) => {
+  if (props.isOpen && name && name.trim().length >= 2) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      const catName = selectedCategory.value?.label || selectedCategory.value?.name || '';
+      fetchSampleImages(`${name} ${catName}`.trim());
+    }, 600);
+  }
+});
 
 const stepTitle = computed(() => {
   if (currentStep.value === 1) return "Asosiy parametrlar va o'lchov birligi";

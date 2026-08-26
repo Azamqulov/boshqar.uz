@@ -394,6 +394,7 @@ const form = ref({
   unitId: '',
   imageUrl: '',
   productType: 'goods' as 'goods' | 'dish' | 'service',
+  trackInventory: null as boolean | null,
   purchasePrice: 0,
   salePrice: 0,
   minStock: 5,
@@ -511,6 +512,7 @@ const openCreateModal = () => {
     unitId: units.value[0]?.id || '00000000-0000-0000-0000-000000000020',
     imageUrl: '',
     productType: 'goods',
+    trackInventory: null,
     purchasePrice: 0,
     salePrice: 0,
     minStock: 5,
@@ -532,6 +534,7 @@ const editProduct = (prod: any) => {
     unitId: prod.unitId || prod.unit?.id || units.value[0]?.id || '00000000-0000-0000-0000-000000000020',
     imageUrl: prod.imageUrl || '',
     productType: isDish ? 'dish' : isService ? 'service' : 'goods',
+    trackInventory: prod.trackInventory !== undefined ? prod.trackInventory : null,
     purchasePrice: Number(prod.purchasePrice) || 0,
     salePrice: Number(prod.salePrice) || 0,
     minStock: Number(prod.minStock) || 0,
@@ -564,10 +567,11 @@ const saveProduct = async () => {
       imageUrl: form.value.imageUrl || undefined,
       brand: form.value.productType,
       productType: form.value.productType,
+      trackInventory: form.value.trackInventory,
       purchasePrice: Number(form.value.purchasePrice) || 0,
       salePrice: Number(form.value.salePrice) || 0,
-      minStockLevel: form.value.productType === 'goods' ? Number(form.value.minStock) || 0 : 0,
-      initialStock: form.value.productType === 'goods' ? Number(form.value.initialStock) || 0 : 0,
+      minStockLevel: Number(form.value.minStock) || 0,
+      initialStock: Number(form.value.initialStock) || 0,
     };
 
     if (editingId.value) {

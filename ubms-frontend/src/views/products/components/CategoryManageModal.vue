@@ -65,8 +65,8 @@
                 <div class="flex items-center gap-2">
                   <input
                     v-model="catForm.icon"
-                    placeholder="📦"
-                    class="w-10 h-10 text-center text-lg rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold shrink-0 shadow-inner"
+                    placeholder="Package"
+                    class="w-16 h-10 text-center text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold shrink-0 shadow-inner"
                   />
                   <div class="grid grid-cols-4 gap-1 flex-1">
                     <button

@@ -292,12 +292,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Teaser See More Button -->
+      <LandingSeeMoreButton
+        v-if="variant === 'teaser'"
+        to="/telegram-bot"
+        label="Telegram Bot imkoniyatlarini to'liq ko'rish"
+      />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import LandingSeeMoreButton from './LandingSeeMoreButton.vue';
 import {
   Send,
   Receipt,
@@ -306,6 +314,12 @@ import {
   ShieldCheck,
   CheckCircle2,
 } from 'lucide-vue-next';
+
+withDefaults(defineProps<{
+  variant?: 'teaser' | 'full';
+}>(), {
+  variant: 'full',
+});
 
 interface BotMessage {
   isUser: boolean;

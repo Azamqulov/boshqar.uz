@@ -40,7 +40,17 @@ Pull Request yuborishdan oldin quyidagi tekshiruvlarni bajaring:
 
 ---
 
-## 4. Xavfsizlik Qoidalari
+---
+
+## 4. UI & Dizayn Standartlari (0% Emoji / 100% Lucide SVG Icons)
+
+- **Qat'iy Qoida:** Foydalanuvchi interfeysi (tugmalar, menyular, jadvallar, modallar, badge'lar va xabarlar)da hech qachon xom Unicode emoji (📦, ☕, 🍽️, ⚠️, ❌ va h.k.) ishlatilmaydi.
+- Barcha vizual elementlar uchun faqat `lucide-vue-next` kutubxonasining vektorli SVG ikonkalaridan foydalaniladi.
+- Ikonkalar mos o'lchamda (`w-3.5 h-3.5`, `w-4 h-4`, `w-5 h-5`), to'g'ri rang klasslari (`text-emerald-500`, `text-amber-500`, `text-slate-400`) va adaptive Dark/Light mode bilan ishlatiladi.
+
+---
+
+## 5. Xavfsizlik Qoidalari
 
 - Hech qachon `.env`, parollar, secret keylar yoki API tokenlarni Git'ga commit qilmang.
 - Barcha SQL so'rovlar Prisma ORM orqali parametrlangan holda yuboriladi (Raw SQL'da injectiondan ehtiyot bo'ling).

@@ -75,9 +75,13 @@ describe('RestaurantService', () => {
       expect(mockPrismaService.table.create).toHaveBeenCalledWith({
         data: {
           branchId: 'branch-1',
+          zoneId: null,
           name: 'Stol 3',
           capacity: 4,
           status: 'available',
+        },
+        include: {
+          zone: true,
         },
       });
     });
@@ -93,6 +97,9 @@ describe('RestaurantService', () => {
       expect(mockPrismaService.table.update).toHaveBeenCalledWith({
         where: { id: 'table-1' },
         data: { status: 'occupied' },
+        include: {
+          zone: true,
+        },
       });
     });
   });

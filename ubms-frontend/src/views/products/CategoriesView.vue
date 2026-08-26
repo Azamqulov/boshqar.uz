@@ -256,6 +256,7 @@ const catForm = ref({
   name: '',
   icon: defaultIcon.value,
   color: '#10b981',
+  defaultTrackInventory: true,
 });
 
 // SVG Icons List for Category Picker
@@ -278,38 +279,38 @@ const availableCategoryIcons = [
   { name: 'Wrench', label: 'Xizmatlar / Ustaxona', component: Wrench },
 ];
 
-// Fast Presets with clean Lucide SVG icons
+// Fast Presets with clean Lucide SVG icons and trackInventory defaults
 const fastCategoryPresets = computed(() => {
   const t = currentBusinessType.value;
 
   if (t === 'restaurant' || t === 'cafe') {
     return [
-      { name: 'Issiq Taomlar', icon: 'Flame', color: '#10b981' },
-      { name: 'Pitsa & Fast Food', icon: 'UtensilsCrossed', color: '#f59e0b' },
-      { name: 'Salatlar & Gazaklar', icon: 'Apple', color: '#14b8a6' },
-      { name: 'Ichimliklar & Choy', icon: 'CupSoda', color: '#06b6d4' },
-      { name: 'Qahva & Kofe', icon: 'Coffee', color: '#8b5cf6' },
-      { name: 'Desertlar', icon: 'Cookie', color: '#ec4899' },
+      { name: 'Issiq Taomlar', icon: 'Flame', color: '#10b981', defaultTrackInventory: false },
+      { name: 'Pitsa & Fast Food', icon: 'UtensilsCrossed', color: '#f59e0b', defaultTrackInventory: false },
+      { name: 'Salatlar & Gazaklar', icon: 'Apple', color: '#14b8a6', defaultTrackInventory: false },
+      { name: 'Ichimliklar & Choy', icon: 'CupSoda', color: '#06b6d4', defaultTrackInventory: true },
+      { name: 'Qahva & Kofe', icon: 'Coffee', color: '#8b5cf6', defaultTrackInventory: true },
+      { name: 'Desertlar', icon: 'Cookie', color: '#ec4899', defaultTrackInventory: false },
     ];
   }
 
   if (t === 'pharmacy') {
     return [
-      { name: 'Dori-Darmonlar', icon: 'Pill', color: '#10b981' },
-      { name: 'Vitaminlar & BAD', icon: 'Apple', color: '#14b8a6' },
-      { name: 'Tibbiy vositalar', icon: 'Package', color: '#3b82f6' },
-      { name: 'Gigiyena & Parvarish', icon: 'Sparkles', color: '#ec4899' },
-      { name: 'Bolalar parvarishi', icon: 'Milk', color: '#f59e0b' },
+      { name: 'Dori-Darmonlar', icon: 'Pill', color: '#10b981', defaultTrackInventory: true },
+      { name: 'Vitaminlar & BAD', icon: 'Apple', color: '#14b8a6', defaultTrackInventory: true },
+      { name: 'Tibbiy vositalar', icon: 'Package', color: '#3b82f6', defaultTrackInventory: true },
+      { name: 'Gigiyena & Parvarish', icon: 'Sparkles', color: '#ec4899', defaultTrackInventory: true },
+      { name: 'Bolalar parvarishi', icon: 'Milk', color: '#f59e0b', defaultTrackInventory: true },
     ];
   }
 
   return [
-    { name: 'Oziq-ovqat & Mevalar', icon: 'Apple', color: '#10b981' },
-    { name: 'Sut Mahsulotlari', icon: 'Milk', color: '#06b6d4' },
-    { name: 'Ichimliklar & Sharbatlar', icon: 'CupSoda', color: '#3b82f6' },
-    { name: 'Konditer & Shirinliklar', icon: 'Cookie', color: '#ec4899' },
-    { name: 'Uy-ro\'zg\'or & Ximya', icon: 'Sparkles', color: '#8b5cf6' },
-    { name: 'Kanselyariya & Boshqa', icon: 'BookOpen', color: '#f59e0b' },
+    { name: 'Oziq-ovqat & Mevalar', icon: 'Apple', color: '#10b981', defaultTrackInventory: true },
+    { name: 'Sut Mahsulotlari', icon: 'Milk', color: '#06b6d4', defaultTrackInventory: true },
+    { name: 'Ichimliklar & Sharbatlar', icon: 'CupSoda', color: '#3b82f6', defaultTrackInventory: true },
+    { name: 'Konditer & Shirinliklar', icon: 'Cookie', color: '#ec4899', defaultTrackInventory: true },
+    { name: 'Uy-ro\'zg\'or & Ximya', icon: 'Sparkles', color: '#8b5cf6', defaultTrackInventory: true },
+    { name: 'Kanselyariya & Boshqa', icon: 'BookOpen', color: '#f59e0b', defaultTrackInventory: true },
   ];
 });
 
@@ -354,9 +355,7 @@ watch([searchQuery, activeFilter], () => {
 });
 
 const loadData = async (force = false) => {
-  if (categories.value.length === 0) {
-    loading.value = true;
-  }
+  loading.value = true;
   try {
     await Promise.allSettled([dataStore.fetchCategories(force), dataStore.fetchProducts(force)]);
   } finally {
@@ -370,16 +369,18 @@ const openCreateForm = () => {
     name: '',
     icon: defaultIcon.value,
     color: '#10b981',
+    defaultTrackInventory: currentBusinessType.value === 'restaurant' || currentBusinessType.value === 'cafe' ? false : true,
   };
   isFormOpen.value = true;
 };
 
-const editCategory = (cat: Category) => {
+const editCategory = (cat: any) => {
   editingCatId.value = cat.id;
   catForm.value = {
     name: cat.name,
     icon: cat.icon || defaultIcon.value,
     color: cat.color || '#10b981',
+    defaultTrackInventory: cat.defaultTrackInventory !== undefined ? cat.defaultTrackInventory : true,
   };
   isFormOpen.value = true;
 };
@@ -389,10 +390,11 @@ const closeForm = () => {
   editingCatId.value = null;
 };
 
-const applyPreset = (preset: { name: string; icon: string; color: string }) => {
+const applyPreset = (preset: any) => {
   catForm.value.name = preset.name;
   catForm.value.icon = preset.icon;
   catForm.value.color = preset.color;
+  catForm.value.defaultTrackInventory = preset.defaultTrackInventory !== undefined ? preset.defaultTrackInventory : true;
 };
 
 const saveCategory = async () => {
@@ -408,6 +410,7 @@ const saveCategory = async () => {
       name,
       icon: catForm.value.icon || null,
       color: catForm.value.color || '#10b981',
+      defaultTrackInventory: catForm.value.defaultTrackInventory !== false,
     };
 
     if (editingCatId.value) {

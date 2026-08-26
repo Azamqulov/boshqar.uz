@@ -105,8 +105,11 @@ export class ProductsController {
 
   @Get('search-images')
   @RequirePermission('products.view')
-  searchProductImages(@Query('query') query: string) {
-    return this.productsService.searchProductImages(query);
+  searchProductImages(
+    @Query('query') query: string,
+    @Query('category') category?: string,
+  ) {
+    return this.productsService.searchProductImages(query, category);
   }
 
   @Get(':id')

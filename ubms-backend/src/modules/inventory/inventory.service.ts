@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { resolveTrackInventory } from '../../common/utils/inventory-tracking.util';
 
 export interface FindInventoryQueryDto {
   lowStockOnly?: boolean;
@@ -74,7 +75,9 @@ export class InventoryService {
       const qty = Number(inv.quantity);
       const reserved = Number(inv.reservedQty);
       const minStock = Number(inv.product.minStock);
-      const isLowStock = qty <= minStock;
+      // Buyurtma asosida tayyorlanadigan mahsulot (masalan taom) uchun kam-qoldiq
+      // ogohlantirishi ko'rsatilmaydi — chunki uning qoldig'i umuman kuzatilmaydi.
+      const isLowStock = resolveTrackInventory(inv.product) && qty <= minStock;
 
       return {
         id: inv.id,
