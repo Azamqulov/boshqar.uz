@@ -760,13 +760,51 @@ const fetchSampleImages = async (queryStr?: string) => {
   const query = queryStr !== undefined ? queryStr : (gallerySearchQuery.value || props.form.name || '');
   gallerySearchQuery.value = query;
   isSearchingImages.value = true;
+
+  const getClientFallbackImages = (qStr: string) => {
+    const q = qStr.toLowerCase();
+    if (q.includes('burg') || q.includes('gamburg') || q.includes('cheeseburg') || q.includes('fast')) {
+      return [
+        { id: 'fb-b-1', title: 'Klassik Gamburger', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-b-2', title: 'Chizburger (Cheese Burger)', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-b-3', title: 'Double Burger & Kartoshka Fri', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-b-4', title: 'Grill Burger Maxsus Sousda', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
+    if (q.includes('lavash') || q.includes('doner') || q.includes('shavarma') || q.includes('wrap')) {
+      return [
+        { id: 'fb-l-1', title: 'Go\'shtli Katta Lavash', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-l-2', title: 'Tovuqli Pishloqli Lavash', category: 'Fast-Food', url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
+    if (q.includes('shashlik') || q.includes('kabob') || q.includes('gosht')) {
+      return [
+        { id: 'fb-s-1', title: 'Qiyma Shashlik / Kabob', category: 'Taomlar', url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-s-2', title: 'Tovuq Shashlik', category: 'Taomlar', url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
+    if (q.includes('cola') || q.includes('kola') || q.includes('ichimlik') || q.includes('pepsi') || q.includes('fanta')) {
+      return [
+        { id: 'fb-c-1', title: 'Coca-Cola 1.5L Plastik', category: 'Ichimliklar', url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80' },
+        { id: 'fb-c-2', title: 'Coca-Cola Classic Banka', category: 'Ichimliklar', url: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&auto=format&fit=crop&q=80' },
+      ];
+    }
+    return [
+      { id: 'fb-g-1', title: `${qStr || 'Mahsulot'} (Namunaviy rasm 1)`, category: 'Tovar', url: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80' },
+      { id: 'fb-g-2', title: `${qStr || 'Mahsulot'} (Namunaviy rasm 2)`, category: 'Tovar', url: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80' },
+    ];
+  };
+
   try {
     const { data } = await api.get('/products/search-images', { params: { query } });
-    if (data && data.images) {
+    if (data && data.images && data.images.length > 0) {
       sampleImages.value = data.images;
+    } else {
+      sampleImages.value = getClientFallbackImages(query);
     }
   } catch (err) {
-    console.warn('Sample image search error:', err);
+    console.warn('Sample image search error, applying fallback:', err);
+    sampleImages.value = getClientFallbackImages(query);
   } finally {
     isSearchingImages.value = false;
   }

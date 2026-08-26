@@ -19,8 +19,11 @@ import {
   CreateUnitDto,
 } from './products.service';
 import { CurrentBusinessId, CurrentBranchId, CurrentUser } from '../../common/decorators/context.decorator';
-import { RequirePermission } from '../../common/decorators/custom.decorator';
+import { RequirePermission, Public, SkipSubscriptionCheck } from '../../common/decorators/custom.decorator';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Mahsulotlar (Products & Categories)')
+@ApiBearerAuth()
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -104,7 +107,9 @@ export class ProductsController {
   }
 
   @Get('search-images')
-  @RequirePermission('products.view')
+  @Public()
+  @SkipSubscriptionCheck()
+  @ApiOperation({ summary: 'Mahsulot rasmlari namunaviy qidiruvi' })
   searchProductImages(
     @Query('query') query: string,
     @Query('category') category?: string,

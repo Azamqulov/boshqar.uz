@@ -1021,23 +1021,35 @@ export class ProductsService {
     if (q) {
       const words = q.split(/\s+/).filter(Boolean);
 
-      // Search matching items in database
+      // Search matching items in database with typo-tolerance
       results = database.filter((item) => {
         const fullText = `${item.title} ${item.category} ${item.keywords.join(' ')}`.toLowerCase();
-        return words.some((w) => fullText.includes(w));
+        return words.some((w) => {
+          if (fullText.includes(w)) return true;
+          if (w.length >= 4 && fullText.includes(w.slice(0, -1))) return true;
+          if (w.length >= 5 && fullText.includes(w.slice(0, 4))) return true;
+          return item.keywords.some((k) => k.includes(w) || (w.length >= 4 && w.includes(k)));
+        });
       });
 
       // Smart Dynamic Visual Fallback Generator if empty or fewer results:
       // Generates query-tailored HD photos dynamically so NO search turns up empty!
       if (results.length === 0) {
         let themePhotos = [
+          'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=80',
           'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
         ];
 
-        if (q.includes('shashlik') || q.includes('kabob') || q.includes('gosht') || q.includes('grill')) {
+        if (q.includes('burg') || q.includes('gamburg') || q.includes('cheeseburg') || q.includes('chizburg') || q.includes('fast')) {
+          themePhotos = [
+            'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=600&auto=format&fit=crop&q=80',
+          ];
+        } else if (q.includes('shashlik') || q.includes('kabob') || q.includes('gosht') || q.includes('grill')) {
           themePhotos = [
             'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&auto=format&fit=crop&q=80',
             'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
@@ -1056,8 +1068,8 @@ export class ProductsService {
         themePhotos.forEach((url, i) => {
           results.push({
             id: `smart-search-${i + 1}-${Date.now()}`,
-            title: `${query} (${i + 1}-rasm)`,
-            category: 'Shop Product Search',
+            title: `${rawQuery} (${i + 1}-rasm)`,
+            category: 'Smart Image Search',
             url,
           });
         });

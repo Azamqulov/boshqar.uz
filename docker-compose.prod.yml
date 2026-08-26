@@ -52,7 +52,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://boshqar_user:${DB_PASSWORD:-BoshqarSecureDB2026!}@postgres:5432/boshqar_db?schema=public
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-boshqar_super_secure_jwt_secret_key_2026_default}
       CORS_ORIGINS: "*"
     depends_on:
       postgres:
