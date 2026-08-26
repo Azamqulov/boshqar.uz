@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { TelegramService } from '../telegram/telegram.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
   let service: AuthService;

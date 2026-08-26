@@ -1,13 +1,13 @@
 # -------------------------------------------------------------
-# boshqar.uz Backend Dockerfile (NestJS + Prisma + Node.js 20 Alpine)
+# boshqar.uz Backend Dockerfile (NestJS + Prisma + Node.js 20 Slim)
 # -------------------------------------------------------------
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies for shared types and backend
 COPY ubms-shared-types ./ubms-shared-types
@@ -21,11 +21,11 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production Runner
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app/ubms-backend
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=4000

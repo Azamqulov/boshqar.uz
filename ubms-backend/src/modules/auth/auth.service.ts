@@ -13,7 +13,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
 import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, VerifyOtpDto, ResetPasswordDto } from './dto/auth.dto';
 import { mapPermModulesToUiModules, extractActionPermissions } from '../employees/employees.service';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 function normalizePhone(raw: string): string {
   if (!raw) return '';
