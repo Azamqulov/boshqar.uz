@@ -17,7 +17,7 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "system:healthcheck": "ts-node scripts/system-healthcheck.ts",
     "load:test": "ts-node scripts/load-test.ts",
-    "backfill:subscriptions": "ts-node scripts/backfill-subscriptions.ts",
+    "seed:75burger": "ts-node scripts/seed-75burger.ts",
     "test": "jest"
   },
   "prisma": {
