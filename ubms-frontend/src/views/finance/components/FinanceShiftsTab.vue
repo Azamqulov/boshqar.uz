@@ -120,7 +120,10 @@
                 </td>
                 <td class="py-2.5 px-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
                   <div>{{ formatDateTime(shift.openedAt) }}</div>
-                  <div v-if="shift.closedAt" class="text-slate-400">➔ {{ formatDateTime(shift.closedAt) }}</div>
+                  <div v-if="shift.closedAt" class="text-slate-400 flex items-center gap-1">
+                    <ArrowRight class="w-3 h-3 text-slate-400" />
+                    <span>{{ formatDateTime(shift.closedAt) }}</span>
+                  </div>
                 </td>
                 <td class="py-2.5 px-3 font-mono whitespace-nowrap">
                   {{ formatCurrency(shift.startingCash) }}
@@ -258,7 +261,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { History, RefreshCw, Receipt, Trash2 } from 'lucide-vue-next';
+import { History, RefreshCw, Receipt, Trash2, ArrowRight } from 'lucide-vue-next';
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppPagination from '../../../components/AppPagination.vue';
 import AppEmptyState from '../../../components/AppEmptyState.vue';

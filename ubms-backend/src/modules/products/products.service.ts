@@ -920,7 +920,38 @@ export class ProductsService {
       return cached.data;
     }
 
-    // 2. Attempt Google Custom Search JSON API if credentials are provided
+    // 2. Attempt SerpApi (Google Images engine) if credentials are provided
+    const serpApiKey = process.env.SERPAPI_KEY;
+    if (serpApiKey && q.length >= 2) {
+      try {
+        const serpUrl = `https://serpapi.com/search.json?engine=google_images&q=${encodeURIComponent(rawQuery)}&api_key=${encodeURIComponent(serpApiKey)}&num=10`;
+        const response = await fetch(serpUrl);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data.images_results) && data.images_results.length > 0) {
+            const serpResults = data.images_results.slice(0, 10).map((item: any, idx: number) => ({
+              id: `serp-${idx + 1}-${Date.now()}`,
+              title: item.title || rawQuery,
+              category: 'Google Images (SerpApi)',
+              url: item.original || item.thumbnail,
+            }));
+
+            const resultObj = {
+              query: rawQuery,
+              source: 'serpapi',
+              count: serpResults.length,
+              images: serpResults,
+            };
+            this.imageSearchCache.set(cacheKey, { timestamp: Date.now(), data: resultObj });
+            return resultObj;
+          }
+        }
+      } catch (serpErr) {
+        console.warn('SerpApi Google Images fallback:', serpErr);
+      }
+    }
+
+    // 3. Attempt Google Custom Search JSON API if credentials are provided
     const googleApiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const googleCx = process.env.GOOGLE_SEARCH_ENGINE_ID;
 

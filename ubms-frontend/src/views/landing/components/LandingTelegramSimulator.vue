@@ -219,7 +219,10 @@
                       <p class="text-[10px] text-slate-600 dark:text-slate-200">
                         "Baraka Market" tizimga ulandi. Savdo va hisobotlar shu yerga keladi.
                       </p>
-                      <div class="text-[9px] text-slate-400 dark:text-sky-300/80 text-right">09:00 ✓✓</div>
+                      <div class="text-[9px] text-slate-400 dark:text-sky-300/80 flex items-center justify-end gap-1">
+                        <span>09:00</span>
+                        <CheckCheck class="w-3 h-3 text-sky-400 inline" />
+                      </div>
                     </div>
                   </div>
 
@@ -236,7 +239,10 @@
                       class="bg-emerald-600 dark:bg-[#2b5278] text-white px-3 py-1 rounded-2xl rounded-tr-xs shadow-xs text-[11px]"
                     >
                       <span>{{ msg.text }}</span>
-                      <div class="text-[8px] text-emerald-200 dark:text-sky-200/80 text-right mt-0.5">{{ msg.time }} ✓✓</div>
+                      <div class="text-[8px] text-emerald-200 dark:text-sky-200/80 flex items-center justify-end gap-0.5 mt-0.5">
+                        <span>{{ msg.time }}</span>
+                        <CheckCheck class="w-2.5 h-2.5 text-emerald-200 dark:text-sky-200/80 inline" />
+                      </div>
                     </div>
 
                     <!-- Bot Response Card Bubble -->
@@ -245,7 +251,10 @@
                       class="bg-white dark:bg-[#182533] border border-slate-200/90 dark:border-slate-700/60 text-slate-900 dark:text-white p-2.5 rounded-2xl rounded-tl-xs shadow-xs space-y-1 text-[10.5px] leading-relaxed"
                     >
                       <div v-html="msg.html"></div>
-                      <div class="text-[8.5px] text-slate-400 dark:text-slate-400 text-right pt-0.5">{{ msg.time }} ✓✓</div>
+                      <div class="text-[8.5px] text-slate-400 dark:text-slate-400 flex items-center justify-end gap-0.5 pt-0.5">
+                        <span>{{ msg.time }}</span>
+                        <CheckCheck class="w-2.5 h-2.5 text-slate-400 inline" />
+                      </div>
                     </div>
                   </div>
 
@@ -313,6 +322,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   CheckCircle2,
+  CheckCheck,
 } from 'lucide-vue-next';
 
 withDefaults(defineProps<{

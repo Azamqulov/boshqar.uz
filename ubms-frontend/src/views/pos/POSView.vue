@@ -123,7 +123,7 @@
         </div>
         <div class="flex items-center gap-1.5 font-mono text-sm">
           <span>{{ formatCurrency(cartStore.grandTotal) }}</span>
-          <span>➔</span>
+          <ArrowRight class="w-4 h-4" />
         </div>
       </button>
     </div>

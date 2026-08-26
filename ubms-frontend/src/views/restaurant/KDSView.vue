@@ -153,7 +153,7 @@
               class="w-full py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-black text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 btn-interactive"
             >
               <CheckCircle class="w-4 h-4" />
-              <span>Taom Tayyor Bo'ldi! ✓</span>
+              <span>Taom Tayyor Bo'ldi!</span>
             </button>
           </div>
         </div>

@@ -136,7 +136,9 @@
             <thead>
               <tr class="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-bold">
                 <th class="p-4 sm:p-6">Imkoniyatlar va Mezonlar</th>
-                <th class="p-4 sm:p-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-center">Boshqar.uz 🟢</th>
+                <th class="p-4 sm:p-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-center">
+                  <span class="inline-flex items-center gap-1.5 justify-center">Boshqar.uz <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span></span>
+                </th>
                 <th class="p-4 sm:p-6 text-center text-slate-500">Qog'oz Daftar / Excel</th>
                 <th class="p-4 sm:p-6 text-center text-slate-500">Chet el ERP tizimlari</th>
               </tr>
