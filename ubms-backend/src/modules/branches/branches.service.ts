@@ -27,6 +27,12 @@ export class BranchesService {
       where: { id: businessId },
       include: {
         plan: true,
+        subscriptions: {
+          where: { status: 'active' },
+          orderBy: { currentPeriodEnd: 'desc' },
+          take: 1,
+          include: { plan: true },
+        },
         branches: { select: { id: true } },
       },
     });
@@ -35,11 +41,19 @@ export class BranchesService {
       throw new NotFoundException('Biznes topilmadi');
     }
 
-    if (business.plan && business.plan.maxBranches !== null && business.branches.length >= business.plan.maxBranches) {
+    const effectivePlan = business.subscriptions?.[0]?.plan || business.plan;
+    const isUnlimitedBranches =
+      !effectivePlan ||
+      effectivePlan.maxBranches === null ||
+      effectivePlan.maxBranches <= 0 ||
+      effectivePlan.maxBranches >= 99999 ||
+      effectivePlan.name === 'Business';
+
+    if (!isUnlimitedBranches && effectivePlan.maxBranches && business.branches.length >= effectivePlan.maxBranches) {
       throw new ForbiddenException({
         code: 'PLAN_LIMIT_BRANCHES',
-        message: `Tarifingiz bo'yicha maksimal ${business.plan.maxBranches} ta filial ochish mumkin. Ko'proq filial ochish uchun tarifni yangilang.`,
-        maxBranches: business.plan.maxBranches,
+        message: `Tarifingiz bo'yicha maksimal ${effectivePlan.maxBranches} ta filial ochish mumkin. Ko'proq filial ochish uchun tarifni yangilang.`,
+        maxBranches: effectivePlan.maxBranches,
         currentBranchesCount: business.branches.length,
       });
     }

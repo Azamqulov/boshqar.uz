@@ -307,11 +307,11 @@ const pillStyle = computed(() => {
 });
 
 const adminTabs = computed(() => [
-  { id: 'leads' as const, label: 'Demo & Leadlar', icon: Target },
-  { id: 'owners' as const, label: 'Mijozlar CRM', icon: Crown, count: owners.value.length },
-  { id: 'businesses' as const, label: 'Korxonalar & Obunalar', icon: Building2, count: businesses.value.length },
-  { id: 'users' as const, label: 'Xodimlar & Rollar', icon: Users, count: users.value.length },
-  { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt },
+  { id: 'leads' as const, label: 'Demo & Leadlar', icon: Target, count: stats.value.totalLeads ?? 0 },
+  { id: 'owners' as const, label: 'Mijozlar CRM', icon: Crown, count: stats.value.totalOwners !== undefined ? stats.value.totalOwners : owners.value.length },
+  { id: 'businesses' as const, label: 'Korxonalar & Obunalar', icon: Building2, count: stats.value.totalBusinesses !== undefined ? stats.value.totalBusinesses : businesses.value.length },
+  { id: 'users' as const, label: 'Xodimlar & Rollar', icon: Users, count: stats.value.totalUsers !== undefined ? stats.value.totalUsers : users.value.length },
+  { id: 'billing' as const, label: "To'lovlar & Rekvizitlar", icon: Receipt, count: stats.value.pendingBillingRequests },
   { id: 'audit' as const, label: 'Audit Tarixi', icon: ShieldCheck },
   { id: 'businessTypes' as const, label: 'Biznes Turlari', icon: Sliders },
   { id: 'backups' as const, label: 'Baza Zaxiralari', icon: Database },

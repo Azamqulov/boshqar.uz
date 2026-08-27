@@ -35,7 +35,7 @@
           </button>
         </div>
 
-        <AppButton variant="danger" size="sm" :icon="Plus" @click="isExpenseModalOpen = true" class="w-full sm:w-auto">
+        <AppButton v-if="canCreate('finance')" variant="danger" size="sm" :icon="Plus" @click="isExpenseModalOpen = true" class="w-full sm:w-auto">
           Xarajat Kiritish
         </AppButton>
       </div>
@@ -277,11 +277,13 @@ import { useDataStore } from '../../stores/data.store';
 import { useShiftStore } from '../../stores/shift.store';
 import { useAuthStore } from '../../stores/auth.store';
 import { useToast } from '../../composables/useToast';
+import { usePermissions } from '../../composables/usePermissions';
 
 import { usePersistentTab } from '../../composables/usePersistentTab';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 
 const toast = useToast();
+const { canCreate, canEdit, canDelete } = usePermissions();
 const dataStore = useDataStore();
 const shiftStore = useShiftStore();
 const authStore = useAuthStore();

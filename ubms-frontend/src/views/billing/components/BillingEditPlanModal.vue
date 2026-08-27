@@ -179,34 +179,74 @@
               <span class="text-[10px] text-slate-400">0 kiritilsa — Bepul (Free) deb ko'rsatiladi</span>
             </div>
 
-            <!-- Limits: Branches & Users -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="space-y-1">
-                <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Maks. Filiallar soni
-                </label>
-                <input
-                  v-model.number="editPlanForm.maxBranches"
-                  type="number"
-                  min="0"
-                  placeholder="0 (Cheksiz)"
-                  class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
-                />
-                <span class="text-[10px] text-slate-400">0 yoki bo'sh = Cheksiz</span>
+            <!-- Limits: Branches & Users (With 1-Click Cheksiz Toggles) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <!-- Branches Limit -->
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Maks. Filiallar soni
+                  </label>
+                  <button
+                    type="button"
+                    @click="editPlanForm.maxBranches = (!editPlanForm.maxBranches || editPlanForm.maxBranches === 0) ? 1 : 0"
+                    class="px-2 py-0.5 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1"
+                    :class="(!editPlanForm.maxBranches || editPlanForm.maxBranches === 0)
+                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300'"
+                  >
+                    <span>{{ (!editPlanForm.maxBranches || editPlanForm.maxBranches === 0) ? '✓ Cheksiz (∞)' : 'Cheklangan' }}</span>
+                  </button>
+                </div>
+
+                <div v-if="!editPlanForm.maxBranches || editPlanForm.maxBranches === 0" class="py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-between">
+                  <span>Cheksiz filiallar ruxsat etilgan</span>
+                  <span class="text-sm font-black">∞</span>
+                </div>
+                <div v-else class="space-y-1">
+                  <input
+                    v-model.number="editPlanForm.maxBranches"
+                    type="number"
+                    min="1"
+                    max="999"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                  />
+                  <span class="text-[10px] text-slate-400">Masalan: 1, 3, 10 ta filial</span>
+                </div>
               </div>
 
-              <div class="space-y-1">
-                <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                  Maks. Xodimlar soni
-                </label>
-                <input
-                  v-model.number="editPlanForm.maxUsers"
-                  type="number"
-                  min="0"
-                  placeholder="0 (Cheksiz)"
-                  class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
-                />
-                <span class="text-[10px] text-slate-400">0 yoki bo'sh = Cheksiz</span>
+              <!-- Users Limit -->
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    Maks. Xodimlar soni
+                  </label>
+                  <button
+                    type="button"
+                    @click="editPlanForm.maxUsers = (!editPlanForm.maxUsers || editPlanForm.maxUsers === 0) ? 2 : 0"
+                    class="px-2 py-0.5 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1"
+                    :class="(!editPlanForm.maxUsers || editPlanForm.maxUsers === 0)
+                      ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300'"
+                  >
+                    <span>{{ (!editPlanForm.maxUsers || editPlanForm.maxUsers === 0) ? '✓ Cheksiz (∞)' : 'Cheklangan' }}</span>
+                  </button>
+                </div>
+
+                <div v-if="!editPlanForm.maxUsers || editPlanForm.maxUsers === 0" class="py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-between">
+                  <span>Cheksiz xodimlar ruxsat etilgan</span>
+                  <span class="text-sm font-black">∞</span>
+                </div>
+                <div v-else class="space-y-1">
+                  <input
+                    v-model.number="editPlanForm.maxUsers"
+                    type="number"
+                    min="1"
+                    max="999"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                  />
+                  <span class="text-[10px] text-slate-400">Masalan: 2, 5, 20 ta xodim</span>
+                </div>
               </div>
             </div>
           </div>

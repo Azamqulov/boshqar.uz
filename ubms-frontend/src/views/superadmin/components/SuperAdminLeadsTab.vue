@@ -208,7 +208,7 @@
               <!-- Actions -->
               <td class="py-3.5 px-4 text-right whitespace-nowrap">
                 <button
-                  @click="deleteLead(lead.id)"
+                  @click="promptDeleteLead(lead.id)"
                   title="O'chirish"
                   class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition"
                 >
@@ -220,6 +220,19 @@
         </table>
       </div>
     </div>
+
+    <!-- Confirmation Dialog -->
+    <AppConfirmDialog
+      :open="isDeleteConfirmOpen"
+      title="Leadni o'chirish"
+      message="Ushbu demo leadni ro'yxatdan o'chirishni tasdiqlaysizmi?"
+      confirm-text="Ha, o'chirish"
+      cancel-text="Bekor qilish"
+      variant="danger"
+      :loading="isDeleting"
+      @confirm="confirmDeleteLead"
+      @cancel="isDeleteConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -227,6 +240,7 @@
 import { ref, computed, onMounted } from 'vue';
 import api from '../../../services/api';
 import { useToast } from '../../../composables/useToast';
+import AppConfirmDialog from '../../../components/AppConfirmDialog.vue';
 import {
   Target,
   Clock,
@@ -358,15 +372,30 @@ const saveNote = async (lead: DemoLeadItem) => {
   }
 };
 
-const deleteLead = async (id: string) => {
-  if (!confirm('Ushbu demo leadni ro\'yxatdan o\'chirishni xohlaysizmi?')) return;
+const isDeleteConfirmOpen = ref(false);
+const leadToDeleteId = ref<string | null>(null);
+const isDeleting = ref(false);
+
+const promptDeleteLead = (id: string) => {
+  leadToDeleteId.value = id;
+  isDeleteConfirmOpen.value = true;
+};
+
+const confirmDeleteLead = async () => {
+  if (!leadToDeleteId.value) return;
+  isDeleting.value = true;
   try {
+    const id = leadToDeleteId.value;
     await api.delete(`/superadmin/demo-leads/${id}`);
     leads.value = leads.value.filter((l) => l.id !== id);
     toast.success('Lead o\'chirildi');
+    isDeleteConfirmOpen.value = false;
+    leadToDeleteId.value = null;
     fetchLeads();
   } catch (err) {
     toast.error('O\'chirishda xatolik');
+  } finally {
+    isDeleting.value = false;
   }
 };
 

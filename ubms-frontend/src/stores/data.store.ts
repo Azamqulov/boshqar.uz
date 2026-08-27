@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import api from '../services/api';
 import { useProductStore } from './product.store';
 import { useCustomerStore } from './customer.store';
@@ -189,18 +189,51 @@ export const useDataStore = defineStore('ubms_data', () => {
   };
 
   return {
-    // Composed reactive state
-    products: productStore.products,
-    categories: productStore.categories,
-    customers: customerStore.customers,
-    suppliers: customerStore.suppliers,
-    inventory: inventoryStore.inventory,
-    inventoryTotal: inventoryStore.inventoryTotal,
-    inventoryMeta: inventoryStore.inventoryMeta,
-    dashboardSummary: financeStore.dashboardSummary,
-    dashboardCharts: financeStore.dashboardCharts,
-    financeSummary: financeStore.financeSummary,
-    financeExpenses: financeStore.financeExpenses,
+    // Composed reactive state (computed properties ensure 100% reactive sync with sub-stores)
+    products: computed({
+      get: () => productStore.products,
+      set: (val: any[]) => { productStore.products = val; },
+    }),
+    categories: computed({
+      get: () => productStore.categories,
+      set: (val: any[]) => { productStore.categories = val; },
+    }),
+    customers: computed({
+      get: () => customerStore.customers,
+      set: (val: any[]) => { customerStore.customers = val; },
+    }),
+    suppliers: computed({
+      get: () => customerStore.suppliers,
+      set: (val: any[]) => { customerStore.suppliers = val; },
+    }),
+    inventory: computed({
+      get: () => inventoryStore.inventory,
+      set: (val: any[]) => { inventoryStore.inventory = val; },
+    }),
+    inventoryTotal: computed({
+      get: () => inventoryStore.inventoryTotal,
+      set: (val: number) => { inventoryStore.inventoryTotal = val; },
+    }),
+    inventoryMeta: computed({
+      get: () => inventoryStore.inventoryMeta,
+      set: (val: any) => { inventoryStore.inventoryMeta = val; },
+    }),
+    dashboardSummary: computed({
+      get: () => financeStore.dashboardSummary,
+      set: (val: any) => { financeStore.dashboardSummary = val; },
+    }),
+    dashboardCharts: computed({
+      get: () => financeStore.dashboardCharts,
+      set: (val: any) => { financeStore.dashboardCharts = val; },
+    }),
+    financeSummary: computed({
+      get: () => financeStore.financeSummary,
+      set: (val: any) => { financeStore.financeSummary = val; },
+    }),
+    financeExpenses: computed({
+      get: () => financeStore.financeExpenses,
+      set: (val: any[]) => { financeStore.financeExpenses = val; },
+    }),
     tables,
     appointments,
 

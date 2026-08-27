@@ -477,15 +477,13 @@ const handleSaveUnifiedProfile = async () => {
           currentPassword: passwordForm.value.currentPassword || 'placeholder',
           newPassword: passwordForm.value.newPassword,
         });
-        passwordForm.value = {
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        };
       } finally {
         changingPassword.value = false;
       }
     }
+
+    // 4. Save POS / Card settings
+    await saveSettings();
 
     toast.success("Profil va sozlamalar muvaffaqiyatli saqlandi!", "Profil");
   } catch (err: any) {
@@ -578,6 +576,17 @@ const availableModules = [
 ];
 
 const getModuleLabel = (modId: string) => {
+  if (modId === 'tables' || modId === 'restaurant') return 'Stollar & Ofitsiant';
+  if (modId === 'kds') return 'Oshxona (KDS)';
+  if (modId === 'pos' || modId === 'orders') return 'Kassa (POS)';
+  if (modId === 'products') return 'Mahsulotlar';
+  if (modId === 'inventory') return 'Ombor & Kirim';
+  if (modId === 'customers') return 'Mijozlar (CRM)';
+  if (modId === 'suppliers') return 'Ta\'minotchilar';
+  if (modId === 'appointments') return 'Bandlovlar';
+  if (modId === 'finance') return 'Moliya & Xarajatlar';
+  if (modId === 'dashboard') return 'Boshqaruv Paneli';
+  if (modId === 'all') return 'Barchasi (Admin)';
   const m = availableModules.find((item) => item.id === modId);
   return m ? m.label : modId;
 };
@@ -618,20 +627,38 @@ const openAddEmployeeModal = () => {
 
 const editEmployee = (emp: any) => {
   editingEmpId.value = emp.id;
+  const validModuleIds = new Set(availableModules.map((item) => item.id));
+  let modules = (emp.allowedModules && emp.allowedModules.length > 0 ? emp.allowedModules : ['pos', 'products'])
+    .filter((m: string) => validModuleIds.has(m));
+  
+  if (modules.length === 0) modules = ['pos'];
+
+  const basePermissions: Record<string, { create: boolean; edit: boolean; delete: boolean }> = {
+    pos: { create: true, edit: true, delete: false },
+    products: { create: true, edit: true, delete: false },
+    inventory: { create: true, edit: true, delete: false },
+    customers: { create: true, edit: true, delete: false },
+    suppliers: { create: true, edit: true, delete: false },
+    tables: { create: true, edit: true, delete: false },
+    kds: { create: true, edit: true, delete: false },
+    finance: { create: true, edit: true, delete: false },
+    appointments: { create: true, edit: true, delete: false },
+  };
+
+  const currentPermissions = emp.actionPermissions ? JSON.parse(JSON.stringify(emp.actionPermissions)) : {};
+  for (const key of Object.keys(basePermissions)) {
+    if (!currentPermissions[key]) {
+      currentPermissions[key] = { ...basePermissions[key] };
+    }
+  }
+
   empForm.value = {
     fullName: emp.fullName,
     phone: emp.phone,
     password: '',
     position: emp.position || 'Sotuvchi',
-    allowedModules: emp.allowedModules && emp.allowedModules.length > 0 ? [...emp.allowedModules] : ['pos', 'products'],
-    actionPermissions: emp.actionPermissions || {
-      pos: { create: true, edit: true, delete: false },
-      products: { create: true, edit: true, delete: false },
-      inventory: { create: true, edit: true, delete: false },
-      customers: { create: true, edit: true, delete: false },
-      suppliers: { create: true, edit: true, delete: false },
-      finance: { create: true, edit: true, delete: false },
-    },
+    allowedModules: [...modules],
+    actionPermissions: currentPermissions,
   };
   showEmployeeModal.value = true;
 };

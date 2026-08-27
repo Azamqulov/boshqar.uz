@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getWorkerDefaultRoute } from '../../router';
 import { useAuthStore } from '../../stores/auth.store';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
@@ -196,8 +197,12 @@ const handleLogin = async () => {
     toast.success(`Xush kelibsiz, ${data.user?.fullName || 'Foydalanuvchi'}!`, 'Muvaffaqiyatli');
     localStorage.removeItem('ubms_login_lockout');
 
-    // Force refresh all app data for clean session state
-    dataStore.prefetchAll(true).catch(() => {});
+    // Force refresh all app data for clean session state before routing
+    try {
+      await dataStore.prefetchAll(true);
+    } catch (e) {
+      console.warn('Initial prefetch warning:', e);
+    }
 
     if (!data.activeBusiness) {
       router.push('/onboarding');
@@ -205,7 +210,8 @@ const handleLogin = async () => {
       const role = (data.activeBusiness?.role || '').toLowerCase();
       const isWorker = !data.user?.isSuperAdmin && role !== 'owner' && role !== 'admin';
       if (isWorker) {
-        router.push('/pos');
+        const dest = getWorkerDefaultRoute(data.activeBusiness?.allowedModules);
+        router.push(dest);
       } else {
         router.push('/dashboard');
       }

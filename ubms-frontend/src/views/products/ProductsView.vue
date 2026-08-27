@@ -9,7 +9,7 @@
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
         <button
-          v-if="isFeatureVisible('ai_import')"
+          v-if="isFeatureVisible('ai_import') && canCreate('products')"
           type="button"
           @click="handleAiImportClick"
           class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
@@ -32,7 +32,7 @@
         </button>
 
         <button
-          v-if="isFeatureVisible('export_reports')"
+          v-if="isFeatureVisible('export_reports') && canCreate('products')"
           type="button"
           @click="openExcelImportModal"
           class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
@@ -49,12 +49,20 @@
         </button>
 
         <button
+          v-if="posSettings.allowBarcodeStudio !== false && isFeatureVisible('barcode_studio')"
           type="button"
-          @click="isBarcodePrintOpen = true"
+          @click="handleBarcodeStudioClick"
           class="flex items-center justify-center space-x-2 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs border border-slate-300 dark:border-slate-700 transition btn-interactive w-full sm:w-auto"
         >
-          <Tag class="w-4 h-4 text-blue-500" />
+          <Tag class="w-4 h-4 text-emerald-500" />
           <span>Narx Yorliqlari</span>
+          <div
+            v-if="isFeatureDisabled('barcode_studio') && authStore.isDemo"
+            class="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0"
+            title="Obunada qulflangan"
+          >
+            <Lock class="w-3 h-3" />
+          </div>
         </button>
 
         <router-link
@@ -214,6 +222,7 @@ import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
 import { usePermissions } from '../../composables/usePermissions';
 import { usePagination } from '../../composables/usePagination';
 import { usePlanFeatures } from '../../composables/usePlanFeatures';
+import { usePosSettings } from '../../composables/usePosSettings';
 
 import AppEmptyState from '../../components/AppEmptyState.vue';
 import ProductStatsCards from './components/ProductStatsCards.vue';
@@ -226,6 +235,7 @@ const router = useRouter();
 const toast = useToast();
 const dataStore = useDataStore();
 const authStore = useAuthStore();
+const { posSettings } = usePosSettings();
 const { canCreate } = usePermissions();
 const { isFeatureEnabled, isFeatureDisabled, isFeatureVisible } = usePlanFeatures();
 
@@ -235,6 +245,17 @@ const proModalSubtitle = ref('');
 const proModalFeature = ref('');
 const isExcelImportOpen = ref(false);
 const isBarcodePrintOpen = ref(false);
+
+const handleBarcodeStudioClick = () => {
+  if (isFeatureDisabled('barcode_studio') && authStore.isDemo) {
+    proModalTitle.value = 'Narx Yorliqlari & Barkod Studiyasi';
+    proModalSubtitle.value = 'Termo printerlar (40×25mm, 58×40mm) orqali professional cennik va shtrix-kod stikerlarini chop etish';
+    proModalFeature.value = 'Barkod & Narx Yorliqlari Studiyasi';
+    showProModal.value = true;
+    return;
+  }
+  isBarcodePrintOpen.value = true;
+};
 
 const handleAiImportClick = () => {
   if (isFeatureDisabled('ai_import') && isFeatureDisabled('ai_assistant')) {

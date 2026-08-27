@@ -4,11 +4,18 @@
       <div
         v-if="isLocked"
         class="fixed inset-0 z-[99999] select-none overflow-hidden font-sans flex flex-col items-center justify-between transition-all duration-300"
-        :class="isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900'"
-        @keydown.esc="showUnlockCard = false"
+        :class="[
+          isDarkMode ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-900',
+          !showUnlockCard ? 'cursor-pointer active:scale-[0.998]' : ''
+        ]"
+        @touchstart.passive="handleTouchStart"
+        @touchend="handleTouchEnd"
+        @mousedown="handleMouseDown"
+        @mouseup="handleMouseUp"
+        @wheel.passive="handleWheel"
       >
         <!-- 1. DYNAMIC LIGHT vs DARK CINEMATIC WALLPAPER WITH GLASS OVERLAY -->
-        <div class="absolute inset-0 z-0 overflow-hidden">
+        <div class="absolute inset-0 z-0 overflow-hidden" @click="handleBackgroundClick">
           <img
             :src="currentWallpaperUrl"
             alt="Lock Background"
@@ -39,7 +46,7 @@
         </div>
 
         <!-- 2. TOP STATUS BAR & BUSINESS IDENTITY -->
-        <div class="relative z-10 w-full px-5 py-3.5 flex items-center justify-between text-xs font-medium">
+        <div class="relative z-10 w-full px-5 py-3.5 flex items-center justify-between text-xs font-medium" @click.stop>
           <div
             class="flex items-center space-x-2.5 px-3.5 py-1.5 rounded-xl border backdrop-blur-md shadow-xl transition-colors"
             :class="isDarkMode
@@ -66,7 +73,7 @@
             <!-- Manual Wallpaper Selector Button -->
             <button
               type="button"
-              @click="nextWallpaper"
+              @click.stop="nextWallpaper"
               class="p-1.5 rounded-xl border backdrop-blur-md transition btn-interactive cursor-pointer"
               :class="isDarkMode
                 ? 'bg-slate-950/70 hover:bg-slate-800 border-slate-700/60 text-slate-300 hover:text-white'
@@ -79,13 +86,13 @@
         </div>
 
         <!-- 3. CENTER AREA: CLOCK OR COMPACT DUAL-THEME PIN CARD -->
-        <div class="relative z-10 flex-1 w-full flex flex-col items-center justify-center px-4">
-          <!-- A) Real-time Clock View (Slides Up on Enter or Click) -->
+        <div class="relative z-10 flex-1 w-full flex flex-col items-center justify-center px-4" @click="handleBackgroundClick">
+          <!-- A) Real-time Clock View (Slides Up on Enter, Click, Swipe, Drag) -->
           <div
             v-if="!showUnlockCard"
             @click="openUnlockPanel"
             class="flex flex-col items-center justify-center cursor-pointer group space-y-3 transition-all duration-300 transform hover:scale-105"
-            title="Ekranni ochish uchun bosing yoki Enter tugmasini bosing"
+            title="Ekranni ochish uchun bosing yoki suring"
           >
             <div
               class="font-mono font-black text-7xl sm:text-9xl tracking-tighter text-transparent bg-clip-text drop-shadow-2xl"
@@ -114,7 +121,7 @@
                 class="text-[11px] font-black tracking-widest uppercase px-3.5 py-1 rounded-full border backdrop-blur-md shadow-sm"
                 :class="isDarkMode ? 'bg-slate-950/70 border-slate-700/60 text-slate-200' : 'bg-white/85 border-slate-200/90 text-slate-800'"
               >
-                {{ t('lock_hint', 'Ochish uchun bosing yoki ENTER bosing') }}
+                {{ t('lock_hint', "Ochish uchun bosing, tepaga suring yoki istalgan tugmani bosing") }}
               </span>
             </div>
           </div>
@@ -122,6 +129,7 @@
           <!-- B) COMPACT DUAL-THEME PIN KEYPAD CARD -->
           <div
             v-else
+            @click.stop
             class="w-full max-w-[320px] rounded-3xl p-4 sm:p-5 backdrop-blur-2xl shadow-2xl flex flex-col items-center space-y-3 transition-all duration-300 animate-slide-up border"
             :class="[
               isDarkMode
@@ -410,12 +418,63 @@ const updateClock = () => {
 };
 
 const openUnlockPanel = () => {
+  if (showUnlockCard.value) return;
   showUnlockCard.value = true;
   errorMessage.value = '';
   inputPin.value = '';
   nextTick(() => {
     pinInputRef.value?.focus();
   });
+};
+
+// Full-screen gesture & click handlers
+const touchStartY = ref(0);
+const mouseStartY = ref(0);
+const isMouseDown = ref(false);
+
+const handleTouchStart = (e: TouchEvent) => {
+  if (showUnlockCard.value) return;
+  touchStartY.value = e.touches[0].clientY;
+};
+
+const handleTouchEnd = (e: TouchEvent) => {
+  if (showUnlockCard.value) return;
+  const touchEndY = e.changedTouches[0].clientY;
+  const deltaY = touchStartY.value - touchEndY;
+  // Swiped up or single tap opens panel
+  if (deltaY > 15 || Math.abs(deltaY) < 10) {
+    openUnlockPanel();
+  }
+};
+
+const handleMouseDown = (e: MouseEvent) => {
+  if (showUnlockCard.value) return;
+  if ((e.target as HTMLElement)?.closest('button')) return;
+  isMouseDown.value = true;
+  mouseStartY.value = e.clientY;
+};
+
+const handleMouseUp = (e: MouseEvent) => {
+  if (!isMouseDown.value || showUnlockCard.value) return;
+  isMouseDown.value = false;
+  const deltaY = mouseStartY.value - e.clientY;
+  // Dragged up or clicked opens panel
+  if (deltaY > 15 || Math.abs(deltaY) < 15) {
+    openUnlockPanel();
+  }
+};
+
+const handleWheel = (e: WheelEvent) => {
+  if (!isLocked.value || showUnlockCard.value) return;
+  if (e.deltaY < -5 || e.deltaY > 5) {
+    openUnlockPanel();
+  }
+};
+
+const handleBackgroundClick = (e: MouseEvent) => {
+  if (showUnlockCard.value) return;
+  if ((e.target as HTMLElement)?.closest('button')) return;
+  openUnlockPanel();
 };
 
 const appendDigit = (digit: string) => {
@@ -468,9 +527,26 @@ watch(inputPin, (val) => {
 const handleWindowKeyDown = (e: KeyboardEvent) => {
   if (!isLocked.value) return;
 
-  if (e.key === 'Enter' || e.key === ' ') {
-    if (!showUnlockCard.value) {
+  if (e.key === 'Escape') {
+    showUnlockCard.value = false;
+    return;
+  }
+
+  if (!showUnlockCard.value) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || (e.key >= '0' && e.key <= '9')) {
+      e.preventDefault();
       openUnlockPanel();
+      if (e.key >= '0' && e.key <= '9') {
+        appendDigit(e.key);
+      }
+    }
+  } else {
+    if (e.key >= '0' && e.key <= '9') {
+      appendDigit(e.key);
+    } else if (e.key === 'Backspace') {
+      clearDigit();
+    } else if (e.key === 'Enter') {
+      tryUnlock();
     }
   }
 };

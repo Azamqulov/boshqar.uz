@@ -323,6 +323,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   CheckCheck,
+  ArrowRight,
 } from 'lucide-vue-next';
 
 withDefaults(defineProps<{

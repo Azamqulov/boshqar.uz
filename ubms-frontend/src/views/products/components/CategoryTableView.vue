@@ -66,6 +66,7 @@
             <td class="py-3.5 px-4 text-right">
               <div class="flex items-center justify-end gap-1.5">
                 <button
+                  v-if="canEdit('products')"
                   type="button"
                   @click="$emit('edit', cat)"
                   class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -74,6 +75,7 @@
                   <Edit2 class="w-4 h-4" />
                 </button>
                 <button
+                  v-if="canDelete('products')"
                   type="button"
                   @click="$emit('delete', cat)"
                   class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
@@ -93,6 +95,9 @@
 <script setup lang="ts">
 import { Package, Edit2, Trash2 } from 'lucide-vue-next';
 import CategoryIcon from '../../../components/CategoryIcon.vue';
+import { usePermissions } from '../../../composables/usePermissions';
+
+const { canEdit, canDelete } = usePermissions();
 
 defineProps<{
   categories: any[];

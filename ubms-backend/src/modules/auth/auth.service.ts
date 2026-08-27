@@ -723,6 +723,24 @@ export class AuthService {
         },
       });
 
+      // 🎯 Create 2-year free subscription for demo business
+      try {
+        const defaultPlan = await this.prisma.plan.findFirst({ orderBy: { priceMonthly: 'asc' } });
+        const twoYearsFromNow = new Date();
+        twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+        await this.prisma.subscription.create({
+          data: {
+            businessId: newBiz.id,
+            planId: defaultPlan?.id || planId,
+            status: 'trialing',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: twoYearsFromNow,
+          },
+        });
+      } catch (subErr) {
+        console.warn('Demo subscription yaratishda xatolik:', subErr);
+      }
+
       activeBusiness = bu;
     } else {
       await this.prisma.business.update({

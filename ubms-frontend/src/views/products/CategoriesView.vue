@@ -33,6 +33,7 @@
         </router-link>
 
         <AppButton
+          v-if="canCreate('products')"
           variant="primary"
           size="md"
           :icon="Plus"
@@ -177,12 +178,13 @@ import api, { getErrorMessage } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
-import AppInput from '../../components/AppInput.vue';
+import { usePermissions } from '../../composables/usePermissions';
 import AppButton from '../../components/AppButton.vue';
 import AppViewToggle from '../../components/AppViewToggle.vue';
 import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import AppPagination from '../../components/AppPagination.vue';
 import SkeletonLoader from '../../components/SkeletonLoader.vue';
+import AppInput from '../../components/AppInput.vue';
 import AppEmptyState from '../../components/AppEmptyState.vue';
 import { usePagination } from '../../composables/usePagination';
 import { usePersistentViewMode } from '../../composables/usePersistentViewMode';
@@ -227,6 +229,7 @@ interface Category {
 const authStore = useAuthStore();
 const dataStore = useDataStore();
 const toast = useToast();
+const { canCreate, canEdit, canDelete } = usePermissions();
 
 const loading = ref(dataStore.categories.length === 0);
 const saving = ref(false);

@@ -51,8 +51,10 @@ export const UI_MODULE_TO_PERM_MODULES: Record<string, string[]> = {
   finance: ['finance', 'reports', 'expenses', 'revenues'],
   employees: ['employees'],
   reports: ['reports'],
-  restaurant: ['restaurant', 'tables', 'kds'],
+  tables: ['tables'],
+  kds: ['kds'],
   appointments: ['appointments', 'services'],
+  dashboard: ['dashboard', 'reports'],
   settings: ['settings', 'audit'],
 };
 
@@ -61,8 +63,9 @@ export function resolvePermissionModules(uiModules: string[]): string[] {
   for (const mod of uiModules) {
     if (UI_MODULE_TO_PERM_MODULES[mod]) {
       UI_MODULE_TO_PERM_MODULES[mod].forEach((m) => dbModules.add(m));
+    } else {
+      dbModules.add(mod);
     }
-    dbModules.add(mod);
   }
   return Array.from(dbModules);
 }
@@ -76,8 +79,8 @@ export function extractActionPermissions(
   return {
     pos: {
       create: codes.has('orders.create') || codes.has('pos.create'),
-      edit: true,
-      delete: codes.has('orders.cancel') || codes.has('pos.delete'),
+      edit: codes.has('orders.manualPrice'),
+      delete: codes.has('orders.cancel') || codes.has('pos.delete') || codes.has('refunds.create'),
     },
     products: {
       create: codes.has('products.create'),
@@ -86,23 +89,38 @@ export function extractActionPermissions(
     },
     inventory: {
       create: codes.has('inventory.create'),
-      edit: codes.has('inventory.create') || codes.has('inventory.transfer'),
-      delete: codes.has('inventory.delete'),
+      edit: codes.has('inventory.transfer') || codes.has('inventory.create'),
+      delete: false,
     },
     customers: {
-      create: codes.has('customers.manage') || codes.has('customers.create'),
-      edit: codes.has('customers.manage') || codes.has('customers.edit'),
-      delete: codes.has('customers.delete'),
+      create: codes.has('customers.manage'),
+      edit: codes.has('customers.manage'),
+      delete: false,
     },
     suppliers: {
-      create: codes.has('suppliers.manage') || codes.has('suppliers.create'),
-      edit: codes.has('suppliers.manage') || codes.has('suppliers.edit'),
-      delete: codes.has('suppliers.delete'),
+      create: codes.has('suppliers.manage'),
+      edit: codes.has('suppliers.manage'),
+      delete: false,
     },
     finance: {
       create: codes.has('finance.create'),
-      edit: true,
-      delete: codes.has('finance.delete'),
+      edit: codes.has('finance.create'),
+      delete: false,
+    },
+    kds: {
+      create: codes.has('kds.manage'),
+      edit: codes.has('kds.manage'),
+      delete: false,
+    },
+    tables: {
+      create: codes.has('tables.manage'),
+      edit: codes.has('tables.manage'),
+      delete: false,
+    },
+    appointments: {
+      create: codes.has('appointments.manage'),
+      edit: codes.has('appointments.manage'),
+      delete: false,
     },
   };
 }
@@ -120,15 +138,20 @@ export function filterPermissionsByActions(
 
     if (code === 'orders.create' && actionPermissions.pos?.create === false) return false;
     if (code === 'orders.cancel' && actionPermissions.pos?.delete === false) return false;
+    if (code === 'refunds.create' && actionPermissions.pos?.delete === false) return false;
+    if (code === 'orders.manualPrice' && actionPermissions.pos?.edit === false) return false;
 
     if (code === 'inventory.create' && actionPermissions.inventory?.create === false) return false;
-    if (code === 'inventory.delete' && actionPermissions.inventory?.delete === false) return false;
+    if (code === 'inventory.transfer' && actionPermissions.inventory?.edit === false) return false;
 
-    if (code === 'customers.delete' && actionPermissions.customers?.delete === false) return false;
-    if (code === 'customers.manage' && actionPermissions.customers?.delete === false && actionPermissions.customers?.edit === false) return false;
+    if (code === 'customers.manage' && actionPermissions.customers?.create === false && actionPermissions.customers?.edit === false) return false;
+    if (code === 'suppliers.manage' && actionPermissions.suppliers?.create === false && actionPermissions.suppliers?.edit === false) return false;
 
-    if (code === 'suppliers.delete' && actionPermissions.suppliers?.delete === false) return false;
-    if (code === 'suppliers.manage' && actionPermissions.suppliers?.delete === false && actionPermissions.suppliers?.edit === false) return false;
+    if (code === 'finance.create' && actionPermissions.finance?.create === false) return false;
+
+    if (code === 'tables.manage' && actionPermissions.tables?.create === false && actionPermissions.tables?.edit === false) return false;
+    if (code === 'kds.manage' && actionPermissions.kds?.create === false && actionPermissions.kds?.edit === false) return false;
+    if (code === 'appointments.manage' && actionPermissions.appointments?.create === false && actionPermissions.appointments?.edit === false) return false;
 
     return true;
   });
@@ -145,12 +168,15 @@ export function mapPermModulesToUiModules(permModules: string[]): string[] {
   if (dbSet.has('finance') || dbSet.has('expenses') || dbSet.has('revenues')) uiModules.add('finance');
   if (dbSet.has('employees')) uiModules.add('employees');
   if (dbSet.has('reports')) uiModules.add('reports');
-  if (dbSet.has('restaurant') || dbSet.has('tables') || dbSet.has('kds')) uiModules.add('restaurant');
-  if (dbSet.has('appointments') || dbSet.has('services')) uiModules.add('appointments');
-  if (dbSet.has('settings') || dbSet.has('audit')) uiModules.add('settings');
-  for (const m of permModules) {
-    if (UI_MODULE_TO_PERM_MODULES[m]) uiModules.add(m);
+  if (dbSet.has('kds')) uiModules.add('kds');
+  if (dbSet.has('tables')) uiModules.add('tables');
+  if (dbSet.has('restaurant') && !dbSet.has('kds') && !dbSet.has('tables')) {
+    uiModules.add('kds');
+    uiModules.add('tables');
   }
+  if (dbSet.has('appointments') || dbSet.has('services')) uiModules.add('appointments');
+  if (dbSet.has('dashboard')) uiModules.add('dashboard');
+  if (dbSet.has('settings') || dbSet.has('audit')) uiModules.add('settings');
   return Array.from(uiModules);
 }
 
@@ -253,7 +279,16 @@ export class EmployeesService {
     const [business, activeUsersCount] = await Promise.all([
       this.prisma.business.findUnique({
         where: { id: businessId },
-        include: { owner: true, plan: true },
+        include: {
+          owner: true,
+          plan: true,
+          subscriptions: {
+            where: { status: 'active' },
+            orderBy: { currentPeriodEnd: 'desc' },
+            take: 1,
+            include: { plan: true },
+          },
+        },
       }),
       this.prisma.businessUser.count({
         where: { businessId, status: 'active' },
@@ -264,11 +299,19 @@ export class EmployeesService {
       throw new NotFoundException('Biznes topilmadi');
     }
 
-    if (business.plan && business.plan.maxUsers !== null && activeUsersCount >= business.plan.maxUsers) {
+    const effectivePlan = business.subscriptions?.[0]?.plan || business.plan;
+    const isUnlimitedUsers =
+      !effectivePlan ||
+      effectivePlan.maxUsers === null ||
+      effectivePlan.maxUsers <= 0 ||
+      effectivePlan.maxUsers >= 99999 ||
+      effectivePlan.name === 'Business';
+
+    if (!isUnlimitedUsers && effectivePlan.maxUsers && activeUsersCount >= effectivePlan.maxUsers) {
       throw new ForbiddenException({
         code: 'PLAN_LIMIT_USERS',
-        message: `Tarifingiz bo'yicha maksimal ${business.plan.maxUsers} ta foydalanuvchi/xodim qo'shish mumkin. Ko'proq xodimlar uchun tarifni yangilang.`,
-        maxUsers: business.plan.maxUsers,
+        message: `Tarifingiz bo'yicha maksimal ${effectivePlan.maxUsers} ta foydalanuvchi/xodim qo'shish mumkin. Ko'proq xodimlar uchun tarifni yangilang.`,
+        maxUsers: effectivePlan.maxUsers,
         currentUsersCount: activeUsersCount,
       });
     }

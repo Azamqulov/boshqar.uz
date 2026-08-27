@@ -33,7 +33,7 @@
         </div>
 
         <AppButton
-          v-if="activeTab === 'calendar'"
+          v-if="activeTab === 'calendar' && canCreate('appointments')"
           variant="primary"
           size="md"
           :icon="Plus"
@@ -42,7 +42,7 @@
           Yangi Bandlov
         </AppButton>
         <AppButton
-          v-else
+          v-else-if="canCreate('appointments')"
           variant="primary"
           size="md"
           :icon="Plus"
@@ -103,6 +103,7 @@ import { Plus, Calendar, Scissors } from 'lucide-vue-next';
 import AppButton from '../../components/AppButton.vue';
 import { useDataStore } from '../../stores/data.store';
 import { useToast } from '../../composables/useToast';
+import { usePermissions } from '../../composables/usePermissions';
 
 import AppointmentStatsCards from './components/AppointmentStatsCards.vue';
 import AppointmentTimelineGrid from './components/AppointmentTimelineGrid.vue';
@@ -113,6 +114,7 @@ import AppointmentServiceModal from './components/AppointmentServiceModal.vue';
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const { canCreate, canEdit, canDelete } = usePermissions();
 const dataStore = useDataStore();
 
 const activeTab = ref<'calendar' | 'services'>('calendar');

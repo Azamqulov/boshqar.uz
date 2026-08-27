@@ -287,16 +287,54 @@ export const GUIDE_MODULES: GuideModule[] = [
     ]
   },
 
-  // 8. RESTORAN VA KAFE
+  // 8. OSHXONA KDS EKRANI
   {
-    id: 'restaurant',
-    title: 'Restoran, Kafe va Fast-food (Stollar & KDS)',
-    shortDesc: 'Interaktiv stollar xaritasi, ofitsiant ekrani, taomlar menyusi, pre-chek va oshxona ekrani (KDS).',
-    badge: 'Restoran',
+    id: 'kds',
+    title: 'Oshxona va Taomlar Tayyorlash (KDS)',
+    shortDesc: 'Ofitsiant va kassadan yuborilgan buyurtmalarni real vaqtda qabul qilish, pishirish va tayyor qilish.',
+    badge: 'Oshxona & KDS',
+    icon: 'Flame',
+    route: '/restaurant/kds',
+    color: 'orange',
+    roles: ['Owner', 'Admin', 'Oshpaz'],
+    steps: [
+      {
+        title: '1. Yangi buyurtmalarni qabul qilish',
+        description: 'Ofitsiant yoki kassa orqali buyurtma qilingan taomlar "1. Yangi tushgan" ustunida ovozli signal bilan darhol paydo bo‘ladi.',
+        tip: 'Har bir buyurtmada stol raqami, taom miqdori va maxsus eslatmalar ko‘rinadi.'
+      },
+      {
+        title: '2. Pishirishni boshlash',
+        description: 'Taomni tayyorlashni boshlaganingizda "Pishirishni boshlash" tugmasini bosing — buyurtma "2. Pishirilmoqda" ustuniga o‘tadi.',
+        tip: 'Bu ofitsiantga taom oshxonada tayyorlanayotganini bildiradi.'
+      },
+      {
+        title: '3. Tayyor qilish va ofitsiantga xabar berish',
+        description: 'Taom tayyor bo‘lgach "Tayyor (Ofitsiantga)" tugmasini bosing. Buyurtma "3. Tayyor" ustuniga o‘tadi va ofitsiantga tezda yetkazish uchun signal boradi.',
+      }
+    ],
+    faq: [
+      {
+        q: 'Oshxona ekrani internet uzilsa ham ishlaydimi?',
+        a: 'Ha, mahalliy tarmoq (Wi-Fi) orqali kassa va oshxona o‘rtasida buyurtmalar uzluksiz almashinib turadi.'
+      },
+      {
+        q: 'Tayyor bo‘lgan buyurtmalarni qanday arxivlayman?',
+        a: 'Ofitsiant taomni olib ketgach "Topshirildi" tugmasi bosiladi va buyurtma ekrandan olinadi.'
+      }
+    ]
+  },
+
+  // 8.1. STOLLAR VA OFITSIANT
+  {
+    id: 'tables',
+    title: 'Stollar Xaritasi va Ofitsiant Xizmati',
+    shortDesc: 'Interaktiv stollar xaritasi, mehmonlar buyurtmasini ochish, taomlarni oshxonaga yuborish va pre-chek.',
+    badge: 'Stollar & Ofitsiant',
     icon: 'UtensilsCrossed',
     route: '/restaurant/tables',
     color: 'rose',
-    roles: ['Owner', 'Admin', 'Ofitsiant', 'Oshpaz'],
+    roles: ['Owner', 'Admin', 'Ofitsiant'],
     steps: [
       {
         title: '1. Stolni tanlash va buyurtma ochish',
@@ -314,8 +352,8 @@ export const GUIDE_MODULES: GuideModule[] = [
     ],
     faq: [
       {
-        q: 'KDS ekrani qanday ishlaydi?',
-        a: 'Oshpazlar /restaurant/kds sahifasidan kelgan taomlarni "Tayyorlanmoqda" va "Tayyor" holatiga o‘tkazishadi, bu ofitsiantga darhol ko‘rinadi.'
+        q: 'Stolni boshqa ofitsiantga yoki boshqa stolga ko‘chirish mumkinmi?',
+        a: 'Ha, stol kartasidagi "Ko‘chirish" funksiyasi orqali butun buyurtmani boshqa stolga 1-klikda o‘tkazasiz.'
       }
     ]
   },

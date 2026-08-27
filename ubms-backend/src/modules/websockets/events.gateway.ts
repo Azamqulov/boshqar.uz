@@ -162,4 +162,16 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitKitchenStatusChanged(branchId: string, kitchenOrder: Record<string, unknown>) {
     this.server.to(`branch_${branchId}`).emit('kitchen.status_changed', kitchenOrder);
   }
+
+  emitProductChanged(businessId: string, event: 'product.created' | 'product.updated' | 'product.deleted', data: Record<string, unknown>) {
+    this.server.to(`business_${businessId}`).emit(event, data);
+  }
+
+  emitInventoryChanged(businessId: string, data: Record<string, unknown>) {
+    this.server.to(`business_${businessId}`).emit('inventory.updated', data);
+  }
+
+  emitTableChanged(businessId: string, data: Record<string, unknown>) {
+    this.server.to(`business_${businessId}`).emit('table.updated', data);
+  }
 }

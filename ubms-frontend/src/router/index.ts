@@ -104,8 +104,10 @@ const routes: RouteRecordRaw[] = [
       { path: 'products/categories', component: CategoriesView },
       { path: 'inventory', component: InventoryView },
       { path: 'restaurant/tables', component: WaiterView },
+      { path: 'tables', redirect: '/restaurant/tables' },
       { path: 'restaurant/waiter', component: WaiterView },
       { path: 'restaurant/kds', component: KDSView },
+      { path: 'kds', redirect: '/restaurant/kds' },
       { path: 'appointments', component: AppointmentsView },
       { path: 'appointments/services', component: AppointmentsView },
       { path: 'customers', component: CustomersView },
@@ -119,24 +121,45 @@ const routes: RouteRecordRaw[] = [
       { path: 'superadmin', component: SuperAdminView },
     ],
   },
-  { path: '/:pathMatch(.*)*', component: NotFoundView },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404',
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition;
+    }
+    return { top: 0 };
+  },
 });
 
+export function getWorkerDefaultRoute(allowedModules: string[] = []): string {
+  if (!allowedModules || allowedModules.length === 0 || allowedModules.includes('all') || allowedModules.includes('dashboard')) {
+    return '/dashboard';
+  }
+  if (allowedModules.includes('tables')) return '/restaurant/tables';
+  if (allowedModules.includes('pos')) return '/pos';
+  if (allowedModules.includes('kds')) return '/restaurant/kds';
+  if (allowedModules.includes('products')) return '/products';
+  if (allowedModules.includes('inventory')) return '/inventory';
+  if (allowedModules.includes('customers')) return '/customers';
+  if (allowedModules.includes('suppliers')) return '/suppliers';
+  if (allowedModules.includes('finance')) return '/finance';
+  if (allowedModules.includes('appointments')) return '/appointments';
+  return '/pos';
+}
+
 router.beforeEach((to, _from, next) => {
-  // Check invalid section hash on landing page
   const validLandingHashes = [
-    '',
-    '#about',
     '#features',
+    '#demo',
     '#pricing',
     '#faq',
-    '#demo',
-    '#telegram',
     '#sectors',
     '#calculator',
     '#compare',
@@ -166,6 +189,9 @@ router.beforeEach((to, _from, next) => {
     localStorage.removeItem('ubms_active_business');
   }
 
+  const role = (activeBiz?.role || '').toLowerCase();
+  const isWorker = !user?.isSuperAdmin && role !== 'owner' && role !== 'admin';
+
   const isDemo =
     user?.phone === '+998900000000' ||
     user?.id === 'demo-user-id' ||
@@ -174,6 +200,7 @@ router.beforeEach((to, _from, next) => {
 
   const isSubscriptionExpired =
     !user?.isSuperAdmin &&
+    !isWorker &&
     activeBiz?.plan !== 'Free' &&
     Boolean(activeBiz?.isSubscriptionExpired || activeBiz?.subscription?.isExpired);
 
@@ -195,10 +222,9 @@ router.beforeEach((to, _from, next) => {
   } else if (to.meta.requiresAuth && isSubscriptionExpired && !allowedWhenExpired.some((p) => to.path === p || to.path.startsWith(p + '/'))) {
     next('/billing');
   } else if (to.path.startsWith('/auth') && token && user) {
-    // Agar foydalanuvchi demo rejimida bo'lsa, haqiqiy hisob ochishga ruxsat berish
     if (isDemo) {
       localStorage.removeItem('ubms-access_token');
-      localStorage.removeItem('ubms_refresh_token');
+      localStorage.removeItem('ubms-refresh_token');
       localStorage.removeItem('ubms_user');
       localStorage.removeItem('ubms_businesses');
       localStorage.removeItem('ubms_active_business');
@@ -211,7 +237,7 @@ router.beforeEach((to, _from, next) => {
       const role = (activeBiz?.role || '').toLowerCase();
       const isWorker = !user.isSuperAdmin && role !== 'owner' && role !== 'admin';
       if (isWorker) {
-        next('/pos');
+        next(getWorkerDefaultRoute(activeBiz?.allowedModules));
       } else {
         next('/dashboard');
       }
@@ -223,7 +249,16 @@ router.beforeEach((to, _from, next) => {
     const isWorker = !user?.isSuperAdmin && role !== 'owner' && role !== 'admin';
     const allowed = activeBiz?.allowedModules || [];
     if (isWorker && !allowed.includes('dashboard') && !allowed.includes('all')) {
-      next('/pos');
+      next(getWorkerDefaultRoute(allowed));
+    } else {
+      next();
+    }
+  } else if (to.path === '/pos' && activeBiz) {
+    const role = (activeBiz?.role || '').toLowerCase();
+    const isWorker = !user?.isSuperAdmin && role !== 'owner' && role !== 'admin';
+    const allowed = activeBiz?.allowedModules || [];
+    if (isWorker && !allowed.includes('pos') && !allowed.includes('orders') && !allowed.includes('all')) {
+      next(getWorkerDefaultRoute(allowed));
     } else {
       next();
     }

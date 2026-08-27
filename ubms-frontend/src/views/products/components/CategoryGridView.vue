@@ -49,6 +49,7 @@
 
         <div class="flex items-center gap-1">
           <button
+            v-if="canEdit('products')"
             @click="$emit('edit', cat)"
             class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             title="Tahrirlash"
@@ -56,6 +57,7 @@
             <Edit2 class="w-4 h-4" />
           </button>
           <button
+            v-if="canDelete('products')"
             @click="$emit('delete', cat)"
             class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
             title="O'chirish"
@@ -71,6 +73,9 @@
 <script setup lang="ts">
 import { Edit2, Trash2 } from 'lucide-vue-next';
 import CategoryIcon from '../../../components/CategoryIcon.vue';
+import { usePermissions } from '../../../composables/usePermissions';
+
+const { canEdit, canDelete } = usePermissions();
 
 defineProps<{
   categories: any[];

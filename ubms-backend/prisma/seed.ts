@@ -75,6 +75,11 @@ async function main() {
     { code: 'employees.manage', module: 'employees', description: 'Xodimlarni boshqarish' },
     { code: 'reports.view', module: 'reports', description: 'Hisobotlarni ko\'rish' },
     { code: 'restaurant.manage', module: 'restaurant', description: 'Stollar va oshxonani boshqarish' },
+    { code: 'kds.view', module: 'kds', description: 'Oshxona KDS ekranini ko\'rish' },
+    { code: 'kds.manage', module: 'kds', description: 'Oshxonadagi buyurtmalarni tayyorlash' },
+    { code: 'tables.view', module: 'tables', description: 'Stollarni ko\'rish' },
+    { code: 'tables.manage', module: 'tables', description: 'Stollar va ofitsiant xizmatini boshqarish' },
+    { code: 'dashboard.view', module: 'dashboard', description: 'Boshqaruv panelini ko\'rish' },
     { code: 'appointments.manage', module: 'appointments', description: 'Bandlovlarni boshqarish' },
     { code: 'settings.manage', module: 'settings', description: 'Tizim sozlamalarini o\'zgartirish' },
     { code: 'audit_logs.view', module: 'audit', description: 'Audit jurnallarini ko\'rish' },
@@ -196,6 +201,26 @@ async function main() {
       status: 'active',
     },
   });
+
+  // 6b. Demo Business Subscription (2-year active Pro trial)
+  const twoYearsFromNow = new Date();
+  twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+  await prisma.subscription.upsert({
+    where: { id: '00000000-0000-0000-0000-000000000099' },
+    update: {
+      status: 'trialing',
+      currentPeriodEnd: twoYearsFromNow,
+    },
+    create: {
+      id: '00000000-0000-0000-0000-000000000099',
+      businessId: business.id,
+      planId: proPlan.id,
+      status: 'trialing',
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: twoYearsFromNow,
+    },
+  });
+  console.log('✅ Demo business subscription created/updated — valid for 2 years');
 
   // 7. Branches (Chilonzor & Yunusobod)
   const mainBranch = await prisma.branch.upsert({

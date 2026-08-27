@@ -629,6 +629,38 @@
             Sichqonchasiz (klaviatura orqali) kassa boshqarish, to'lovni yakunlash va chek chiqarish uchun F1, F2, F4, F8, F10 tugmalarini faollashtiradi.
           </p>
         </div>
+
+        <!-- 8. Narx Yorlig'i (Cennik / Barkod) Studiyasi -->
+        <div class="p-5 sm:p-5.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-3 min-w-0">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-xs">
+                <Tag class="w-5.5 h-5.5" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">Narx Yorlig'i & Barkod Chop Etish</h4>
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                  Termo Printer / Cennik
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="$emit('togglePosSetting', 'allowBarcodeStudio')"
+              class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="posSettings.allowBarcodeStudio !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+            >
+              <span
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="posSettings.allowBarcodeStudio !== false ? 'translate-x-5' : 'translate-x-0'"
+              />
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-2.5 border-t border-slate-200/60 dark:border-slate-800">
+            Mahsulotlar bo'limida termo printerlar (40x25mm, 58x40mm) uchun narx yorliqlari va shtrix-kod stikerlarini chop etish studiyasini yoqish/o'chirish.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -658,6 +690,7 @@ import {
   Layers,
   Building2,
   Crown,
+  Tag,
 } from 'lucide-vue-next';
 
 import { useThemeStore } from '../../../stores/theme.store';
@@ -699,6 +732,7 @@ const props = defineProps<{
     enableServiceFee?: boolean;
     serviceFeePercent?: number;
     enableTableZones?: boolean;
+    allowBarcodeStudio?: boolean;
   };
 }>();
 

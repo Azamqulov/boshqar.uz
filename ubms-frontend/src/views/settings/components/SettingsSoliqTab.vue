@@ -87,7 +87,9 @@ import { ref } from 'vue';
 import AppInput from '@/components/AppInput.vue';
 import AppSelect from '@/components/AppSelect.vue';
 import AppButton from '@/components/AppButton.vue';
+import { useToast } from '@/composables/useToast';
 
+const toast = useToast();
 const isSaving = ref(false);
 
 const form = ref({
@@ -102,7 +104,7 @@ function saveSettings() {
   isSaving.value = true;
   setTimeout(() => {
     isSaving.value = false;
-    alert('Soliq.uz Virtual Kassa sozlamalari muvaffaqiyatli saqlandi!');
+    toast.success('Soliq.uz Virtual Kassa sozlamalari muvaffaqiyatli saqlandi!', 'Soliq Integratsiyasi');
   }, 600);
 }
 </script>

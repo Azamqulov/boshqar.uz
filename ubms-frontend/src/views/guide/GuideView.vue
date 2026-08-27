@@ -41,17 +41,20 @@ import {
   DollarSign,
   Clock,
   UtensilsCrossed,
+  Flame,
   Calendar,
   LayoutDashboard,
   Bot,
   Settings,
 } from 'lucide-vue-next';
 import { GUIDE_MODULES } from './guideData';
+import { useAuthStore } from '@/stores/auth.store';
 import BoshqarAIAssistant from '@/components/BoshqarAIAssistant.vue';
 import GuideHeader from './components/GuideHeader.vue';
 import GuideTopicDetail from './components/GuideTopicDetail.vue';
 import GuideCatalogGrid from './components/GuideCatalogGrid.vue';
 
+const authStore = useAuthStore();
 const searchQuery = ref('');
 const viewMode = ref<'guides' | 'ai'>('guides');
 const selectedTopic = ref<any>(null);
@@ -65,6 +68,8 @@ const iconMap: Record<string, any> = {
   finance: DollarSign,
   shifts: Clock,
   restaurant: UtensilsCrossed,
+  tables: UtensilsCrossed,
+  kds: Flame,
   appointments: Calendar,
   dashboard: LayoutDashboard,
   telegram: Bot,
@@ -104,6 +109,14 @@ const iconStyleMap: Record<string, { bg: string; color: string }> = {
     bg: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
     color: 'text-rose-600 dark:text-rose-400',
   },
+  tables: {
+    bg: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
+    color: 'text-rose-600 dark:text-rose-400',
+  },
+  kds: {
+    bg: 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400',
+    color: 'text-orange-600 dark:text-orange-400',
+  },
   appointments: {
     bg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
     color: 'text-purple-600 dark:text-purple-400',
@@ -122,8 +135,43 @@ const iconStyleMap: Record<string, { bg: string; color: string }> = {
   },
 };
 
+const isWorker = computed(() => {
+  const isSuper = authStore.user?.isSuperAdmin;
+  const role = (authStore.activeBusiness?.role || '').toLowerCase();
+  if (isSuper) return false;
+  return role !== 'owner' && role !== 'admin';
+});
+
+const allowedModules = computed(() => {
+  return authStore.activeBusiness?.allowedModules || [];
+});
+
 const guideTopics = computed(() => {
-  return GUIDE_MODULES.map((m) => {
+  const allowed = allowedModules.value;
+  const worker = isWorker.value;
+
+  const filtered = GUIDE_MODULES.filter((m) => {
+    if (!worker || allowed.includes('all')) return true;
+
+    if (m.id === 'pos') return allowed.includes('pos') || allowed.includes('orders');
+    if (m.id === 'products') return allowed.includes('products');
+    if (m.id === 'inventory') return allowed.includes('inventory');
+    if (m.id === 'customers') return allowed.includes('customers');
+    if (m.id === 'suppliers') return allowed.includes('suppliers');
+    if (m.id === 'finance') return allowed.includes('finance');
+    if (m.id === 'shifts') return allowed.includes('pos') || allowed.includes('finance');
+    if (m.id === 'kds') return allowed.includes('kds') || allowed.includes('restaurant');
+    if (m.id === 'tables') return allowed.includes('tables') || allowed.includes('restaurant');
+    if (m.id === 'restaurant') return allowed.includes('restaurant') || (allowed.includes('tables') && allowed.includes('kds'));
+    if (m.id === 'appointments') return allowed.includes('appointments') || allowed.includes('services');
+    if (m.id === 'dashboard') return allowed.includes('dashboard');
+    if (m.id === 'telegram') return allowed.includes('settings');
+    if (m.id === 'settings') return allowed.includes('settings');
+
+    return allowed.includes(m.id);
+  });
+
+  return filtered.map((m) => {
     const style = iconStyleMap[m.id] || {
       bg: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
       color: 'text-slate-600 dark:text-slate-400',

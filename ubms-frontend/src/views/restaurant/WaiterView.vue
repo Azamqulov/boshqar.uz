@@ -3,7 +3,7 @@
     <!-- Top Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 py-1">
       <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
+        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
           <UtensilsCrossed class="w-6 h-6" />
         </div>
         <div>
@@ -45,7 +45,7 @@
         </button>
 
         <button
-          v-else
+          v-else-if="canCreate('tables')"
           @click="openCreateTableModal"
           class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold transition shadow-lg shadow-emerald-500/25 btn-interactive"
         >
@@ -133,8 +133,8 @@
       :sending="sending"
       :paying-table="payingTable"
       @add-dish="addDishToTable"
-      @increase-new-item="$event.quantity++"
-      @decrease-new-item="$event.quantity > 1 ? $event.quantity-- : newItems = newItems.filter(i => i.product.id !== $event.product.id)"
+      @increase-new-item="increaseNewItem"
+      @decrease-new-item="decreaseNewItem"
       @send-to-kitchen="sendToKitchen"
       @open-pre-bill="openPreBillModal"
       @open-pay-modal="openTablePayModal"
@@ -240,6 +240,7 @@ import AppConfirmDialog from '../../components/AppConfirmDialog.vue';
 import ReceiptModal from '../../components/ReceiptModal.vue';
 import ShiftModal from '../../components/ShiftModal.vue';
 import { useToast } from '../../composables/useToast';
+import { usePermissions } from '../../composables/usePermissions';
 import { useDataStore } from '../../stores/data.store';
 import { useShiftStore } from '../../stores/shift.store';
 
@@ -253,6 +254,7 @@ import POSQuickCustomerModal from '../pos/components/POSQuickCustomerModal.vue';
 
 const router = useRouter();
 const toast = useToast();
+const { canCreate, canEdit, canDelete } = usePermissions();
 const dataStore = useDataStore();
 const shiftStore = useShiftStore();
 const { formatCurrency, formatDateTime } = useFormat();
@@ -468,6 +470,10 @@ const saveTable = async () => {
       toast.success(`Yangi "${tableForm.value.name}" muvaffaqiyatli qo'shildi!`, 'Stollar');
     }
 
+    isTableModalOpen.value = false;
+    editingTableId.value = null;
+    dataStore.invalidate('tables');
+    await loadTables(true);
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Stolni saqlashda xatolik', 'Xatolik');
   } finally {
@@ -545,21 +551,56 @@ const addDishToTable = (prod: any) => {
     openShiftModal('open');
     return;
   }
-  const existing = newItems.value.find((i) => i.product.id === prod.id);
-  if (existing) {
-    existing.quantity++;
+  const prodId = prod.id || prod.productId;
+  const existingIndex = newItems.value.findIndex((i) => (i.product?.id || i.productId) === prodId);
+  if (existingIndex !== -1) {
+    const currentQty = Number(newItems.value[existingIndex].quantity || 1);
+    newItems.value[existingIndex].quantity = currentQty + 1;
+    toast.info(`"${prod.name}" (${currentQty + 1} ta) stolga qo'shildi`, selectedTable.value?.name || 'Stol');
   } else {
     newItems.value.push({
       product: prod,
       quantity: 1,
     });
+    toast.info(`"${prod.name}" (1 ta) stolga qo'shildi`, selectedTable.value?.name || 'Stol');
   }
-  toast.info(`"${prod.name}" stol buyurtmasiga qo'shildi`, selectedTable.value.name);
+  newItems.value = [...newItems.value];
+};
+
+const increaseNewItem = (item: any) => {
+  const targetId = item.product?.id || item.productId || item.id;
+  const index = newItems.value.findIndex((i) => (i.product?.id || i.productId) === targetId);
+  if (index !== -1) {
+    newItems.value[index].quantity = Number(newItems.value[index].quantity || 1) + 1;
+  } else if (item.quantity !== undefined) {
+    item.quantity = Number(item.quantity || 1) + 1;
+  }
+  newItems.value = [...newItems.value];
+};
+
+const decreaseNewItem = (item: any) => {
+  const targetId = item.product?.id || item.productId || item.id;
+  const index = newItems.value.findIndex((i) => (i.product?.id || i.productId) === targetId);
+  if (index !== -1) {
+    if (newItems.value[index].quantity > 1) {
+      newItems.value[index].quantity = Number(newItems.value[index].quantity) - 1;
+    } else {
+      newItems.value.splice(index, 1);
+    }
+  }
+  newItems.value = [...newItems.value];
 };
 
 const orderTotalSum = computed(() => {
-  const newSum = newItems.value.reduce((sum, i) => sum + i.product.salePrice * i.quantity, 0);
-  const existingSum = existingItems.value.reduce((sum, i) => sum + Number(i.total), 0);
+  const newSum = newItems.value.reduce((sum, i) => {
+    const price = Number(i.product?.salePrice || i.product?.price || 0);
+    const qty = Number(i.quantity || 1);
+    return sum + (price * qty);
+  }, 0);
+  const existingSum = existingItems.value.reduce((sum, i) => {
+    const itemTotal = i.total !== undefined ? Number(i.total) : Number(i.unitPrice || i.price || 0) * Number(i.quantity || 1);
+    return sum + itemTotal;
+  }, 0);
   return newSum + existingSum;
 });
 

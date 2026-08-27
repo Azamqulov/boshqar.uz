@@ -89,6 +89,59 @@
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Telefon Raqami *</label>
               <PhoneInput v-model="profileForm.phone" required placeholder="90 123 45 67" />
             </div>
+
+            <!-- PLASTIK KARTA VA CLICK / PAYME REKVIZITLARI -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-800/80 space-y-3.5">
+              <div class="flex items-center justify-between">
+                <label class="block font-black text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                  <CreditCard class="w-4 h-4 text-emerald-500" />
+                  <span>Plastik Karta & Click / Payme Rekvizitlari</span>
+                </label>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  Kassa & Ofitsiantda chiqadi
+                </span>
+              </div>
+
+              <!-- Karta Raqami -->
+              <div>
+                <label class="block font-bold text-slate-600 dark:text-slate-400 text-[11px] mb-1">Karta Raqami (16 xonali)</label>
+                <div class="relative">
+                  <input
+                    :value="posSettings.ownerCardNumber"
+                    @input="handleCardNumberInput"
+                    maxlength="19"
+                    placeholder="8600 0000 0000 0000 yoki 9860..."
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold text-xs tracking-wider focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                  <span class="absolute right-3 top-2.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                    {{ (posSettings.ownerCardNumber || '').startsWith('9860') ? 'HUMO' : (posSettings.ownerCardNumber || '').startsWith('8600') ? 'UZCARD' : 'KARTA' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Karta Egasi & Bank Nomi -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-600 dark:text-slate-400 text-[11px] mb-1">Karta Egasi (Ism Familiya)</label>
+                  <input
+                    v-model="posSettings.ownerCardHolder"
+                    @input="posSettings.ownerCardHolder = ($event.target as HTMLInputElement).value.toUpperCase()"
+                    placeholder="ALISHER VALIYEV"
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold text-xs uppercase focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-600 dark:text-slate-400 text-[11px] mb-1">Bank Nomi</label>
+                  <AppSelect
+                    :model-value="selectedCardBank"
+                    @update:model-value="onBankChange"
+                    :options="cardBankOptions"
+                    placeholder="Bankni tanlang..."
+                    size="md"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -104,21 +157,17 @@
           <div class="space-y-4 text-xs">
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Amaldagi Parol</label>
-              <input
-                type="password"
+              <PasswordInput
                 v-model="passwordForm.currentPassword"
                 placeholder="Amaldagi joriy parolingizni kiriting"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
               />
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Yangi Parol (Ixtiyoriy)</label>
-              <input
-                type="password"
+              <PasswordInput
                 v-model="passwordForm.newPassword"
                 placeholder="O'zgartirish uchun yangi parol kiriting"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
               />
             </div>
 
@@ -359,7 +408,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import {
   CheckCircle2,
   Phone,
@@ -377,13 +426,56 @@ import {
   Clock,
   Eye,
   EyeOff,
+  CreditCard,
 } from 'lucide-vue-next';
 import { useAuthStore } from '../../../stores/auth.store';
 import { useCurrencyStore } from '../../../stores/currency.store';
 import AppSelect from '../../../components/AppSelect.vue';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PasswordInput from '../../../components/PasswordInput.vue';
 import { useLanguage } from '../../../composables/useLanguage';
 import { useScreenLock } from '../../../composables/useScreenLock';
+import { usePosSettings } from '../../../composables/usePosSettings';
+
+const { posSettings } = usePosSettings();
+
+const cardBankOptions = [
+  { value: 'Kapitalbank', label: 'Kapitalbank' },
+  { value: 'TBC Bank', label: 'TBC Bank' },
+  { value: 'Anorbank', label: 'Anorbank' },
+  { value: 'Ipak Yo\'li Banki', label: 'Ipak Yo\'li Banki' },
+  { value: 'Agrobank', label: 'Agrobank' },
+  { value: 'Xalq Banki', label: 'Xalq Banki' },
+  { value: 'Hamkorbank', label: 'Hamkorbank' },
+  { value: 'Milliy Bank (NBU)', label: 'Milliy Bank (NBU)' },
+  { value: 'O\'zsanoatqurilishbank (SQB)', label: 'SQB' },
+  { value: 'Boshqa bank', label: 'Boshqa bank' },
+];
+
+const selectedCardBank = ref(posSettings.value.ownerCardBank || 'Kapitalbank');
+
+watch(
+  () => posSettings.value.ownerCardBank,
+  (val) => {
+    if (val && val !== selectedCardBank.value) {
+      selectedCardBank.value = val;
+    }
+  }
+);
+
+const onBankChange = (val: string) => {
+  selectedCardBank.value = val;
+  posSettings.value.ownerCardBank = val;
+};
+
+const handleCardNumberInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const raw = target.value.replace(/\D/g, '').slice(0, 16);
+  const parts = raw.match(/.{1,4}/g);
+  const formatted = parts ? parts.join(' ') : raw;
+  posSettings.value.ownerCardNumber = formatted;
+  target.value = formatted;
+};
 
 const showPin = ref(false);
 

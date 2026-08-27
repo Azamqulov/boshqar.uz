@@ -28,12 +28,10 @@
             <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               {{ editingEmpId ? 'Yangi Parol (ixtiyoriy)' : 'Vaqtinchalik Parol *' }}
             </label>
-            <input
-              type="password"
+            <PasswordInput
               v-model="empForm.password"
               :required="!editingEmpId"
               :placeholder="editingEmpId ? 'O\'zgarishsiz qoldirish uchun bo\'sh qoldiring' : 'Kamida 4 yoki 6 ta belgi'"
-              class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
@@ -75,7 +73,7 @@
 
             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
               <div
-                v-for="modId in empForm.allowedModules"
+                v-for="modId in empForm.allowedModules.filter((id: string) => availableModules.some(m => m.id === id))"
                 :key="modId"
                 class="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-[11px]"
               >
@@ -132,6 +130,7 @@
 <script setup lang="ts">
 import { X, Plus, Edit2, Trash2 } from 'lucide-vue-next';
 import PhoneInput from '../../../components/PhoneInput.vue';
+import PasswordInput from '../../../components/PasswordInput.vue';
 
 const props = defineProps<{
   isOpen: boolean;

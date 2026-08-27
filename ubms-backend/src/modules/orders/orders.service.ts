@@ -61,12 +61,14 @@ function mapInputToPaymentType(input: string): { type: 'cash' | 'card' | 'click'
 }
 
 import { TelegramService } from '../telegram/telegram.service';
+import { EventsGateway } from '../websockets/events.gateway';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private telegramService?: TelegramService,
+    private eventsGateway?: EventsGateway,
   ) {}
 
   async findAll(
@@ -504,6 +506,19 @@ export class OrdersService {
       this.telegramService?.sendOrderNotification(businessId, fullOrderResult).catch(() => null);
     }
 
+    // Emit Realtime WebSocket event to all connected clients in business room
+    if (fullOrderResult) {
+      try {
+        if (isImmediateComplete) {
+          this.eventsGateway?.emitOrderCompleted(businessId, branchId, fullOrderResult as any);
+        } else {
+          this.eventsGateway?.emitOrderCreated(businessId, branchId, fullOrderResult as any);
+        }
+      } catch (err) {
+        // ws emit should never throw
+      }
+    }
+
     // Trigger low stock notifications if any
     if (lowStockAlerts.length > 0) {
       for (const alert of lowStockAlerts) {
@@ -604,6 +619,9 @@ export class OrdersService {
 
     if (result) {
       this.telegramService?.sendOrderNotification(businessId, result).catch(() => null);
+      try {
+        this.eventsGateway?.emitOrderCompleted(businessId, branchId, result as any);
+      } catch (err) {}
     }
 
     return result;

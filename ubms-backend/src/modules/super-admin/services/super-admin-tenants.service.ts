@@ -535,8 +535,14 @@ export class SuperAdminTenantsService {
     const data: any = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.priceMonthly !== undefined) data.priceMonthly = dto.priceMonthly;
-    if (dto.maxBranches !== undefined) data.maxBranches = dto.maxBranches === 0 ? null : dto.maxBranches;
-    if (dto.maxUsers !== undefined) data.maxUsers = dto.maxUsers === 0 ? null : dto.maxUsers;
+    if (dto.maxBranches !== undefined) {
+      const val = Number(dto.maxBranches);
+      data.maxBranches = (!val || val <= 0 || val >= 99999 || isNaN(val)) ? null : Math.min(Math.floor(val), 2147483647);
+    }
+    if (dto.maxUsers !== undefined) {
+      const val = Number(dto.maxUsers);
+      data.maxUsers = (!val || val <= 0 || val >= 99999 || isNaN(val)) ? null : Math.min(Math.floor(val), 2147483647);
+    }
     if (dto.features !== undefined) data.features = dto.features;
 
     const res = await this.prisma.plan.update({

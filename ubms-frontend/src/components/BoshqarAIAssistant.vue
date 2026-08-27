@@ -401,7 +401,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 import {
   Sparkles,
   Bot,
@@ -434,9 +434,28 @@ import {
   LayoutGrid,
   FileText,
   CheckCircle2,
+  Flame,
+  UtensilsCrossed,
+  Calendar,
+  Clock,
+  Truck,
 } from 'lucide-vue-next';
 import api from '../services/api';
+import { useAuthStore } from '../stores/auth.store';
 import { AI_KNOWLEDGE_BASE, GUIDE_MODULES } from '../views/guide/guideData';
+
+const authStore = useAuthStore();
+
+const isWorker = computed(() => {
+  const isSuper = authStore.user?.isSuperAdmin;
+  const role = (authStore.activeBusiness?.role || '').toLowerCase();
+  if (isSuper) return false;
+  return role !== 'owner' && role !== 'admin';
+});
+
+const allowedModules = computed(() => {
+  return authStore.activeBusiness?.allowedModules || [];
+});
 
 const props = withDefaults(
   defineProps<{
@@ -474,15 +493,87 @@ const scrollPills = (direction: 'left' | 'right') => {
   }
 };
 
-const defaultPills = [
-  { text: "Bugun qancha savdo bo'ldi?", icon: DollarSign },
-  { text: "Yangi tovar qanday qo'shiladi?", icon: PlusCircle },
-  { text: "Kassada chek qanday chiqariladi?", icon: Receipt },
-  { text: "Telegram botni qanday ulayman?", icon: SendHorizontal },
-  { text: "Barchasini ko'rish", icon: LayoutGrid },
-];
+const allPillsMap: Record<string, { text: string; icon: any }[]> = {
+  kds: [
+    { text: "Yangi buyurtmani qanday qabul qilaman?", icon: Flame },
+    { text: "Taomni 'Pishirilmoqda' holatiga qanday o‘tkazaman?", icon: Flame },
+    { text: "Tayyor bo‘lgan taom haqida ofitsiantga qanday xabar boradi?", icon: SendHorizontal },
+    { text: "Oshxona ovozli signalini qanday tekshiraman?", icon: Volume2 },
+  ],
+  tables: [
+    { text: "Stolni qanday band qilaman?", icon: UtensilsCrossed },
+    { text: "Buyurtmani oshxonaga (KDS) qanday yuboraman?", icon: SendHorizontal },
+    { text: "Pre-chekni qanday chiqaraman?", icon: Receipt },
+  ],
+  pos: [
+    { text: "Bugun qancha savdo bo'ldi?", icon: DollarSign },
+    { text: "Kassada chek qanday chiqariladi?", icon: Receipt },
+    { text: "Chegirma yoki aksiya qanday qilinadi?", icon: PlusCircle },
+  ],
+  products: [
+    { text: "Yangi tovar qanday qo'shiladi?", icon: PlusCircle },
+    { text: "Shtrix-kodni qanday skaner qilaman?", icon: Package },
+  ],
+  inventory: [
+    { text: "Ombor qoldig‘i qayerda ko‘rinadi?", icon: Store },
+    { text: "Kam qolgan tovarlar ro‘yxati qanday olinadi?", icon: FileText },
+  ],
+  customers: [
+    { text: "Nasiya qarzini qanday yopaman?", icon: Users },
+    { text: "Yangi mijoz qanday kiritiladi?", icon: PlusCircle },
+  ],
+  finance: [
+    { text: "Kunlik tushum va xarajatlar qayerda ko‘rinadi?", icon: DollarSign },
+    { text: "Xarajat (chiqim) qanday kiritiladi?", icon: FileText },
+  ],
+  appointments: [
+    { text: "Yangi bandlov qanday qo‘shiladi?", icon: Calendar },
+    { text: "Ustalar ish jadvalini qanday ko‘raman?", icon: Clock },
+  ],
+};
 
-const sidebarTopics = [
+const defaultPills = computed(() => {
+  const allowed = allowedModules.value;
+  const worker = isWorker.value;
+
+  if (worker && !allowed.includes('all')) {
+    const list: { text: string; icon: any }[] = [];
+    for (const mod of allowed) {
+      if (allPillsMap[mod]) {
+        list.push(...allPillsMap[mod]);
+      }
+    }
+    if (list.length > 0) return list;
+  }
+
+  return [
+    { text: "Bugun qancha savdo bo'ldi?", icon: DollarSign },
+    { text: "Yangi tovar qanday qo'shiladi?", icon: PlusCircle },
+    { text: "Kassada chek qanday chiqariladi?", icon: Receipt },
+    { text: "Telegram botni qanday ulayman?", icon: SendHorizontal },
+    { text: "Barchasini ko'rish", icon: LayoutGrid },
+  ];
+});
+
+const allSidebarTopics = [
+  {
+    id: 'kds',
+    title: 'Oshxona (KDS)',
+    desc: 'Buyurtmalarni qabul qilish, pishirish, tayyorlash',
+    icon: Flame,
+    iconBg: 'bg-orange-50 dark:bg-orange-950/50',
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    prompt: 'Oshxona KDS ekranida taomlarni qanday qabul qilaman va tayyorlayman?',
+  },
+  {
+    id: 'tables',
+    title: 'Stollar & Ofitsiant',
+    desc: 'Stollar xaritasi, mehmonlar, pre-chek',
+    icon: UtensilsCrossed,
+    iconBg: 'bg-rose-50 dark:bg-rose-950/50',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    prompt: 'Stollar xaritasi va ofitsiant xizmati bo‘yicha qo‘llanma ber',
+  },
   {
     id: 'pos',
     title: 'Kassa (POS)',
@@ -520,12 +611,21 @@ const sidebarTopics = [
     prompt: 'Mijoz qarzini qanday yozaman?',
   },
   {
+    id: 'appointments',
+    title: 'Bandlovlar (Salon)',
+    desc: 'Xizmatlar, ustalar navbati, taqvim',
+    icon: Calendar,
+    iconBg: 'bg-purple-50 dark:bg-purple-950/50',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    prompt: 'Xizmatlar va bandlovlar taqvimi qanday ishlaydi?',
+  },
+  {
     id: 'finance',
     title: 'Moliya & Hisobot',
     desc: 'Kirim-chiqimlar, foyda, xarajatlar',
     icon: DollarSign,
-    iconBg: 'bg-amber-50 dark:bg-amber-950/50',
-    iconColor: 'text-amber-600 dark:text-amber-500',
+    iconBg: 'bg-emerald-50 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
     prompt: 'Kunlik sof foyda qayerda ko‘rinadi?',
   },
   {
@@ -539,17 +639,42 @@ const sidebarTopics = [
   },
 ];
 
-const keyboardShortcuts = [
-  { key: 'Ctrl + N', action: 'Yangi yozuv' },
-  { key: 'Ctrl + F', action: 'Qidirish' },
-  { key: 'F1', action: 'Yordam markazi' },
-  { key: 'Esc', action: 'Amalni bekor qilish' },
-];
+const sidebarTopics = computed(() => {
+  const allowed = allowedModules.value;
+  const worker = isWorker.value;
+
+  if (worker && !allowed.includes('all')) {
+    return allSidebarTopics.filter((t) => {
+      if (t.id === 'kds') return allowed.includes('kds') || allowed.includes('restaurant');
+      if (t.id === 'tables') return allowed.includes('tables') || allowed.includes('restaurant');
+      if (t.id === 'pos') return allowed.includes('pos') || allowed.includes('orders');
+      if (t.id === 'products') return allowed.includes('products');
+      if (t.id === 'inventory') return allowed.includes('inventory');
+      if (t.id === 'customers') return allowed.includes('customers');
+      if (t.id === 'appointments') return allowed.includes('appointments') || allowed.includes('services');
+      if (t.id === 'finance') return allowed.includes('finance');
+      if (t.id === 'settings') return allowed.includes('settings');
+      return allowed.includes(t.id);
+    });
+  }
+
+  return allSidebarTopics.filter((t) => t.id !== 'kds' && t.id !== 'tables').concat([
+    {
+      id: 'kds',
+      title: 'Oshxona & KDS',
+      desc: 'Taomlar tayyorlash ekrani',
+      icon: Flame,
+      iconBg: 'bg-orange-50 dark:bg-orange-950/50',
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      prompt: 'Oshxona KDS ekrani qanday ishlaydi?',
+    }
+  ]);
+});
 
 const defaultWelcomeMessage: ChatMessage = {
   id: 'welcome',
   sender: 'bot',
-  text: `Assalomu alaykum! Men **Boshqar AI** aqlli yordamchingiz.\n\nBoshqar.uz tizimidan foydalanishda (Kassa, Ombor, Moliya, Nasiya, Restoran, Xizmatlar yoki Sozlamalar) qanday savolingiz bo‘lsa, menga bemalol yozing!`,
+  text: `Assalomu alaykum! Men **Boshqar AI** aqlli virtual yordamchingiz.\n\nTizimdan foydalanish bo‘yicha qanday savolingiz bo‘lsa, menga bemalol yozing!`,
   timestamp: new Date(),
 };
 

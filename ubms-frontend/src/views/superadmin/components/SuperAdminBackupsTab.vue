@@ -112,6 +112,19 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Confirm Dialog -->
+    <AppConfirmDialog
+      :open="isDeleteConfirmOpen"
+      title="Zaxira nusxasini o'chirish"
+      :message="`Haqiqatdan ham &quot;${backupToDelete}&quot; zaxirasini o'chirmoqchimisiz?`"
+      confirm-text="Ha, o'chirish"
+      cancel-text="Bekor qilish"
+      variant="danger"
+      :loading="isDeletingBackup"
+      @confirm="confirmDeleteBackup"
+      @cancel="isDeleteConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -128,6 +141,7 @@ import {
 import api from '@/services/api';
 import { useToast } from '@/composables/useToast';
 import SkeletonLoader from '@/components/SkeletonLoader.vue';
+import AppConfirmDialog from '@/components/AppConfirmDialog.vue';
 
 const toast = useToast();
 const backups = ref<any[]>([]);
@@ -187,14 +201,29 @@ const downloadBackup = async (filename: string) => {
   }
 };
 
-const deleteBackup = async (filename: string) => {
-  if (!confirm(`Haqiqatdan ham "${filename}" zaxirasini o'chirmoqchimisiz?`)) return;
+const isDeleteConfirmOpen = ref(false);
+const backupToDelete = ref<string | null>(null);
+const isDeletingBackup = ref(false);
+
+const deleteBackup = (filename: string) => {
+  backupToDelete.value = filename;
+  isDeleteConfirmOpen.value = true;
+};
+
+const confirmDeleteBackup = async () => {
+  if (!backupToDelete.value) return;
+  const filename = backupToDelete.value;
+  isDeletingBackup.value = true;
   try {
     await api.delete(`/superadmin/backups/${encodeURIComponent(filename)}`);
     toast.success('Zaxira fayli o\'chirildi');
     backups.value = backups.value.filter((b) => b.filename !== filename);
+    isDeleteConfirmOpen.value = false;
+    backupToDelete.value = null;
   } catch (err: any) {
     toast.error('Faylni o\'chirishda xatolik yuz berdi');
+  } finally {
+    isDeletingBackup.value = false;
   }
 };
 

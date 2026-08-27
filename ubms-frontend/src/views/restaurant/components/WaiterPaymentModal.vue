@@ -98,6 +98,108 @@
             </div>
           </div>
 
+          <!-- CARD / CLICK PAYMENT: OWNER CARD DETAILS & RECEIPT UPLOAD -->
+          <div v-if="tablePaymentMethod === '2' || tablePaymentMethod === '3'" class="space-y-3">
+            <!-- Owner Card Box -->
+            <div
+              v-if="posSettings.ownerCardNumber"
+              class="rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-slate-50 dark:from-slate-900 dark:via-emerald-950 dark:to-slate-900 p-4 text-slate-900 dark:text-white shadow-xs border border-emerald-500/30 relative overflow-hidden"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 font-mono">
+                  {{ posSettings.ownerCardBank || 'KAPITALBANK' }}
+                </span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/15 dark:bg-white/10 text-emerald-800 dark:text-white border border-emerald-500/20 dark:border-white/20">
+                  {{ posSettings.ownerCardNumber.startsWith('9860') ? 'HUMO' : posSettings.ownerCardNumber.startsWith('8600') ? 'UZCARD' : 'KARTA' }}
+                </span>
+              </div>
+
+              <!-- Card Number + Copy -->
+              <div class="flex items-center justify-between my-2 bg-white dark:bg-black/30 p-2.5 rounded-xl border border-emerald-500/20 dark:border-white/10 shadow-xs">
+                <span class="font-mono text-sm sm:text-base font-black tracking-widest text-slate-900 dark:text-emerald-100">
+                  {{ posSettings.ownerCardNumber }}
+                </span>
+                <button
+                  type="button"
+                  @click="copyCardNumber(posSettings.ownerCardNumber)"
+                  class="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs shadow-emerald-500/20"
+                >
+                  <component :is="isCopied ? Check : Copy" class="w-3.5 h-3.5" />
+                  <span>{{ isCopied ? 'Nusxalandi' : 'Nusxa olish' }}</span>
+                </button>
+              </div>
+
+              <!-- Cardholder -->
+              <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-emerald-500/15 dark:border-white/10">
+                <div>
+                  <span class="text-[9px] text-slate-500 dark:text-emerald-400/80 block uppercase font-bold">Karta Egasi:</span>
+                  <span class="font-bold tracking-wider uppercase text-slate-900 dark:text-white font-mono text-xs">
+                    {{ posSettings.ownerCardHolder || 'BIZNES EGASI' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hint if no card is set -->
+            <div
+              v-else
+              class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between"
+            >
+              <div class="flex items-center gap-2">
+                <CreditCard class="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>Karta rekvizitlarini <b>Sozlamalar ➔ Terminallar</b> bo'limida kiritishingiz mumkin.</span>
+              </div>
+            </div>
+
+            <!-- Receipt Upload Section (Click / Payme Cheki) -->
+            <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Upload class="w-3.5 h-3.5 text-emerald-600" />
+                  <span>To'lov / Click chekini biriktirish (Ixtiyoriy):</span>
+                </label>
+                <span v-if="receiptPreview" class="text-[10px] text-emerald-600 font-bold">
+                  ✓ Chek yuklandi
+                </span>
+              </div>
+
+              <!-- Upload input & Preview -->
+              <div v-if="!receiptPreview">
+                <label class="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-xl cursor-pointer bg-white dark:bg-slate-800/60 transition group">
+                  <div class="flex items-center gap-2 text-slate-500 group-hover:text-emerald-600">
+                    <Camera class="w-4 h-4" />
+                    <span class="text-xs font-semibold">Chek skrinshotini tanlang yoki rasmga oling</span>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="handleReceiptFileChange"
+                  />
+                </label>
+              </div>
+
+              <div v-else class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                  <img :src="receiptPreview" class="w-10 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0" />
+                  <div class="text-xs truncate">
+                    <span class="font-bold text-slate-900 dark:text-white block truncate">{{ receiptFileName || 'To\'lov cheki' }}</span>
+                    <span class="text-[10px] text-slate-400">Skrinshot biriktirildi</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  @click="removeReceipt"
+                  class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                  title="Chekni o'chirish"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Cash change / Nasiya calculation if cash selected -->
           <div v-if="tablePaymentMethod === '1'" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
             <div>
@@ -170,6 +272,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import {
   Receipt,
   X,
@@ -180,10 +283,60 @@ import {
   CheckCircle2,
   User,
   AlertTriangle,
+  Upload,
+  Camera,
+  Trash2,
+  Copy,
+  Check,
 } from 'lucide-vue-next';
 import CurrencyInput from '../../../components/CurrencyInput.vue';
 import AppSelect from '../../../components/AppSelect.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePosSettings } from '../../../composables/usePosSettings';
+import { useToast } from '../../../composables/useToast';
+
+const toast = useToast();
+const { posSettings } = usePosSettings();
+
+const isCopied = ref(false);
+const receiptPreview = ref<string | null>(null);
+const receiptFileName = ref<string>('');
+
+const copyCardNumber = async (num: string) => {
+  if (!num) return;
+  try {
+    await navigator.clipboard.writeText(num.replace(/\s+/g, ''));
+    isCopied.value = true;
+    toast.success('Karta raqami nusxalandi!', 'Nusxa olindi');
+    setTimeout(() => {
+      isCopied.value = false;
+    }, 2000);
+  } catch (e) {}
+};
+
+const handleReceiptFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    toast.warning('Rasm hajmi 5MB dan oshmasligi kerak', 'Fayl hajmi');
+    return;
+  }
+
+  receiptFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    receiptPreview.value = event.target?.result as string;
+    toast.success('To\'lov cheki muvaffaqiyatli biriktirildi!', 'Chek yuklandi');
+  };
+  reader.readAsDataURL(file);
+};
+
+const removeReceipt = () => {
+  receiptPreview.value = null;
+  receiptFileName.value = '';
+};
 
 defineProps<{
   isOpen: boolean;

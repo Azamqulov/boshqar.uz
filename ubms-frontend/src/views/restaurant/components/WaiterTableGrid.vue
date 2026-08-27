@@ -67,6 +67,7 @@
         <p class="font-bold text-sm text-slate-600 dark:text-slate-400">Hech qanday stol topilmadi</p>
         <p class="text-xs text-slate-400 max-w-sm">Yangi stol qo'shish uchun "Yangi Stol Qo'shish" tugmasini bosing</p>
         <button
+          v-if="canCreate('tables')"
           @click="$emit('openCreateTable')"
           class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md transition"
         >
@@ -119,6 +120,7 @@
 
               <!-- Fast Actions (Edit / Delete) -->
               <button
+                v-if="canEdit('tables')"
                 type="button"
                 @click.stop="$emit('editTable', table)"
                 class="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -127,6 +129,7 @@
                 <Edit2 class="w-3.5 h-3.5" />
               </button>
               <button
+                v-if="canDelete('tables')"
                 type="button"
                 @click.stop="$emit('deleteTable', table)"
                 class="p-1 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
@@ -168,6 +171,9 @@ import { Search, Plus, UtensilsCrossed, Edit2, Trash2, ArrowRight } from 'lucide
 import SkeletonLoader from '../../../components/SkeletonLoader.vue';
 import AppInput from '../../../components/AppInput.vue';
 import { useFormat } from '../../../composables/useFormat';
+import { usePermissions } from '../../../composables/usePermissions';
+
+const { canCreate, canEdit, canDelete } = usePermissions();
 
 const props = defineProps<{
   statusFilter: string;

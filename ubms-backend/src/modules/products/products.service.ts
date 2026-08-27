@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProductStatus } from '@prisma/client';
 import { resolveTrackInventory } from '../../common/utils/inventory-tracking.util';
+import { EventsGateway } from '../websockets/events.gateway';
 
 export interface FindProductsQueryDto {
   search?: string;
@@ -55,7 +56,10 @@ export interface CreateUnitDto {
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventsGateway?: EventsGateway,
+  ) {}
 
   async findAllLite(businessId: string, branchId?: string, query?: { search?: string; categoryId?: string; limit?: number }) {
     const limit = Math.min(Number(query?.limit) || 1000, 2000);
@@ -363,7 +367,7 @@ export class ProductsService {
 
       const effectiveStockQty = isMadeToOrder ? (product.status === 'active' ? 9999 : 0) : initialQty;
 
-      return {
+      const res = {
         ...product,
         isMadeToOrder,
         isAvailable: product.status === 'active',
@@ -372,6 +376,12 @@ export class ProductsService {
         rawInventoryQty: initialQty,
         inventory: targetBranchId ? [{ branchId: targetBranchId, quantity: initialQty, reservedQty: 0 }] : [],
       };
+
+      try {
+        this.eventsGateway?.emitProductChanged(businessId, 'product.created', res as any);
+      } catch (e) {}
+
+      return res;
     });
   }
 
@@ -470,7 +480,7 @@ export class ProductsService {
       const effectiveStockQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : stockQty;
       const effectiveAvailableQty = isMadeToOrder ? (updatedProduct.status === 'active' ? 9999 : 0) : Math.max(0, stockQty - reservedQty);
 
-      return {
+      const res = {
         ...updatedProduct,
         isMadeToOrder,
         isAvailable: updatedProduct.status === 'active',
@@ -479,6 +489,12 @@ export class ProductsService {
         rawInventoryQty: stockQty,
         inventory: currentInventories,
       };
+
+      try {
+        this.eventsGateway?.emitProductChanged(businessId, 'product.updated', res as any);
+      } catch (e) {}
+
+      return res;
     });
   }
 
@@ -501,33 +517,46 @@ export class ProductsService {
       this.prisma.stockTransferItem.count({ where: { productId: id } }),
     ]);
 
+    let deleteResult: any;
     if (hasOrders > 0 || hasInventoryTx > 0 || hasTransferItems > 0) {
       // Soft delete / archive so historical reports and receipts stay intact
-      return this.prisma.product.update({
+      deleteResult = await this.prisma.product.update({
         where: { id },
         data: { status: 'archived' },
       });
+    } else {
+      // Clean up inventory records before hard deleting product
+      await this.prisma.inventory.deleteMany({
+        where: { productId: id },
+      });
+
+      deleteResult = await this.prisma.product.delete({
+        where: { id },
+      });
     }
 
-    // Clean up inventory records before hard deleting product
-    await this.prisma.inventory.deleteMany({
-      where: { productId: id },
-    });
+    try {
+      this.eventsGateway?.emitProductChanged(businessId, 'product.deleted', { id } as any);
+    } catch (e) {}
 
-    return this.prisma.product.delete({
-      where: { id },
-    });
+    return deleteResult;
   }
 
   async toggleAvailability(businessId: string, id: string, targetStatus?: ProductStatus) {
     const product = await this.findOne(businessId, id);
     const newStatus: ProductStatus = targetStatus ? targetStatus : (product.status === 'active' ? 'inactive' : 'active');
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id: product.id },
       data: { status: newStatus },
       include: { category: true, unit: true },
     });
+
+    try {
+      this.eventsGateway?.emitProductChanged(businessId, 'product.updated', updated as any);
+    } catch (e) {}
+
+    return updated;
   }
 
   // Bestsellers (Last 30 days)

@@ -73,6 +73,19 @@
       @confirm="saveRequestChanges"
       @set-expiry-days="setEditExpiryDays"
     />
+
+    <!-- MODAL 5: Delete Confirm Dialog -->
+    <AppConfirmDialog
+      :open="isDeleteConfirmOpen"
+      title="To'lov so'rovini o'chirish"
+      :message="`&quot;${reqToDelete?.business?.name || 'Ushbu'}&quot; to'lov so'rovini o'chirishni tasdiqlaysizmi?`"
+      confirm-text="Ha, o'chirish"
+      cancel-text="Bekor qilish"
+      variant="danger"
+      :loading="isDeletingReq"
+      @confirm="confirmDeleteRequest"
+      @cancel="isDeleteConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -82,6 +95,7 @@ import api from '@/services/api';
 import { useToast } from '@/composables/useToast';
 import { usePagination } from '@/composables/usePagination';
 
+import AppConfirmDialog from '@/components/AppConfirmDialog.vue';
 import SuperAdminRequisitesCard from './SuperAdminRequisitesCard.vue';
 import SuperAdminBillingTable from './SuperAdminBillingTable.vue';
 import SuperAdminReceiptModal from './SuperAdminReceiptModal.vue';
@@ -356,17 +370,30 @@ const saveRequestChanges = async () => {
   }
 };
 
-const deleteRequest = async (req: any) => {
-  if (!confirm(`"${req.business?.name}" to'lov so'rovini o'chirishni tasdiqlaysizmi?`)) return;
+const isDeleteConfirmOpen = ref(false);
+const reqToDelete = ref<any>(null);
+const isDeletingReq = ref(false);
 
+const deleteRequest = (req: any) => {
+  reqToDelete.value = req;
+  isDeleteConfirmOpen.value = true;
+};
+
+const confirmDeleteRequest = async () => {
+  if (!reqToDelete.value) return;
+  const req = reqToDelete.value;
+  isDeletingReq.value = true;
   actionLoadingId.value = req.id;
   try {
     await api.delete(`/billing/admin/requests/${req.id}`);
     toast.success('To\'lov so\'rovi o\'chirildi!');
+    isDeleteConfirmOpen.value = false;
+    reqToDelete.value = null;
     await loadRequests();
   } catch (err: any) {
     toast.error(err.response?.data?.message || err.message || 'Xatolik yuz berdi');
   } finally {
+    isDeletingReq.value = false;
     actionLoadingId.value = null;
   }
 };

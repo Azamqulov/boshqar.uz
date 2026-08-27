@@ -63,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await api.post('/auth/login', loginData);
         this.setAuthData(data);
+        this.fetchBusinesses().catch(() => {});
         return data;
       } finally {
         this.isLoading = false;
@@ -106,7 +107,9 @@ export const useAuthStore = defineStore('auth', {
 
       this.user = data.user;
       this.token = data.accessToken;
-      this.businesses = data.businesses || [];
+      this.businesses = (data.businesses && data.businesses.length > 0)
+        ? data.businesses
+        : (data.activeBusiness ? [data.activeBusiness] : []);
       this.activeBusiness = data.activeBusiness || (this.businesses[0] ?? null);
 
       localStorage.setItem('ubms_access_token', data.accessToken);
@@ -120,6 +123,7 @@ export const useAuthStore = defineStore('auth', {
     },
     setActiveBusiness(business: BusinessItem) {
       if (!business) return;
+      const isChanged = this.activeBusiness?.id !== business.id;
       this.activeBusiness = business;
       localStorage.setItem('ubms_active_business', JSON.stringify(business));
       localStorage.setItem('ubms_active_business_id', business.id);
@@ -128,6 +132,13 @@ export const useAuthStore = defineStore('auth', {
         this.setActiveBranch(business.branchId);
       } else if (business.branches && business.branches.length > 0) {
         this.setActiveBranch(business.branches[0].id);
+      }
+
+      if (isChanged) {
+        try {
+          const dataStore = useDataStore();
+          dataStore.invalidate();
+        } catch (e) {}
       }
     },
     setActiveBranch(branchId: string) {

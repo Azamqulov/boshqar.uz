@@ -521,12 +521,26 @@
       feature-title="Telegram Bot & AI Avtomatizatsiya"
       @close="showProModal = false"
     />
+
+    <!-- DISCONNECT CONFIRM DIALOG -->
+    <AppConfirmDialog
+      :open="isDisconnectConfirmOpen"
+      title="Telegram Botni uzish"
+      message="Haqiqatan ham Telegram botni tizimdan uzmoqchimisiz? Barcha avtomatik chek va hisobot xabarlari to'xtatiladi."
+      confirm-text="Ha, uzish"
+      cancel-text="Bekor qilish"
+      variant="danger"
+      :loading="disconnecting"
+      @confirm="confirmDisconnectBot"
+      @cancel="isDisconnectConfirmOpen = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import TelegramConnectModal from './TelegramConnectModal.vue';
+import AppConfirmDialog from '../../../components/AppConfirmDialog.vue';
 import {
   Bot,
   Send,
@@ -791,13 +805,19 @@ const sendTestMessage = async () => {
   }
 };
 
-const disconnectBot = async () => {
-  if (!confirm('Haqiqatan ham Telegram botni uzmoqchimisiz?')) return;
+const isDisconnectConfirmOpen = ref(false);
+
+const disconnectBot = () => {
+  isDisconnectConfirmOpen.value = true;
+};
+
+const confirmDisconnectBot = async () => {
   disconnecting.value = true;
   try {
     await api.post('/telegram/disconnect');
     await loadStatus();
     toast.info('Telegram bot tizimdan uzildi', 'Telegram Bot');
+    isDisconnectConfirmOpen.value = false;
   } catch (e: any) {
     toast.error(e.response?.data?.message || 'Uzishda xatolik', 'Telegram');
   } finally {

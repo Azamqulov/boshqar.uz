@@ -90,6 +90,7 @@ export function usePlanFeatures() {
       export_reports: true,
       vip_support: true,
       cloud_backup: true,
+      barcode_studio: true,
     };
   });
 

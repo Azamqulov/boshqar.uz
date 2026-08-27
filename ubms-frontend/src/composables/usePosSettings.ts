@@ -35,6 +35,12 @@ export interface PosSettings {
   // Service Fee (Restoran / Kafe Xizmat haqi %)
   enableServiceFee: boolean;
   serviceFeePercent: number;
+  ownerCardNumber?: string;
+  ownerCardHolder?: string;
+  ownerCardBank?: string;
+  ownerCardPhone?: string;
+  // Barcode & Price Tag Label Studio
+  allowBarcodeStudio: boolean;
 }
 
 export const defaultPosSettings: PosSettings = {
@@ -51,6 +57,12 @@ export const defaultPosSettings: PosSettings = {
   // Service Fee default
   enableServiceFee: true,
   serviceFeePercent: 10,
+  // Card & Click defaults
+  ownerCardNumber: '',
+  ownerCardHolder: '',
+  ownerCardBank: 'Kapitalbank',
+  ownerCardPhone: '',
+  allowBarcodeStudio: true,
   // Receipt & Printer defaults
 
   enableReceiptPrinting: true,

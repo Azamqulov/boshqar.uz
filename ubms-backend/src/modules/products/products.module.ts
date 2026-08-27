@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductsController, CategoriesController, UnitsController } from './products.controller';
+import { WebSocketsModule } from '../websockets/websockets.module';
 
 @Module({
+  imports: [WebSocketsModule],
   controllers: [ProductsController, CategoriesController, UnitsController],
   providers: [ProductsService],
   exports: [ProductsService],

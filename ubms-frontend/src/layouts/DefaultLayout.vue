@@ -24,8 +24,10 @@
 
       <!-- Right: Quick POS shortcut, Theme Toggle, User Badge & Logout -->
       <div class="flex items-center space-x-2.5 sm:space-x-3">
-        <!-- Quick Kassa button if not already active -->
-        <router-link to="/pos"
+        <!-- Quick Kassa button if worker has POS permission -->
+        <router-link
+          v-if="canAccessPos"
+          to="/pos"
           class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold transition btn-interactive"
           :class="{ 'ring-2 ring-emerald-500': $route.path === '/pos' }">
           <ShoppingCart class="w-3.5 h-3.5" />
@@ -287,6 +289,12 @@ const isWorker = computed(() => {
   const isSuper = authStore.user?.isSuperAdmin;
   if (isSuper) return false;
   return role !== 'owner' && role !== 'admin';
+});
+
+const canAccessPos = computed(() => {
+  if (!isWorker.value) return true;
+  const allowed = authStore.activeBusiness?.allowedModules || [];
+  return allowed.includes('all') || allowed.includes('pos') || allowed.includes('orders');
 });
 
 // Compute out of stock items count (quantity <= 0) -> RED
@@ -579,7 +587,11 @@ const visibleNavGroups = computed(() => {
       return false;
     }
     if (item.types.includes('superadmin')) return isSuper;
-    const typeMatch = item.types.includes('all') || item.types.includes(currentType);
+    const isExplicitlyAllowed = allowed.includes(item.name) ||
+      (item.name === 'kds' && allowed.includes('kds')) ||
+      (item.name === 'tables' && allowed.includes('tables')) ||
+      (item.name === 'pos' && (allowed.includes('pos') || allowed.includes('orders')));
+    const typeMatch = item.types.includes('all') || item.types.includes(currentType) || isExplicitlyAllowed;
     if (!typeMatch) return false;
 
     // 1. If SuperAdmin or Owner/Admin
@@ -587,25 +599,18 @@ const visibleNavGroups = computed(() => {
       return true;
     }
 
-    // 2. Universal items accessible to ALL users (Guide & AI)
-    if (item.name === 'guide' || item.to === '/guide') {
-      return true;
-    }
-
-    // 3. If Worker
+    // 2. If Worker - strictly filter by assigned allowedModules
     if (item.name === 'pos') {
-      return (
-        allowed.includes('pos') ||
-        allowed.includes('orders') ||
-        userRole.includes('sotuvchi') ||
-        userRole.includes('kassir') ||
-        userRole.includes('cashier') ||
-        userRole.includes('seller') ||
-        userRole.includes('xodim') ||
-        userRole.includes('worker') ||
-        userRole.includes('waiter') ||
-        userRole.includes('ofitsiant')
-      );
+      return allowed.includes('pos') || allowed.includes('orders');
+    }
+    if (item.name === 'tables') {
+      return allowed.includes('tables');
+    }
+    if (item.name === 'kds') {
+      return allowed.includes('kds');
+    }
+    if (item.name === 'guide' || item.to === '/guide') {
+      return allowed.includes('guide') || allowed.includes('all');
     }
     return (
       allowed.includes(item.name) ||
@@ -614,8 +619,6 @@ const visibleNavGroups = computed(() => {
       (item.name === 'inventory' && allowed.includes('inventory')) ||
       (item.name === 'suppliers' && allowed.includes('suppliers')) ||
       (item.name === 'customers' && allowed.includes('customers')) ||
-      (item.name === 'tables' && (allowed.includes('tables') || allowed.includes('restaurant'))) ||
-      (item.name === 'kds' && allowed.includes('kds')) ||
       (item.name === 'appointments' && allowed.includes('appointments')) ||
       (item.name === 'services' && (allowed.includes('services') || allowed.includes('appointments'))) ||
       (item.name === 'finance' && allowed.includes('finance')) ||
@@ -633,13 +636,7 @@ const visibleNavGroups = computed(() => {
 });
 
 const visibleNavItems = computed(() => {
-  const items = visibleNavGroups.value.flatMap((g) => g.items);
-  if (items.length === 0) {
-    const posGroup = allNavGroups.find((g) => g.items.some((i) => i.name === 'pos'));
-    const posItem = posGroup?.items.find((i) => i.name === 'pos');
-    return posItem ? [posItem] : [];
-  }
-  return items;
+  return visibleNavGroups.value.flatMap((g) => g.items);
 });
 
 const isItemActive = (item: NavItem) => {

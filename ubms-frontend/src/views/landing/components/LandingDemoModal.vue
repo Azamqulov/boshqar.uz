@@ -206,6 +206,7 @@ import PhoneInput from '../../../components/PhoneInput.vue';
 const props = defineProps<{
   isOpen: boolean;
   loading: boolean;
+  sectorOptions?: any[];
 }>();
 
 const emit = defineEmits<{

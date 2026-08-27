@@ -7,10 +7,10 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <AppButton variant="primary" size="md" :icon="ArrowDownLeft" @click="openStockInModal">
+        <AppButton v-if="canCreate('inventory')" variant="primary" size="md" :icon="ArrowDownLeft" @click="openStockInModal">
           Kirim Qilish
         </AppButton>
-        <AppButton variant="danger" size="md" :icon="ArrowUpRight" @click="openStockOutModal">
+        <AppButton v-if="canCreate('inventory')" variant="danger" size="md" :icon="ArrowUpRight" @click="openStockOutModal">
           Chiqim Qilish
         </AppButton>
       </div>

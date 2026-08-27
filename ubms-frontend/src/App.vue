@@ -20,6 +20,10 @@ import FloatingStockAlert from './components/FloatingStockAlert.vue';
 import CookieConsentBanner from './components/CookieConsentBanner.vue';
 import OfflineStatusBar from './components/OfflineStatusBar.vue';
 import PwaInstallPrompt from './components/PwaInstallPrompt.vue';
+import { useRealtimeSync } from './composables/useRealtimeSync';
+
+// Enable application-wide real-time sync with backend WebSockets
+useRealtimeSync();
 
 onMounted(() => {
   // Register Service Worker for PWA Offline caching only in production mode

@@ -6,7 +6,7 @@
         <p class="text-xs text-slate-400 mt-0.5">Zaldagi stollar holati, buyurtmalar va bandlik</p>
       </div>
 
-      <div class="flex items-center space-x-2">
+      <div v-if="canAccessKds" class="flex items-center space-x-2">
         <router-link
           to="/restaurant/kds"
           class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs transition"
@@ -50,16 +50,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import { useCartStore } from '../../stores/cart.store';
+import { useAuthStore } from '../../stores/auth.store';
 import { useFormat } from '../../composables/useFormat';
 import { Flame } from 'lucide-vue-next';
 
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const { formatCurrency } = useFormat();
+
+const canAccessKds = computed(() => {
+  const isSuper = authStore.user?.isSuperAdmin;
+  const role = (authStore.activeBusiness?.role || '').toLowerCase();
+  if (isSuper || role === 'owner' || role === 'admin') return true;
+  const allowed = authStore.activeBusiness?.allowedModules || [];
+  return allowed.includes('all') || allowed.includes('kds');
+});
 
 const tables = ref<any[]>([]);
 

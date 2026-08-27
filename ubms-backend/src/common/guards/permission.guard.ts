@@ -43,7 +43,7 @@ export class PermissionGuard implements CanActivate {
 
     // 2. Check pre-resolved permissions from JwtStrategy (0ms in-memory verification)
     const userPermissions: string[] = Array.isArray(user.permissions) ? user.permissions : [];
-    if (userPermissions.includes('*') || userPermissions.includes('ALL') || userPermissions.includes(requiredPermission)) {
+    if (checkPermMatch(userPermissions, requiredPermission)) {
       return true;
     }
 
@@ -97,17 +97,88 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    const hasPermission = businessUser.role?.rolePermissions?.some(
-      (rp) => rp.permission.code === requiredPermission,
-    );
-
-    if (!hasPermission) {
-      throw new ForbiddenException({
-        code: 'FORBIDDEN',
-        message: `Sizda ushbu amalni bajarish uchun ruxsat (${requiredPermission}) yo'q`,
-      });
+    const dbCodes = (businessUser.role?.rolePermissions || []).map((rp) => rp.permission?.code || '');
+    if (checkPermMatch(dbCodes, requiredPermission)) {
+      return true;
     }
 
+    throw new ForbiddenException({
+      code: 'FORBIDDEN',
+      message: `Ushbu amalni bajarish uchun ruxsat yetarli emas (${requiredPermission})`,
+    });
+  }
+}
+
+function checkPermMatch(userPermissions: string[], required: string): boolean {
+  if (
+    userPermissions.includes('*') ||
+    userPermissions.includes('ALL') ||
+    userPermissions.includes(required)
+  ) {
     return true;
   }
+
+  if (required === 'products.view') {
+    return userPermissions.some((p) =>
+      [
+        'orders.create',
+        'orders.view',
+        'tables.view',
+        'tables.manage',
+        'kds.view',
+        'kds.manage',
+        'inventory.create',
+        'inventory.view',
+        'pos.create',
+        'pos.view',
+        'restaurant.manage',
+        'restaurant.view',
+      ].includes(p),
+    );
+  }
+
+  if (required === 'restaurant.view' || required === 'tables.view') {
+    return userPermissions.some((p) =>
+      [
+        'tables.view',
+        'tables.manage',
+        'restaurant.view',
+        'restaurant.manage',
+        'orders.create',
+        'orders.view',
+        'kds.view',
+        'kds.manage',
+      ].includes(p),
+    );
+  }
+
+  if (required === 'restaurant.manage' || required === 'tables.manage') {
+    return userPermissions.some((p) =>
+      ['tables.manage', 'restaurant.manage'].includes(p),
+    );
+  }
+
+  if (required === 'restaurant.order' || required === 'restaurant.pay') {
+    return userPermissions.some((p) =>
+      [
+        'tables.view',
+        'tables.manage',
+        'restaurant.manage',
+        'orders.create',
+        'pos.create',
+      ].includes(p),
+    );
+  }
+
+  if (
+    required === 'restaurant.kds' ||
+    required === 'kds.view' ||
+    required === 'kds.manage'
+  ) {
+    return userPermissions.some((p) =>
+      ['kds.view', 'kds.manage', 'restaurant.manage'].includes(p),
+    );
+  }
+
+  return false;
 }

@@ -2,6 +2,9 @@
 import { ref } from 'vue';
 import { CreditCard, Send, X, PlusCircle, CheckCircle2, History, ArrowDownRight, ArrowUpRight, Phone, MessageSquare } from 'lucide-vue-next';
 import api from '../../../services/api';
+import { useToast } from '../../../composables/useToast';
+
+const toast = useToast();
 
 interface CustomerDebtItem {
   id: string;
@@ -43,10 +46,11 @@ const handleAddDebt = async () => {
     });
     amountInput.value = '';
     notesInput.value = '';
+    toast.success('Qarz muvaffaqiyatli kiritildi', 'Nasiya');
     emit('updated');
     activeTab.value = 'history';
   } catch (err: any) {
-    alert(err?.response?.data?.message || 'Qarz kiritishda xatolik yuz berdi');
+    toast.error(err?.response?.data?.message || 'Qarz kiritishda xatolik yuz berdi', 'Nasiya');
   } finally {
     isSubmitting.value = false;
   }
@@ -62,10 +66,11 @@ const handlePayDebt = async () => {
     });
     amountInput.value = '';
     notesInput.value = '';
+    toast.success("Nasiya to'lovi muvaffaqiyatli qabul qilindi", 'To\'lov');
     emit('updated');
     activeTab.value = 'history';
   } catch (err: any) {
-    alert(err?.response?.data?.message || "To'lovni saqlashda xatolik yuz berdi");
+    toast.error(err?.response?.data?.message || "To'lovni saqlashda xatolik yuz berdi", 'To\'lov');
   } finally {
     isSubmitting.value = false;
   }

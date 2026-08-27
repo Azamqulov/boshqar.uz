@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { Eye, EyeOff } from 'lucide-vue-next';
 
 interface Props {
   modelValue: string | number;
@@ -30,6 +31,14 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void;
 }>();
+
+const showPassword = ref(false);
+const computedType = computed(() => {
+  if (props.type === 'password') {
+    return showPassword.value ? 'text' : 'password';
+  }
+  return props.type;
+});
 
 const inputId = computed(() => props.id || (props.label ? `input-${props.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : undefined));
 const errorId = computed(() => inputId.value ? `${inputId.value}-error` : undefined);
@@ -75,7 +84,7 @@ const handleInput = (event: Event) => {
       <input
         :id="inputId"
         :value="modelValue"
-        :type="type"
+        :type="computedType"
         :step="step"
         :min="min"
         :max="max"
@@ -89,12 +98,25 @@ const handleInput = (event: Event) => {
         class="w-full h-[42px] rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white placeholder-slate-400 text-xs px-3.5 outline-none transition duration-200 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-emerald-500"
         :class="[
           icon ? 'pl-9' : '',
+          type === 'password' ? 'pr-10' : '',
           error
             ? 'border-rose-400 dark:border-rose-600 focus:border-rose-500'
             : 'border-slate-300 dark:border-slate-700 focus:border-emerald-500',
         ]"
         @input="handleInput"
       />
+
+      <button
+        v-if="type === 'password'"
+        type="button"
+        @click="showPassword = !showPassword"
+        class="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1 rounded focus:outline-none cursor-pointer"
+        :title="showPassword ? 'Parolni yashirish' : 'Parolni ko\'rish'"
+        tabindex="-1"
+      >
+        <EyeOff v-if="showPassword" class="w-4 h-4" />
+        <Eye v-else class="w-4 h-4" />
+      </button>
     </div>
 
     <span v-if="error" :id="errorId" class="text-[11px] text-rose-500 font-medium" role="alert">{{ error }}</span>
