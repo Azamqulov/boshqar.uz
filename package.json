@@ -9,6 +9,7 @@
     "ubms-telegram-bot"
   ],
   "scripts": {
+    "build": "npm run build:frontend",
     "dev:backend": "npm --prefix ubms-backend run start:dev",
     "dev:frontend": "npm --prefix ubms-frontend run dev",
     "dev:bot": "npm --prefix ubms-telegram-bot run dev",
