@@ -28,6 +28,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.0",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vue/test-utils": "^2.4.11",
     "autoprefixer": "^10.4.19",
@@ -37,10 +38,12 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.11",
     "vitest": "^4.1.11",
-    "@playwright/test": "^1.44.0",
-    "vue-tsc": "^2.0.19"
+    "vue-tsc": "^2.0.19",
+    "rollup": "4.62.4"
   },
   "optionalDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.62.5"
+    "@rollup/rollup-linux-x64-gnu": "4.62.4",
+    "@rollup/rollup-linux-x64-musl": "4.62.4",
+    "@rollup/rollup-win32-x64-msvc": "4.62.4"
   }
 }
