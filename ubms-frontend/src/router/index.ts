@@ -75,6 +75,18 @@ const routes: RouteRecordRaw[] = [
     component: LegalView,
   },
   {
+    path: '/login',
+    redirect: '/auth/login',
+  },
+  {
+    path: '/register',
+    redirect: '/auth/register',
+  },
+  {
+    path: '/logout',
+    redirect: '/auth/login',
+  },
+  {
     path: '/auth',
     component: AuthLayout,
     children: [

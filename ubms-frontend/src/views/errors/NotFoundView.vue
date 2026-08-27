@@ -47,7 +47,7 @@
           class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-emerald-500/25 transition active:scale-95 cursor-pointer"
         >
           <Home class="w-4 h-4" />
-          <span>Boshqaruv Paneliga</span>
+          <span>{{ authStore.isAuthenticated ? 'Boshqaruv Paneliga' : 'Tizimga Kirish' }}</span>
         </button>
       </div>
 
@@ -78,6 +78,10 @@ const goBack = () => {
 };
 
 const goHome = () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/auth/login');
+    return;
+  }
   const role = (authStore.activeBusiness?.role || '').toLowerCase();
   const isSuper = authStore.user?.isSuperAdmin;
   const isWorker = !isSuper && role !== 'owner' && role !== 'admin';
