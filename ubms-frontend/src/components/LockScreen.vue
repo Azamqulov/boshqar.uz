@@ -33,7 +33,6 @@
             :class="isDarkMode ? 'bg-slate-950/10 backdrop-blur-[2px]' : 'bg-white/10 backdrop-blur-[2px]'"
           ></div>
 
-
           <!-- Ambient Mesh Glowing Lights -->
           <div
             class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full filter blur-[120px] pointer-events-none transition-colors"
@@ -130,7 +129,7 @@
           <div
             v-else
             @click.stop
-            class="w-full max-w-[320px] rounded-3xl p-4 sm:p-5 backdrop-blur-2xl shadow-2xl flex flex-col items-center space-y-3 transition-all duration-300 animate-slide-up border"
+            class="w-full max-w-[340px] rounded-3xl p-4 sm:p-5 backdrop-blur-2xl shadow-2xl flex flex-col items-center space-y-3 transition-all duration-300 animate-slide-up border"
             :class="[
               isDarkMode
                 ? 'bg-slate-950/90 border-slate-800/90 text-white'
@@ -156,7 +155,7 @@
               </div>
 
               <div class="text-center">
-                <h3 class="text-base font-black tracking-tight truncate max-w-[200px]" :class="isDarkMode ? 'text-white' : 'text-slate-900'">
+                <h3 class="text-base font-black tracking-tight truncate max-w-[220px]" :class="isDarkMode ? 'text-white' : 'text-slate-900'">
                   {{ userName }}
                 </h3>
                 <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider">
@@ -167,11 +166,11 @@
 
             <!-- PIN Code Indicators (Compact Dots) -->
             <div class="w-full space-y-2">
-              <div class="flex items-center justify-center space-x-2 py-0.5">
+              <div class="flex items-center justify-center space-x-2.5 py-0.5">
                 <div
                   v-for="i in expectedPinLength"
                   :key="i"
-                  class="w-3 h-3 rounded-full border transition-all duration-200"
+                  class="w-3.5 h-3.5 rounded-full border transition-all duration-200"
                   :class="[
                     inputPin.length >= i
                       ? 'bg-emerald-500 border-emerald-400 scale-110 shadow-md shadow-emerald-500/50'
@@ -180,29 +179,44 @@
                 ></div>
               </div>
 
-              <!-- Input Box (Compact) -->
+              <!-- Input Box (Readonly to prevent double input event with window keydown) -->
               <div class="relative flex items-center justify-center">
                 <input
                   ref="pinInputRef"
-                  v-model="inputPin"
-                  type="password"
-                  maxlength="4"
-                  inputmode="numeric"
-                  :placeholder="t('enter_pin', '4-xonali PIN kod')"
-                  @keyup.enter="tryUnlock"
-                  class="w-full text-center tracking-[0.4em] text-lg font-mono font-bold py-2 px-3 rounded-xl border font-mono text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition shadow-inner placeholder:tracking-normal placeholder:text-slate-400 placeholder:text-xs"
-
-                  :class="isDarkMode
-                    ? 'bg-slate-900/90 border-slate-700/80 text-emerald-400'
-                    : 'bg-slate-50 border-slate-300 text-emerald-600'"
+                  :value="maskedPinDisplay"
+                  readonly
+                  type="text"
+                  :placeholder="lockoutSeconds > 0 ? `Vaqtinchalik qulf (${lockoutSeconds}s)` : t('enter_pin', 'PIN Kodni kiriting')"
+                  class="w-full text-center tracking-[0.3em] text-lg font-mono font-bold py-2 px-3 rounded-2xl border transition shadow-inner placeholder:tracking-normal placeholder:text-slate-400 placeholder:text-xs select-none cursor-default"
+                  :class="[
+                    lockoutSeconds > 0
+                      ? 'bg-rose-500/10 border-rose-500/40 text-rose-500'
+                      : isDarkMode
+                        ? 'bg-slate-900/90 border-slate-700/80 text-emerald-400'
+                        : 'bg-slate-50 border-slate-300 text-emerald-600'
+                  ]"
                 />
               </div>
 
-              <!-- Status Notification -->
-              <div v-if="errorMessage" class="text-center text-[11px] font-bold text-rose-500 bg-rose-500/10 py-1 px-2.5 rounded-lg border border-rose-500/20">
-                {{ errorMessage }}
+              <!-- Status Notification & Lockout Countdown -->
+              <div
+                v-if="lockoutSeconds > 0"
+                class="text-center text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/15 py-1.5 px-3 rounded-xl border border-rose-500/30 flex items-center justify-center gap-1.5 animate-pulse"
+              >
+                <Clock class="w-3.5 h-3.5 shrink-0" />
+                <span>5 marta xato kiritildi! {{ lockoutSeconds }} soniya kuting...</span>
               </div>
-              <div v-else-if="isSuccess" class="text-center text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 py-1 px-2.5 rounded-lg border border-emerald-500/20 flex items-center justify-center space-x-1">
+              <div
+                v-else-if="errorMessage"
+                class="text-center text-[11px] font-bold text-rose-500 bg-rose-500/10 py-1.5 px-3 rounded-xl border border-rose-500/20 flex items-center justify-center gap-1"
+              >
+                <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
+                <span>{{ errorMessage }}</span>
+              </div>
+              <div
+                v-else-if="isSuccess"
+                class="text-center text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 py-1.5 px-3 rounded-xl border border-emerald-500/20 flex items-center justify-center space-x-1"
+              >
                 <CheckCircle2 class="w-3.5 h-3.5 animate-spin text-emerald-500" />
                 <span>{{ t('unlocking', 'Ochilmoqda...') }}</span>
               </div>
@@ -214,8 +228,9 @@
                 v-for="num in [1,2,3,4,5,6,7,8,9]"
                 :key="num"
                 type="button"
+                :disabled="lockoutSeconds > 0"
                 @click="appendDigit(String(num))"
-                class="py-2.5 rounded-xl font-mono font-bold text-lg border transition cursor-pointer shadow-sm active:scale-95"
+                class="py-2.5 rounded-xl font-mono font-bold text-lg border transition cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 :class="isDarkMode
                   ? 'bg-slate-900/80 hover:bg-slate-800 text-white border-slate-800'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-200'"
@@ -224,8 +239,9 @@
               </button>
               <button
                 type="button"
+                :disabled="lockoutSeconds > 0"
                 @click="clearDigit"
-                class="py-2.5 rounded-xl font-bold text-xs border transition cursor-pointer active:scale-95"
+                class="py-2.5 rounded-xl font-bold text-xs border transition cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 :class="isDarkMode
                   ? 'bg-slate-900/40 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 border-slate-800'
                   : 'bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 border-slate-200'"
@@ -234,8 +250,9 @@
               </button>
               <button
                 type="button"
+                :disabled="lockoutSeconds > 0"
                 @click="appendDigit('0')"
-                class="py-2.5 rounded-xl font-mono font-bold text-lg border transition cursor-pointer shadow-sm active:scale-95"
+                class="py-2.5 rounded-xl font-mono font-bold text-lg border transition cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 :class="isDarkMode
                   ? 'bg-slate-900/80 hover:bg-slate-800 text-white border-slate-800'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border-slate-200'"
@@ -244,16 +261,29 @@
               </button>
               <button
                 type="button"
+                :disabled="lockoutSeconds > 0"
                 @click="tryUnlock"
-                class="py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs border border-emerald-400/40 transition shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center space-x-1"
+                class="py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs border border-emerald-400/40 transition shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center justify-center space-x-1 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <KeyRound class="w-3.5 h-3.5" />
                 <span>{{ t('unlock', 'Ochish') }}</span>
               </button>
             </div>
 
+            <!-- Logout / Switch Account Button -->
+            <div class="w-full pt-1">
+              <button
+                type="button"
+                @click="handleLogout"
+                class="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs border border-rose-500/20 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <LogOut class="w-3.5 h-3.5" />
+                <span>Tizimdan Chiqish (Log out)</span>
+              </button>
+            </div>
+
             <!-- Footer Hint & Back Button -->
-            <div class="w-full flex items-center justify-between pt-1 text-[10px] font-medium" :class="isDarkMode ? 'text-slate-400' : 'text-slate-500'">
+            <div class="w-full flex items-center justify-between pt-0.5 text-[10px] font-medium" :class="isDarkMode ? 'text-slate-400' : 'text-slate-500'">
               <button
                 type="button"
                 @click="showUnlockCard = false"
@@ -289,6 +319,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import { useScreenLock } from '../composables/useScreenLock';
 import { useAuthStore } from '../stores/auth.store';
 import { useLanguage } from '../composables/useLanguage';
@@ -306,8 +337,12 @@ import {
   Scissors,
   Wrench,
   CheckCircle2,
+  LogOut,
+  Clock,
+  AlertTriangle,
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const { isLocked, pinCode, unlockScreen, initLockListeners, destroyLockListeners } = useScreenLock();
 const authStore = useAuthStore();
 const { t } = useLanguage();
@@ -326,6 +361,16 @@ const errorMessage = ref('');
 const isShake = ref(false);
 const isSuccess = ref(false);
 const pinInputRef = ref<HTMLInputElement | null>(null);
+
+// 5 failed attempts lockout state
+const failedAttempts = ref(0);
+const lockoutSeconds = ref(0);
+let lockoutTimer: any = null;
+
+const maskedPinDisplay = computed(() => {
+  if (!inputPin.value) return '';
+  return '• '.repeat(inputPin.value.length).trim();
+});
 
 // Wallpapers mapped to 6 Uzbek business domains
 const wallpaperPresets: Record<string, string[]> = {
@@ -399,7 +444,6 @@ const userInitials = computed(() => {
 
 const expectedPinLength = computed(() => 4);
 
-
 const updateClock = () => {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
@@ -422,9 +466,6 @@ const openUnlockPanel = () => {
   showUnlockCard.value = true;
   errorMessage.value = '';
   inputPin.value = '';
-  nextTick(() => {
-    pinInputRef.value?.focus();
-  });
 };
 
 // Full-screen gesture & click handlers
@@ -441,7 +482,6 @@ const handleTouchEnd = (e: TouchEvent) => {
   if (showUnlockCard.value) return;
   const touchEndY = e.changedTouches[0].clientY;
   const deltaY = touchStartY.value - touchEndY;
-  // Swiped up or single tap opens panel
   if (deltaY > 15 || Math.abs(deltaY) < 10) {
     openUnlockPanel();
   }
@@ -458,7 +498,6 @@ const handleMouseUp = (e: MouseEvent) => {
   if (!isMouseDown.value || showUnlockCard.value) return;
   isMouseDown.value = false;
   const deltaY = mouseStartY.value - e.clientY;
-  // Dragged up or clicked opens panel
   if (deltaY > 15 || Math.abs(deltaY) < 15) {
     openUnlockPanel();
   }
@@ -478,14 +517,15 @@ const handleBackgroundClick = (e: MouseEvent) => {
 };
 
 const appendDigit = (digit: string) => {
+  if (lockoutSeconds.value > 0) return;
   if (inputPin.value.length < 4) {
     inputPin.value += digit;
     errorMessage.value = '';
   }
 };
 
-
 const clearDigit = () => {
+  if (lockoutSeconds.value > 0) return;
   if (inputPin.value.length > 0) {
     inputPin.value = inputPin.value.slice(0, -1);
     errorMessage.value = '';
@@ -493,6 +533,8 @@ const clearDigit = () => {
 };
 
 const tryUnlock = () => {
+  if (lockoutSeconds.value > 0) return;
+
   if (!inputPin.value.trim()) {
     errorMessage.value = t('enter_pin', 'Iltimos, PIN kodni kiriting');
     return;
@@ -500,6 +542,8 @@ const tryUnlock = () => {
 
   const success = unlockScreen(inputPin.value, authStore.user?.phone);
   if (success) {
+    failedAttempts.value = 0;
+    lockoutSeconds.value = 0;
     isSuccess.value = true;
     setTimeout(() => {
       inputPin.value = '';
@@ -508,15 +552,47 @@ const tryUnlock = () => {
       showUnlockCard.value = false;
     }, 150);
   } else {
-    errorMessage.value = t('invalid_pin', 'PIN-kod noto\'g\'ri!');
+    failedAttempts.value++;
     isShake.value = true;
     setTimeout(() => {
       isShake.value = false;
     }, 500);
+
+    if (failedAttempts.value >= 5) {
+      lockoutSeconds.value = 30;
+      errorMessage.value = `5 marta xato kiritildi! ${lockoutSeconds.value} soniya kuting...`;
+      inputPin.value = '';
+      if (lockoutTimer) clearInterval(lockoutTimer);
+      lockoutTimer = setInterval(() => {
+        lockoutSeconds.value--;
+        if (lockoutSeconds.value <= 0) {
+          clearInterval(lockoutTimer);
+          lockoutTimer = null;
+          failedAttempts.value = 0;
+          errorMessage.value = '';
+        } else {
+          errorMessage.value = `5 marta xato kiritildi! ${lockoutSeconds.value} soniya kuting...`;
+        }
+      }, 1000);
+    } else {
+      const remaining = 5 - failedAttempts.value;
+      errorMessage.value = `PIN-kod noto'g'ri! (${remaining} ta urinish qoldi)`;
+      inputPin.value = '';
+    }
   }
 };
 
-// Auto-unlock watcher: When typed length matches expected pin length or pin is correct, unlock immediately!
+const handleLogout = async () => {
+  isLocked.value = false;
+  localStorage.removeItem('ubms_is_screen_locked');
+  if (lockoutTimer) clearInterval(lockoutTimer);
+  lockoutSeconds.value = 0;
+  failedAttempts.value = 0;
+  await authStore.logout();
+  router.push('/login');
+};
+
+// Auto-unlock watcher: When typed length matches 4 digits, check immediately
 watch(inputPin, (val) => {
   if (!val) return;
   if (val.length >= expectedPinLength.value) {
@@ -528,7 +604,9 @@ const handleWindowKeyDown = (e: KeyboardEvent) => {
   if (!isLocked.value) return;
 
   if (e.key === 'Escape') {
-    showUnlockCard.value = false;
+    if (showUnlockCard.value && lockoutSeconds.value === 0) {
+      showUnlockCard.value = false;
+    }
     return;
   }
 
@@ -541,11 +619,15 @@ const handleWindowKeyDown = (e: KeyboardEvent) => {
       }
     }
   } else {
+    // Prevent default browser double handling
     if (e.key >= '0' && e.key <= '9') {
+      e.preventDefault();
       appendDigit(e.key);
     } else if (e.key === 'Backspace') {
+      e.preventDefault();
       clearDigit();
     } else if (e.key === 'Enter') {
+      e.preventDefault();
       tryUnlock();
     }
   }
@@ -571,6 +653,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer);
+  if (lockoutTimer) clearInterval(lockoutTimer);
   destroyLockListeners();
   window.removeEventListener('keydown', handleWindowKeyDown);
 });
