@@ -127,14 +127,28 @@
                   </div>
                 </td>
 
-                <td class="py-3 px-4">
-                  <div class="flex flex-wrap gap-1">
+                <td class="py-3 px-4 max-w-[280px]">
+                  <div
+                    v-if="(emp.allowedModules || []).includes('all') || (emp.allowedModules || []).length >= 7"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold"
+                  >
+                    <CheckCircle2 class="w-3.5 h-3.5" />
+                    <span>Barcha bo'limlar (To'liq)</span>
+                  </div>
+                  <div v-else class="flex flex-wrap items-center gap-1">
                     <span
-                      v-for="mod in (emp.allowedModules || ['pos', 'products'])"
+                      v-for="mod in (emp.allowedModules || ['pos', 'products']).slice(0, 3)"
                       :key="mod"
-                      class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold"
+                      class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold whitespace-nowrap"
                     >
                       {{ getModuleLabel(mod) }}
+                    </span>
+                    <span
+                      v-if="(emp.allowedModules || []).length > 3"
+                      class="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-[10px] font-bold cursor-help hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                      :title="(emp.allowedModules || []).map((m: string) => getModuleLabel(m)).join(', ')"
+                    >
+                      +{{ (emp.allowedModules || []).length - 3 }} ta
                     </span>
                   </div>
                 </td>
@@ -211,17 +225,32 @@
 
             <div>
               <div class="text-[11px] text-slate-400 mb-1 font-semibold">Lavozim & Ruxsatlar:</div>
-              <div class="flex flex-wrap gap-1">
+              <div class="flex flex-wrap items-center gap-1">
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   {{ emp.position || 'Xodim' }}
                 </span>
                 <span
-                  v-for="mod in (emp.allowedModules || ['pos', 'products'])"
-                  :key="mod"
+                  v-if="(emp.allowedModules || []).includes('all') || (emp.allowedModules || []).length >= 7"
                   class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold"
                 >
-                  {{ getModuleLabel(mod) }}
+                  Barcha bo'limlar (To'liq)
                 </span>
+                <template v-else>
+                  <span
+                    v-for="mod in (emp.allowedModules || ['pos', 'products']).slice(0, 3)"
+                    :key="mod"
+                    class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold whitespace-nowrap"
+                  >
+                    {{ getModuleLabel(mod) }}
+                  </span>
+                  <span
+                    v-if="(emp.allowedModules || []).length > 3"
+                    class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-[10px] font-bold"
+                    :title="(emp.allowedModules || []).map((m: string) => getModuleLabel(m)).join(', ')"
+                  >
+                    +{{ (emp.allowedModules || []).length - 3 }} ta
+                  </span>
+                </template>
               </div>
             </div>
 

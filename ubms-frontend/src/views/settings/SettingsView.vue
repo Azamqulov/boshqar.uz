@@ -576,18 +576,22 @@ const availableModules = [
 ];
 
 const getModuleLabel = (modId: string) => {
-  if (modId === 'tables' || modId === 'restaurant') return 'Stollar & Ofitsiant';
-  if (modId === 'kds') return 'Oshxona (KDS)';
-  if (modId === 'pos' || modId === 'orders') return 'Kassa (POS)';
-  if (modId === 'products') return 'Mahsulotlar';
-  if (modId === 'inventory') return 'Ombor & Kirim';
-  if (modId === 'customers') return 'Mijozlar (CRM)';
-  if (modId === 'suppliers') return 'Ta\'minotchilar';
-  if (modId === 'appointments') return 'Bandlovlar';
-  if (modId === 'finance') return 'Moliya & Xarajatlar';
-  if (modId === 'dashboard') return 'Boshqaruv Paneli';
-  if (modId === 'all') return 'Barchasi (Admin)';
-  const m = availableModules.find((item) => item.id === modId);
+  if (!modId) return '';
+  const id = modId.toLowerCase();
+  if (id === 'tables' || id === 'restaurant' || id === 'waiter') return 'Stollar & Ofitsiant';
+  if (id === 'kds' || id === 'kitchen') return 'Oshxona (KDS)';
+  if (id === 'pos' || id === 'orders') return 'Kassa (POS)';
+  if (id === 'products') return 'Mahsulotlar';
+  if (id === 'inventory' || id === 'stock') return 'Ombor & Kirim';
+  if (id === 'customers' || id === 'crm') return 'Mijozlar (CRM)';
+  if (id === 'suppliers') return 'Ta\'minotchilar';
+  if (id === 'appointments' || id === 'services') return 'Bandlovlar & Xizmatlar';
+  if (id === 'finance') return 'Moliya & Xarajatlar';
+  if (id === 'reports' || id === 'analytics') return 'Hisobotlar';
+  if (id === 'dashboard') return 'Boshqaruv Paneli';
+  if (id === 'settings') return 'Sozlamalar';
+  if (id === 'all') return 'Barcha bo\'limlar';
+  const m = availableModules.find((item) => item.id.toLowerCase() === id);
   return m ? m.label : modId;
 };
 
