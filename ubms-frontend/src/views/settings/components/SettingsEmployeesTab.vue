@@ -225,6 +225,19 @@
               </div>
             </div>
 
+            <div class="flex items-center justify-between text-xs pt-1">
+              <span class="text-slate-500 font-semibold text-[11px]">Lock PIN:</span>
+              <input
+                type="text"
+                maxlength="6"
+                inputmode="numeric"
+                :value="getEmployeePin(emp.id || emp.phone)"
+                @input="setEmployeePin(emp.id || emp.phone, ($event.target as HTMLInputElement).value)"
+                placeholder="----"
+                class="w-20 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-mono text-center font-bold text-xs text-emerald-600 dark:text-emerald-400 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
             <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end gap-1.5">
               <button
                 v-if="!emp.isOwner"

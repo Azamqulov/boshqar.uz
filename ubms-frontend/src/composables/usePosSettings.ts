@@ -41,6 +41,10 @@ export interface PosSettings {
   ownerCardPhone?: string;
   // Barcode & Price Tag Label Studio
   allowBarcodeStudio: boolean;
+  // Screen Lock & PIN Code Security
+  screenLockPin?: string;
+  autoLockMinutes?: number;
+  employeePins?: Record<string, string>;
 }
 
 export const defaultPosSettings: PosSettings = {
@@ -63,6 +67,10 @@ export const defaultPosSettings: PosSettings = {
   ownerCardBank: 'Kapitalbank',
   ownerCardPhone: '',
   allowBarcodeStudio: true,
+  // Screen Lock defaults
+  screenLockPin: '1234',
+  autoLockMinutes: 0,
+  employeePins: {},
   // Receipt & Printer defaults
 
   enableReceiptPrinting: true,
