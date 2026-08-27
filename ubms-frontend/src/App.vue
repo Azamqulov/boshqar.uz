@@ -1,19 +1,22 @@
 <template>
-  <MaintenanceOverlay />
-  <OfflineStatusBar />
-  <router-view v-slot="{ Component }">
-    <transition name="page" mode="out-in">
-      <component :is="Component" />
-    </transition>
-  </router-view>
-  <FloatingStockAlert />
-  <ToastContainer />
-  <CookieConsentBanner />
-  <PwaInstallPrompt />
+  <GlobalErrorBoundary>
+    <MaintenanceOverlay />
+    <OfflineStatusBar />
+    <router-view v-slot="{ Component }">
+      <transition name="page" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+    <FloatingStockAlert />
+    <ToastContainer />
+    <CookieConsentBanner />
+    <PwaInstallPrompt />
+  </GlobalErrorBoundary>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import GlobalErrorBoundary from './components/GlobalErrorBoundary.vue';
 import MaintenanceOverlay from './components/MaintenanceOverlay.vue';
 import ToastContainer from './components/ToastContainer.vue';
 import FloatingStockAlert from './components/FloatingStockAlert.vue';

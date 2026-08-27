@@ -300,4 +300,19 @@ router.afterEach((to) => {
   document.title = titles[to.path] || 'Boshqar.uz — Universal Biznes Boshqaruv Tizimi';
 });
 
+// Automatic self-healing router error catcher (handles ChunkLoadErrors on new deployments)
+router.onError((error, to) => {
+  const isChunkError = /loading chunk|fetch dynamically imported module|Importing a module script failed/i.test(error?.message || '');
+  if (isChunkError) {
+    const reloadKey = 'ubms_chunk_reload_' + (to?.path || '');
+    const alreadyReloaded = sessionStorage.getItem(reloadKey);
+    if (!alreadyReloaded) {
+      sessionStorage.setItem(reloadKey, 'true');
+      window.location.assign(to?.fullPath || window.location.href);
+      return;
+    }
+  }
+  console.error('[Router Error]', error);
+});
+
 export default router;
