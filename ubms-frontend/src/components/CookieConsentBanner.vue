@@ -59,42 +59,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Cookie, X } from 'lucide-vue-next';
 import { useAuthStore } from '../stores/auth.store';
 
+const route = useRoute();
+const authStore = useAuthStore();
 const isVisible = ref(false);
 const STORAGE_KEY = 'ubms_cookie_consent';
-const authStore = useAuthStore();
 
-onMounted(() => {
+const hasConsent = (): boolean => {
   try {
-    const consent = localStorage.getItem(STORAGE_KEY);
-    // If already accepted/dismissed or user is in dashboard, never show banner
-    if (!consent && !authStore.token && !authStore.user) {
-      setTimeout(() => {
-        if (!localStorage.getItem(STORAGE_KEY) && !authStore.token) {
-          isVisible.value = true;
-        }
-      }, 1500);
+    if (localStorage.getItem(STORAGE_KEY)) return true;
+    if (typeof document !== 'undefined' && document.cookie.includes('ubms_cookie_consent=')) return true;
+  } catch (e) {}
+  return false;
+};
+
+const saveConsent = (status: 'accepted' | 'dismissed' = 'accepted') => {
+  try {
+    localStorage.setItem(STORAGE_KEY, status);
+    if (typeof document !== 'undefined') {
+      document.cookie = `ubms_cookie_consent=${status}; path=/; max-age=31536000; SameSite=Lax`;
     }
-  } catch (e) {
-    // ignore
-  }
-});
-
-const acceptCookies = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY, 'accepted');
   } catch (e) {}
   isVisible.value = false;
 };
 
-const dismissCookies = () => {
+const checkVisibility = () => {
   try {
-    localStorage.setItem(STORAGE_KEY, 'dismissed');
-  } catch (e) {}
-  isVisible.value = false;
+    // 1. If already consented, NEVER show
+    if (hasConsent()) {
+      isVisible.value = false;
+      return;
+    }
+
+    // 2. If user is authenticated, auto-save consent and NEVER show
+    if (authStore.token || authStore.user || localStorage.getItem('ubms_token')) {
+      saveConsent('accepted');
+      isVisible.value = false;
+      return;
+    }
+
+    // 3. Only show on public landing / marketing routes
+    const path = route.path || '';
+    const isPublicRoute = path === '/' || path === '/pricing' || path === '/contact' || path.startsWith('/legal');
+    if (!isPublicRoute) {
+      isVisible.value = false;
+      return;
+    }
+
+    isVisible.value = true;
+  } catch (e) {
+    isVisible.value = false;
+  }
+};
+
+onMounted(() => {
+  setTimeout(() => {
+    checkVisibility();
+  }, 1000);
+});
+
+watch(() => route.path, () => {
+  checkVisibility();
+});
+
+const acceptCookies = () => {
+  saveConsent('accepted');
+};
+
+const dismissCookies = () => {
+  saveConsent('dismissed');
 };
 </script>
 
